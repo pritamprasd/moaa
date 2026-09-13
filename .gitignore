@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+out/
+local.properties
+*.iml
+
+# IDE
+.idea/
+captures/
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
+
+# Signing & credentials — never commit
+*.keystore
+*.jks
+*.p12
+secrets.properties
+
+# Logs
+*.log

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Mother of All Apps</string>
+    <string name="dashboard_placeholder_title">No tools yet</string>
+    <string name="dashboard_placeholder_body">Downloadable tools will appear here in a future update.</string>
+</resources>

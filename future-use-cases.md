@@ -14,19 +14,22 @@ Intentional future concerns discovered during environment inspection and/or proj
 
 ## Plugins & native support
 
-- **Plugin runtime module (`plugin-runtime`)** — the biggest deferred piece: runtime download, verification, dynamic loading/unloading, and tool state transitions. The intended position is between `app` and `plugin-api` (see `docs/architecture.md`); today `app` depends on `plugin-api` directly. Do not implement until the loading/unloading semantics are verified against official Android docs.
-- **Tool UI screen contract** — `plugin-api` is currently metadata-only. How a tool provides its `@Composable` screen (and how the host hosts it) is an open design; it must not be coupled into the contract prematurely.
-- **`ToolInfo.icon`** — not modeled. Requires deciding the icon format (drawable, vector XML, packaged resource vs remote bytes) and delivery mechanism.
+- **Plugin runtime implementation** — the architecture is now fully designed (`docs/plugin-runtime.md`, `plugin-api.md`, `plugin-artifact.md`, `plugin-security.md`, `plugin-versioning.md`, `performance.md`; ADRs 020–028). What remains is the **implementation milestone**: building `plugin-runtime` between `app` and `plugin-api`, then the verification matrix on API 34..37 (loading, read-only enforcement, resource IDs, classloader collection, Compose ABI). Do not build until the loading/unloading assumptions are proven on-device (runtime §13).
+- **`ToolInfo.icon`** — not modeled. Requires deciding the icon format (drawable, vector XML, packaged resource vs remote bytes) and delivery mechanism; the container's `assets/` is the natural future carrier.
 - **`plugins/` and `core/` directories** — not created; no concrete tools exist and no shared host logic has yet warranted its own module.
-- **Native tool plugins (NDK/JNI)** — some tools may need native libraries. Not begun. Notes:
+- **Native tool plugins (NDK/JNI)** — designed in `docs/plugin-artifact.md` §7 but not begun. Notes:
   - Requires installing the NDK (not currently installed).
   - The installed emulator image is 16 KB page size; all future native code must be 16 KB-aligned/ABI-compatible (Android 17 default for new images).
   - ABI coverage strategy (`x86_64` vs `arm64-v8a`, and 16 KB support) must be decided before shipping native artifacts.
-- **Plugin API versioning** — stable plugin API with versioned contracts so tools evolve independently without breaking the host; confirm the version negotiation scheme (compatible-with ranges, min host version) before first tool ships.
+  - Native libraries are **not unloadable** within a process; per-tool native lifetime policy (process restart vs load-once) must be resolved at implementation time.
+- **Plugin permission / capability model** — designed as FUTURE in `docs/plugin-api.md` §3.4 (capability requests: e.g. storage, camera intent). Not implemented; every tool currently runs with only what the host grants and sandboxed FileScopes.
+- **Dev-mode hot reload for plugin authors** — sideloaded unsigned `.tpack` in debug builds only (`docs/plugin-artifact.md` §6); a fuller live-reload loop (watcher + rebuild + re-activate) is outside the runtime's ship scope.
+- **Multi-process plugin sandboxing** — running tool code in an isolated process (separate classloader+namespace per process) would give stronger fault isolation and real native unload (process death) at a heavy IPC cost. Postponed; the in-process guarded harness in `docs/plugin-runtime.md` §8 is the v1 boundary.
+- **WebAssembly / JS tool runtime** — an alternative sandbox for untrusted or third-party tools, at the cost of losing Compose tools. Only reconsidered if tool trust changes or isolation requirements outgrow DEX.
 
 ## Performance & correctness tooling
 
-- **Automated performance benchmarking** — e.g. Jetpack Macrobenchmark for startup, frame timing, and tool-switch latency; low-memory and large-tablet profiles.
+- **Automated performance benchmarking** — targets are fixed in `docs/performance.md`; the harness (Jetpack Macrobenchmark + Perfetto trips + low-memory AVD profiles) is not built yet. Wire it into CI once CI exists; validate manually on API 37 meanwhile.
 - **Memory/resource guarantees** — verify actual unload semantics (activity/process, classloader release, native library freeing) against official documentation before claiming resources are freed; research per-tool classloader unloading risks (heap leaks, static state).
 - **Low-memory conditioning (emulator)** — simulate low-RAM devices via AVD `hw.ramSize`/`ro.config.low_ram`, and `adb shell cmd activity memory-info` profiling.
 
@@ -36,6 +39,13 @@ Intentional future concerns discovered during environment inspection and/or proj
 - **GitHub CLI (`gh`)** — install for metadata/artifact workflow automation later.
 - **Additional system images** — download API 34 (Android 14) and API 36 (Android 16) `google_apis` x86_64 images to test the minSdk floor and intermediate OS versions; plus a tablet-profile AVD (e.g. Pixel Tablet) for the tablet form factor.
 - **ADB over Wi-Fi 2.0 / physical device testing** — currently no physical device is connected; later, test on real hardware (orientation, thermal, large-screen behavior).
+
+## Plugin delivery & trust infrastructure
+
+- **Signed revocation channel** — `docs/plugin-security.md` §9 depends on a host repin to truly revoke a key; a resilient out-of-band revocation channel (e.g. a short-lived signed "blocklist" also fetched over HTTPS) would shrink the response window. Postponed until tool count grows.
+- **Hardware-backed key custody** — CI secret storage works for v1; a signing HSM / isolated signer for both manifest and tool keys is the planned escalation as releases multiply.
+- **Delta / differential plugin updates** — for very large artifacts, binary diffs (vs full re-download) would cut bandwidth; postponed — correctness of atomic verified installs comes first.
+- **Per-tool signed provenance / SBOM** — recording build provenance for each `.tpack` (build job id, deps, source commit) to strengthen the authenticity story; useful once multiple people publish tools.
 
 ## Quality & reach
 
@@ -47,7 +57,7 @@ Intentional future concerns discovered during environment inspection and/or proj
 
 ## Foundation (from the first scaffold, deliberately deferred)
 
-- **Host state persistence** — `HostAppState` is in-memory only. Decide `SharedPreferences` vs `DataStore` and what must survive process death when the plugin runtime exists (see `docs/architecture.md` section 6).
+- **Host state persistence** — design accepted (ADR-027: DataStore registry + atomic section writes, `docs/plugin-api.md` §4–§5, `docs/plugin-runtime.md` §7); implementation waits for the plugin runtime milestone.
 - **Real dashboard catalog UI** — the dashboard currently shows an empty state plus a presentational `ToolCard` list; the actual catalog UI (icons, states, install/update actions) waits for the runtime.
 - **Dynamic color / light theme** — deliberately not supported (ADR-016); revisit only if the futuristic dark identity changes.
 - **Localization of current strings** — only default `res/values` exists.

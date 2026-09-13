@@ -122,9 +122,8 @@ private fun ToolCard(tool: ToolInfo) {
         Column(Modifier.padding(16.dp)) {
             Text(
                 text = tool.name,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
             )
-            Spacer(Modifier.height(4.dp))
             Text(
                 text = tool.description,
                 style = MaterialTheme.typography.bodyMedium,

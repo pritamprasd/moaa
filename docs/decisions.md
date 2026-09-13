@@ -177,3 +177,125 @@ Gradle wrapper **9.6.0**, AGP **9.4.0**, JDK **17**, all dependency versions cen
 - **Status:** Accepted
 
 `android:screenOrientation="portrait"` in the manifest, targetSdk 36 (ADR-002). Lint flags `DiscouragedApi`/`LockedOrientationActivity`: Android is moving to ignore fixed orientations and recommends opting out; this is accepted because portrait-only across phone and tablet is a hard requirement (ADR-003) and the API-37 large-screen opt-out is avoided via targetSdk 36. Re-visit on Android 16+ devices if the OS starts forcing dismissal of `screenOrientation` for targetSdk 36.
+
+## ADR-020: Plugin artifact format — APK-shaped `.tpack` container
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+A downloaded tool is a single self-contained ZIP-family file
+`tool-<id>-<buildNumber>.tpack` with an APK file layout (`classes*.dex`,
+`resources.arsc`, `res/`, `assets/`, optional `lib/<abi>/`) produced by the
+standard aapt2/AGP pipeline, plus `meta/plugin.json` (untrusted, cross-checked)
+and `meta/signature.bin` (our own detached signature over a canonical content
+digest). The container is **never** installed through `PackageManager` and never
+exposes components; its AndroidManifest is ignored. Rationale and rejected
+alternatives: `docs/plugin-artifact.md` §2. Single-file containers are the only
+atomic unit that can be verified, signed, and renamed in one operation
+(requirements 14/15/17).
+
+## ADR-021: Plugin loading — per-version DexClassLoader with parent-first whitelist
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+Each installed version gets its own `DexClassLoader` whose `dexPath` is raw
+extracted `.dex` files (avoids in-memory extraction of large containers per
+`BaseDexClassLoader` docs); `optimizedDirectory` is null (deprecated since
+API 26); `parent` is the host `PathClassLoader`, so shared libraries
+(kotlin-stdlib, kotlinx-coroutines, Compose runtime, androidx core, plugin-api,
+plugin-rendering) resolve host-first exactly once. Resources load via the
+**public** `ResourcesProvider`/`ResourcesLoader` + read-only `ParcelFileDescriptor`
+(API 30+); the reflective `AssetManager.addAssetPath` hack is rejected. Plugins
+get **no Android Context**. "Unloaded" means "no live references, eligible for
+collection" — ART does not guarantee deterministic class or native-library
+unload, so the design claims reference-level disposal only (ADR-008).
+Full details and uncertainty checklist: `docs/plugin-runtime.md` §2–§3, §13.
+
+## ADR-022: Plugin lifecycle state machine
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+Two layered machines: a persisted catalog `ToolState` (`AVAILABLE`, `DOWNLOADING`,
+`INSTALLED`, `UPDATE_AVAILABLE`, `INCOMPATIBLE`, `CORRUPT`, `FAILED`) and an
+in-memory runtime `PluginLifecycle` (`UNLOADED → ACTIVATING → ACTIVE → SUSPENDING
+→ SUSPENDED → RESUMING → ACTIVE`, plus `DISPOSING → UNLOADED`, `PERSISTING`
+overlay, `ERROR` terminal). Exactly one tool may be `ACTIVE` (ADR-008).
+Diagram and transitions: `docs/plugin-runtime.md` §4.
+
+## ADR-023: Rendering contract lives outside plugin-api
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+`plugin-api` remains pure Kotlin/JVM with zero dependencies and **no UI**
+(ADR-012, ADR-015). The Compose-bound rendering surface is a separate stable
+artifact, `plugin-rendering`, versioned together with `plugin-api` as one
+contract version. Plugins depend on both; the host supplies the Compose runtime
+on the parent classloader. Contract and backward-compat rules:
+`docs/plugin-api.md` §6, §8.
+
+## ADR-024: Cryptographic scheme — ECDSA P-256 with SHA-256
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+All authenticity/integrity uses `SHA256withECDSA` (P-256) available via platform
+JCA providers on the supported floor (API 34+). Trust is anchored in **public
+keys pinned inside the host** (per role: tool publisher, manifest author);
+private keys exist only in CI/publisher infrastructure, never in the repo or app.
+Both the server manifest and each artifact carry signatures (defense in depth,
+offline-verifiable). APK v1/v2/v3 signatures are **not** used (they are written
+for installed packages). Compromise response, cost/infrastructure
+classification, and verification layers: `docs/plugin-security.md`.
+
+## ADR-025: GitHub is the source of truth
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+A manifest repository serves a signed `manifest.json` over `raw.githubusercontent.com`
+(HTTPS); artifacts are GitHub **Releases** (`/releases/download/tool-<id>-<buildNumber>/…`,
+with `.sha256` sidecars). Update discovery = compare per-tool `buildNumber`
+(latest signed manifest) against installed; background checks happen on
+foreground + ≤ every 6 h and **never download without explicit user action**
+(ADR-008). Protocol and manifest format: `docs/plugin-runtime.md` §9.
+
+## ADR-026: Versioning — monotonic build numbers + CURRENT/STAGED/AVAILABLE/FAILED
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+The canonical version per tool is a strictly monotonic integer `buildNumber`;
+`displayVersion` (semver-like) is decorative. On disk each version is an
+immutable, read-only `v<N>/` directory beside the active one, so rollback is a
+registry pointer change. STAGED is fully installed but not yet activated;
+activation of a new version only flips `CURRENT` after it proves itself; on
+failure the known-good version is restored. Interrupted/corrupt downloads,
+crash windows, repair, and cleanup (keep CURRENT + STAGED, superseded removal,
+never delete user-data) are specified in `docs/plugin-versioning.md`.
+
+## ADR-027: Host persistence — DataStore registry + atomic section writes
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+The host runtime persists the catalog and per-tool registry via a Jetpack
+`DataStore` (single source of truth for `currentBuild`/`stagedBuild`/
+`availableBuild`/`failedBuild` and `ToolState`), written **only after** the
+filesystem state it records is already true (rename-before-register). Plugin
+state sections are opaque atomic-renamed files; host `host-state.json` flushes on
+every transition. Layering, ownership, and durability: `docs/plugin-api.md` §4–§5,
+`docs/plugin-runtime.md` §7.
+
+## ADR-028: Measurable performance baselines
+
+- **Date:** 2026-09-13
+- **Status:** Accepted
+
+Numeric targets for startup, dashboard, navigation, activation, suspension,
+persistence, frame time, memory, disk, and network are fixed in
+`docs/performance.md` and will be enforced with Jetpack Macrobenchmark on the
+API 34/37 emulator matrix (measurement is FUTURE). This supersedes the
+qualitative principles in `docs/architecture.md` §10.

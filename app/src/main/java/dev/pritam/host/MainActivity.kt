@@ -9,6 +9,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.remember
+import dev.pritam.ghostagent.GhostAgentManager
 import dev.pritam.host.host.HostApplicationContainer
 import dev.pritam.host.tool.nfc.manager.NfcManager
 
@@ -21,8 +22,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
+
+        // Initialize Ghost Agent repository and notification channel
+        GhostAgentManager.init(applicationContext)
+
         handleNfcIntent(intent)
         handleShortcutIntent(intent)
+        handleDeepLinkIntent(intent)
 
         setContent {
             HostApp(container = container)
@@ -43,12 +49,21 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         handleNfcIntent(intent)
         handleShortcutIntent(intent)
+        handleDeepLinkIntent(intent)
     }
 
     private fun handleShortcutIntent(intent: Intent?) {
         val targetToolId = intent?.getStringExtra(dev.pritam.host.shortcut.ShortcutUtils.EXTRA_TARGET_TOOL_ID)
         if (!targetToolId.isNullOrBlank()) {
             container.state.setPendingTargetToolId(targetToolId)
+        }
+    }
+
+    /** Handles deep-links from Ghost Agent floating bubble and Quick Settings tile. */
+    private fun handleDeepLinkIntent(intent: Intent?) {
+        val deepLinkToolId = intent?.getStringExtra("deep_link_tool")
+        if (!deepLinkToolId.isNullOrBlank()) {
+            container.state.setPendingTargetToolId(deepLinkToolId)
         }
     }
 

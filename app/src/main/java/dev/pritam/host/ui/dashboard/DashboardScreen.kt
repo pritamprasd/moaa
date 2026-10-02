@@ -63,6 +63,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
@@ -724,6 +725,21 @@ private fun ToolIsometricIcon(
                     // Right Text lines
                     drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx + w * 0.08f, cy - h * 0.04f), end = Offset(cx + w * 0.26f, cy + h * 0.03f), strokeWidth = 1.dp.toPx())
                     drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx + w * 0.08f, cy + h * 0.08f), end = Offset(cx + w * 0.26f, cy + h * 0.15f), strokeWidth = 1.dp.toPx())
+                }
+                "ghost" -> {
+                    // Isometric Ghost: rounded body with wavy bottom and dot eyes
+                    val ghostBody = Path().apply {
+                        moveTo(cx - w * 0.3f, cy + h * 0.3f)
+                        lineTo(cx - w * 0.3f, cy - h * 0.1f)
+                        cubicTo(cx - w * 0.3f, cy - h * 0.38f, cx + w * 0.3f, cy - h * 0.38f, cx + w * 0.3f, cy - h * 0.1f)
+                        lineTo(cx + w * 0.3f, cy + h * 0.3f)
+                        cubicTo(cx + w * 0.2f, cy + h * 0.12f, cx + w * 0.1f, cy + h * 0.38f, cx, cy + h * 0.2f)
+                        cubicTo(cx - w * 0.1f, cy + h * 0.02f, cx - w * 0.2f, cy + h * 0.38f, cx - w * 0.3f, cy + h * 0.3f)
+                        close()
+                    }
+                    drawPath(ghostBody, color = color, style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    drawCircle(color = color, radius = 2.5.dp.toPx(), center = Offset(cx - w * 0.12f, cy - h * 0.08f))
+                    drawCircle(color = color, radius = 2.5.dp.toPx(), center = Offset(cx + w * 0.12f, cy - h * 0.08f))
                 }
                 else -> {
                     // Generic Cyber Chip

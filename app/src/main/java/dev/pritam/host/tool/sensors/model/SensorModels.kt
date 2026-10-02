@@ -244,11 +244,8 @@ object SensorTelemetryFormatter {
                     accuracy = accuracy,
                     accuracyLabel = accLabel,
                     rawValues = rawList,
-                    primaryDisplay = String.format(Locale.US, "%.1f °C", tempC),
-                    formattedAxes = listOf(
-                        "Celsius" to String.format(Locale.US, "%.2f °C", tempC),
-                        "Fahrenheit" to String.format(Locale.US, "%.2f °F", tempF)
-                    ),
+                    primaryDisplay = String.format(Locale.US, "%.1f °C (%.1f °F)", tempC, tempF),
+                    formattedAxes = emptyList(),
                     unit = "°C",
                     formattedTime = timeFormatted
                 )

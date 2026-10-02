@@ -1,19 +1,16 @@
 plugins {
-    alias(libs.plugins.android.application)
+    alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "dev.pritam.host"
-
+    namespace = "dev.pritam.ghostagent"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "dev.pritam.host"
         minSdk = 34
-        targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     buildTypes {
@@ -39,16 +36,12 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.core)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.kotlinx.coroutines.android)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(project(":plugin-api"))
-    implementation(project(":dynamic-tools"))
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
-
-    implementation(project(":ghost-agent"))
 }

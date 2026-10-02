@@ -22,6 +22,7 @@ import dev.pritam.host.tool.sensors.ui.SensorsScreen
 import dev.pritam.host.ui.dashboard.DashboardScreen
 
 import dev.pritam.host.tool.manual.ui.SystemManualScreen
+import dev.pritam.ghostagent.ui.GhostAgentStudioScreen
 
 object HostRoutes {
     const val DASHBOARD = "dashboard"
@@ -36,6 +37,7 @@ object HostRoutes {
     const val DYNAMIC_TOOLS_STUDIO = "dynamic_tools_studio"
     const val DYNAMIC_TOOL_RUNNER = "dynamic_tool_runner/{toolId}"
     const val SYSTEM_MANUAL = "system_manual"
+    const val GHOST_AGENT = "ghost_agent"
 }
 
 @Composable
@@ -58,6 +60,7 @@ fun HostNavHost(
                 toolId == "llm-chat" -> HostRoutes.LLM_CHAT
                 toolId == "dynamic-tools-studio" -> HostRoutes.DYNAMIC_TOOLS_STUDIO
                 toolId == "system-manual" -> HostRoutes.SYSTEM_MANUAL
+                toolId == "ghost-agent" -> HostRoutes.GHOST_AGENT
                 toolId.startsWith("dynamic_") -> "dynamic_tool_runner/${toolId.removePrefix("dynamic_")}"
                 else -> null
             }
@@ -90,6 +93,7 @@ fun HostNavHost(
                         tool.id.value == "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
                         tool.id.value == "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
                         tool.id.value == "system-manual" -> navController.navigate(HostRoutes.SYSTEM_MANUAL)
+                        tool.id.value == "ghost-agent" -> navController.navigate(HostRoutes.GHOST_AGENT)
                         tool.id.value.startsWith("dynamic_") -> {
                             val customId = tool.id.value.removePrefix("dynamic_")
                             navController.navigate("dynamic_tool_runner/$customId")
@@ -194,6 +198,14 @@ fun HostNavHost(
                             }
                         }
                     }
+                }
+            )
+        }
+
+        composable(HostRoutes.GHOST_AGENT) {
+            GhostAgentStudioScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

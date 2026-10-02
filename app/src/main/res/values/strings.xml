@@ -3,4 +3,5 @@
     <string name="app_name">Mother of All Apps</string>
     <string name="dashboard_placeholder_title">No tools yet</string>
     <string name="dashboard_placeholder_body">Downloadable tools will appear here in a future update.</string>
+    <string name="ghost_agent_a11y_description">Ghost Agent reads the screen to help automate multi-step tasks across apps. It can observe UI elements, simulate taps, swipes, and text input to execute saved automation workflows.</string>
 </resources>

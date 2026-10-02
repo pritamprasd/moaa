@@ -28,6 +28,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -40,6 +42,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -133,17 +138,9 @@ fun SensorsScreen(
                 }
             )
 
-            Spacer(Modifier.height(12.dp))
-
-            // 2. Sampling Rate Interval Selector Bar (1s / 2s / 5s / Live / Pause)
-            SamplingIntervalSelector(
-                currentInterval = updateInterval,
-                onSelectInterval = { viewModel.setUpdateInterval(it) }
-            )
-
             Spacer(Modifier.height(10.dp))
 
-            // 3. Search & Filter Bar
+            // 2. Search Bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
@@ -162,15 +159,27 @@ fun SensorsScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // 4. Category Filter Chips
-            CategoryFilterBar(
-                selectedCategory = selectedCategory,
-                onSelectCategory = { viewModel.setSelectedCategory(it) }
-            )
+            // 3. Dropdown Filter Bar: Category Dropdown + Sampling Rate Dropdown
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CategoryFilterDropdown(
+                    selectedCategory = selectedCategory,
+                    onSelectCategory = { viewModel.setSelectedCategory(it) },
+                    modifier = Modifier.weight(1f)
+                )
 
-            Spacer(Modifier.height(12.dp))
+                SamplingIntervalDropdown(
+                    currentInterval = updateInterval,
+                    onSelectInterval = { viewModel.setUpdateInterval(it) },
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
-            // 5. Sensors List
+            Spacer(Modifier.height(10.dp))
+
+            // 4. Sensors List
             if (filteredSensors.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -266,10 +275,12 @@ private fun SensorsStatsBanner(
 }
 
 @Composable
-private fun SamplingIntervalSelector(
+private fun SamplingIntervalDropdown(
     currentInterval: UpdateInterval,
     onSelectInterval: (UpdateInterval) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    var expanded by remember { mutableStateOf(false) }
     val intervals = listOf(
         UpdateInterval.EVERY_1_SEC,
         UpdateInterval.EVERY_2_SEC,
@@ -278,96 +289,199 @@ private fun SamplingIntervalSelector(
         UpdateInterval.PAUSED
     )
 
-    val scrollState = rememberScrollState()
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(scrollState),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        intervals.forEach { interval ->
-            val isSelected = currentInterval == interval
-            val chipColor = when (interval) {
-                UpdateInterval.EVERY_1_SEC -> Color(0xFFF59E0B)
-                UpdateInterval.EVERY_2_SEC -> Cyan
-                UpdateInterval.EVERY_5_SEC -> Violet
-                UpdateInterval.LIVE_FAST -> Color(0xFF34D399)
-                UpdateInterval.PAUSED -> Rose
-            }
+    val currentChipColor = when (currentInterval) {
+        UpdateInterval.EVERY_1_SEC -> Color(0xFFF59E0B)
+        UpdateInterval.EVERY_2_SEC -> Cyan
+        UpdateInterval.EVERY_5_SEC -> Violet
+        UpdateInterval.LIVE_FAST -> Color(0xFF34D399)
+        UpdateInterval.PAUSED -> Rose
+    }
 
-            val shape = RoundedCornerShape(8.dp)
-            Surface(
+    Box(modifier = modifier) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = GlassSurfaceDeep,
+            border = BorderStroke(1.dp, if (expanded) currentChipColor else GlassBorder),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { expanded = !expanded }
+        ) {
+            Row(
                 modifier = Modifier
-                    .clip(shape)
-                    .clickable { onSelectInterval(interval) }
-                    .border(
-                        BorderStroke(1.dp, if (isSelected) chipColor else GlassBorder),
-                        shape
-                    ),
-                color = if (isSelected) chipColor.copy(alpha = 0.2f) else GlassSurfaceDeep,
-                shape = shape
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f, fill = false)
                 ) {
-                    if (isSelected) {
-                        Surface(
-                            modifier = Modifier.size(6.dp),
-                            shape = CircleShape,
-                            color = chipColor
-                        ) {}
-                    }
+                    Surface(
+                        modifier = Modifier.size(6.dp),
+                        shape = CircleShape,
+                        color = currentChipColor
+                    ) {}
                     Text(
-                        text = interval.displayName,
+                        text = "Rate: ${currentInterval.displayName}",
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (isSelected) chipColor else TextSecondary,
-                        fontSize = 11.sp
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        maxLines = 1
                     )
                 }
+                Text(
+                    text = if (expanded) "▲" else "▼",
+                    color = currentChipColor,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(GlassSurfaceElevated)
+                .border(BorderStroke(1.dp, GlassBorderHighlight), RoundedCornerShape(8.dp))
+        ) {
+            intervals.forEach { interval ->
+                val isSelected = currentInterval == interval
+                val chipColor = when (interval) {
+                    UpdateInterval.EVERY_1_SEC -> Color(0xFFF59E0B)
+                    UpdateInterval.EVERY_2_SEC -> Cyan
+                    UpdateInterval.EVERY_5_SEC -> Violet
+                    UpdateInterval.LIVE_FAST -> Color(0xFF34D399)
+                    UpdateInterval.PAUSED -> Rose
+                }
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(6.dp),
+                                shape = CircleShape,
+                                color = chipColor
+                            ) {}
+                            Text(
+                                text = interval.displayName,
+                                color = if (isSelected) chipColor else TextPrimary,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 11.sp
+                            )
+                        }
+                    },
+                    onClick = {
+                        onSelectInterval(interval)
+                        expanded = false
+                    },
+                    modifier = Modifier.background(if (isSelected) chipColor.copy(alpha = 0.12f) else Color.Transparent)
+                )
             }
         }
     }
 }
 
 @Composable
-private fun CategoryFilterBar(
+private fun CategoryFilterDropdown(
     selectedCategory: SensorCategory,
     onSelectCategory: (SensorCategory) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    var expanded by remember { mutableStateOf(false) }
     val categories = SensorCategory.entries
-    val scrollState = rememberScrollState()
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(scrollState),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        categories.forEach { cat ->
-            val isSelected = selectedCategory == cat
-            val shape = RoundedCornerShape(8.dp)
+    val currentAccentColor = when (selectedCategory) {
+        SensorCategory.MOTION -> Color(0xFFF59E0B)
+        SensorCategory.ENVIRONMENT -> Cyan
+        SensorCategory.POSITION -> Violet
+        SensorCategory.HEALTH -> Rose
+        else -> Cyan
+    }
 
-            Surface(
+    Box(modifier = modifier) {
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = GlassSurfaceDeep,
+            border = BorderStroke(1.dp, if (expanded) currentAccentColor else GlassBorder),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(8.dp))
+                .clickable { expanded = !expanded }
+        ) {
+            Row(
                 modifier = Modifier
-                    .clip(shape)
-                    .clickable { onSelectCategory(cat) }
-                    .border(
-                        BorderStroke(1.dp, if (isSelected) Cyan else GlassBorder),
-                        shape
-                    ),
-                color = if (isSelected) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
-                shape = shape
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Text(selectedCategory.iconLabel, fontSize = 11.sp)
+                    Text(
+                        text = selectedCategory.displayName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp,
+                        maxLines = 1
+                    )
+                }
                 Text(
-                    text = "${cat.iconLabel} ${cat.displayName}",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) Cyan else TextSecondary,
-                    fontSize = 10.sp,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                    text = if (expanded) "▲" else "▼",
+                    color = currentAccentColor,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(GlassSurfaceElevated)
+                .border(BorderStroke(1.dp, GlassBorderHighlight), RoundedCornerShape(8.dp))
+        ) {
+            categories.forEach { cat ->
+                val isSelected = selectedCategory == cat
+                val catColor = when (cat) {
+                    SensorCategory.MOTION -> Color(0xFFF59E0B)
+                    SensorCategory.ENVIRONMENT -> Cyan
+                    SensorCategory.POSITION -> Violet
+                    SensorCategory.HEALTH -> Rose
+                    else -> Cyan
+                }
+                DropdownMenuItem(
+                    text = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(cat.iconLabel, fontSize = 12.sp)
+                            Text(
+                                text = cat.displayName,
+                                color = if (isSelected) catColor else TextPrimary,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 11.sp
+                            )
+                        }
+                    },
+                    onClick = {
+                        onSelectCategory(cat)
+                        expanded = false
+                    },
+                    modifier = Modifier.background(if (isSelected) catColor.copy(alpha = 0.12f) else Color.Transparent)
                 )
             }
         }
@@ -394,7 +508,7 @@ private fun SensorLiveCard(
     val shape = RoundedCornerShape(12.dp)
 
     Box(modifier = Modifier.fillMaxWidth().animateContentSize(tween(200))) {
-        // Refraction depth backplate (Border removed for clean liquid shadow)
+        // Refraction depth backplate
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -506,33 +620,34 @@ private fun SensorLiveCard(
                     }
                 }
 
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
 
-                // Live Reading Display
+                // Live Reading Display - Compact & Clean (No extra blank space)
                 if (reading != null && isActive) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
                             Text(
                                 text = "CURRENT READING",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextSecondary,
-                                fontSize = 9.sp
+                                fontSize = 8.sp,
+                                letterSpacing = 0.5.sp
                             )
                             Text(
                                 text = reading.primaryDisplay,
-                                style = MaterialTheme.typography.titleLarge,
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = accentColor,
-                                fontSize = 18.sp,
+                                fontSize = 15.sp,
                                 letterSpacing = 0.5.sp
                             )
                         }
 
-                        Column(horizontalAlignment = Alignment.End) {
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
                                 color = when (reading.accuracy) {
@@ -555,41 +670,40 @@ private fun SensorLiveCard(
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                 )
                             }
-                            Spacer(Modifier.height(2.dp))
                             Text(
                                 text = reading.formattedTime,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextSecondary,
                                 fontFamily = FontFamily.Monospace,
-                                fontSize = 9.sp
+                                fontSize = 8.sp
                             )
                         }
                     }
 
-                    // Multi-axis decomposition
+                    // Multi-axis decomposition (only rendered if non-empty)
                     if (reading.formattedAxes.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(6.dp))
                         Surface(
                             shape = RoundedCornerShape(6.dp),
                             color = GlassSurfaceDeep,
                             border = BorderStroke(1.dp, GlassBorder),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 reading.formattedAxes.forEach { (axis, value) ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text(axis, color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                        Text(value, color = TextPrimary, fontSize = 10.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
+                                        Text(axis, color = TextSecondary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                        Text(value, color = TextPrimary, fontSize = 9.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
                                     }
                                 }
                             }
                         }
                     }
                 } else {
-                    // Inactive / No reading placeholder
+                    // Inactive / No reading placeholder - compact single line
                     Surface(
                         shape = RoundedCornerShape(6.dp),
                         color = GlassSurfaceDeep,
@@ -599,8 +713,8 @@ private fun SensorLiveCard(
                         Text(
                             text = if (isActive) "Waiting for hardware sensor event..." else "Sensor stream disabled. Tap LIVE to start.",
                             color = TextSecondary,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(10.dp)
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         )
                     }
                 }
@@ -610,7 +724,7 @@ private fun SensorLiveCard(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 10.dp)
+                            .padding(top = 8.dp)
                     ) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
@@ -618,7 +732,7 @@ private fun SensorLiveCard(
                             border = BorderStroke(1.dp, GlassBorder),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                                 Text(
                                     text = "HARDWARE SPECIFICATIONS",
                                     style = MaterialTheme.typography.labelSmall,
@@ -641,3 +755,4 @@ private fun SensorLiveCard(
         }
     }
 }
+

@@ -67,6 +67,22 @@ class SensorTelemetryTest {
     }
 
     @Test
+    fun testFormatTemperatureReading() {
+        val values = floatArrayOf(25.0f)
+        val reading = SensorTelemetryFormatter.formatReading(
+            type = Sensor.TYPE_AMBIENT_TEMPERATURE,
+            values = values,
+            accuracy = 3,
+            timeFormatted = "12:00:00.000"
+        )
+
+        assertEquals("°C", reading.unit)
+        assertTrue(reading.primaryDisplay.contains("25.0 °C"))
+        assertTrue(reading.primaryDisplay.contains("77.0 °F"))
+        assertTrue(reading.formattedAxes.isEmpty())
+    }
+
+    @Test
     fun testUpdateIntervalDurations() {
         assertEquals(1000L, UpdateInterval.EVERY_1_SEC.delayMs)
         assertEquals(2000L, UpdateInterval.EVERY_2_SEC.delayMs)

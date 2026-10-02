@@ -146,6 +146,18 @@ object ToolRegistryConfig {
             iconType = "manual",
             accentColorHex = 0xFF38BDF8, // Cyan
             requiredPermissions = listOf("None")
+        ),
+        ToolDefinition(
+            id = "ghost-agent",
+            name = "Ghost Agent",
+            shortTagline = "Background AI agent that automates multi-step tasks across any app.",
+            description = "An intelligent background automation agent powered by Android AccessibilityService & MediaProjection. Define hybrid natural-language + recorded-macro tasks (e.g. 'order from Amazon', 'fill a form', 'play a game'). Runs invisibly with a floating bubble overlay and Quick Settings tile. On failure, pauses and shows a screenshot notification with Skip/Retry/Abort controls.",
+            version = "1.0.0",
+            category = "AI & Automation",
+            author = "Ghost Labs",
+            iconType = "ghost",
+            accentColorHex = 0xFFA78BFA, // Violet
+            requiredPermissions = listOf("SYSTEM_ALERT_WINDOW", "BIND_ACCESSIBILITY_SERVICE", "FOREGROUND_SERVICE_MEDIA_PROJECTION")
         )
     )
 

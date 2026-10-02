@@ -2,6 +2,14 @@ package dev.pritam.host.settings.ui
 
 import android.content.Context
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,11 +27,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -35,9 +45,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -45,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.pritam.ghostagent.GhostAgentManager
 import dev.pritam.host.ftp.ui.components.GlassBackButton
 import dev.pritam.host.ftp.ui.components.IsometricCard
 import dev.pritam.host.ftp.ui.components.LiquidGlassButton
@@ -75,8 +90,14 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val currentColumns by AppSettingsManager.galleryColumnCount.collectAsStateWithLifecycle()
-
     val currentRetention by AppSettingsManager.logRetentionPolicy.collectAsStateWithLifecycle()
+
+    // ── Section expanded state ─────────────────────────────────────────────
+    var generalExpanded    by remember { mutableStateOf(true) }
+    var aiExpanded         by remember { mutableStateOf(true) }
+    var automationExpanded by remember { mutableStateOf(true) }
+    var diagnosticsExpanded by remember { mutableStateOf(false) }
+    var aboutExpanded      by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -92,9 +113,7 @@ fun SettingsScreen(
                         letterSpacing = 1.sp
                     )
                 },
-                navigationIcon = {
-                    GlassBackButton(onClick = onNavigateBack)
-                },
+                navigationIcon = { GlassBackButton(onClick = onNavigateBack) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
@@ -103,83 +122,191 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 1. System User Manual Card
-            item {
-                SystemManualSettingsCard(onOpenSystemManual = onOpenSystemManual)
-            }
 
-            // 2. Tool Gallery Layout Card
-            item {
-                GalleryLayoutSettingsCard(
-                    currentColumns = currentColumns,
-                    onSelectColumns = {
-                        AppSettingsManager.setGalleryColumnCount(it)
-                        Toast.makeText(context, "Gallery layout set to $it column${if (it > 1) "s" else ""}", Toast.LENGTH_SHORT).show()
-                    }
-                )
-            }
-
-            // 3. Default LLM Routing Card
-            item {
-                DefaultLlmSettingsCard(context = context)
-            }
-
-            // 4. MCP Servers & Tools On/Off Card
-            item {
-                McpServersSettingsCard(context = context)
-            }
-
-            // 5. LLM Gateway Server Card
-            item {
-                LlmGatewaySettingsCard(context = context)
-            }
-
-            // 6. Diagnostics & Telemetry Card (With Auto-Delete Policy)
-            item {
-                DiagnosticsSettingsCard(
-                    currentRetention = currentRetention,
-                    onSelectRetention = { policy ->
-                        AppSettingsManager.setLogRetentionPolicy(policy)
-                        val purged = AppLogHub.pruneExpiredLogs(policy)
-                        val msg = if (purged > 0) {
-                            "Retention: ${policy.displayName} ($purged old logs purged)"
-                        } else {
-                            "Retention: ${policy.displayName}"
+            // ══ GENERAL ══════════════════════════════════════════════════════
+            settingsSection(
+                title = "General",
+                emoji = "⚙️",
+                accentColor = Cyan,
+                isExpanded = generalExpanded,
+                onToggle = { generalExpanded = !generalExpanded }
+            ) {
+                item {
+                    SystemManualSettingsCard(onOpenSystemManual = onOpenSystemManual)
+                }
+                item {
+                    GalleryLayoutSettingsCard(
+                        currentColumns = currentColumns,
+                        onSelectColumns = {
+                            AppSettingsManager.setGalleryColumnCount(it)
+                            Toast.makeText(context, "Gallery layout set to $it column${if (it > 1) "s" else ""}", Toast.LENGTH_SHORT).show()
                         }
-                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                    },
-                    onOpenLogViewer = onOpenLogViewer,
-                    onClearLogs = {
-                        AppLogHub.clear()
-                        Toast.makeText(context, "Diagnostic logs cleared", Toast.LENGTH_SHORT).show()
-                    }
-                )
+                    )
+                }
+                item {
+                    HomescreenShortcutsCard(context = context)
+                }
             }
 
-            // 7. Homescreen Shortcuts Card
-            item {
-                HomescreenShortcutsCard(context = context)
+            // ══ AI & LLM ═════════════════════════════════════════════════════
+            settingsSection(
+                title = "AI & LLM",
+                emoji = "🤖",
+                accentColor = Violet,
+                isExpanded = aiExpanded,
+                onToggle = { aiExpanded = !aiExpanded }
+            ) {
+                item { DefaultLlmSettingsCard(context = context) }
+                item { McpServersSettingsCard(context = context) }
+                item { LlmGatewaySettingsCard(context = context) }
             }
 
-            // 8. About & Version Info Card
-            item {
-                AboutInfoCard(
-                    onResetDefaults = {
-                        AppSettingsManager.resetToDefaults()
-                        Toast.makeText(context, "Settings reset to defaults", Toast.LENGTH_SHORT).show()
-                    }
-                )
+            // ══ AUTOMATION (GHOST AGENT) ══════════════════════════════════════
+            settingsSection(
+                title = "Automation",
+                emoji = "👻",
+                accentColor = Violet,
+                isExpanded = automationExpanded,
+                onToggle = { automationExpanded = !automationExpanded }
+            ) {
+                item { GhostAgentSettingsCard(context = context) }
             }
 
-            item {
-                Spacer(Modifier.height(16.dp))
+            // ══ DIAGNOSTICS ═══════════════════════════════════════════════════
+            settingsSection(
+                title = "Diagnostics",
+                emoji = "🔬",
+                accentColor = Amber,
+                isExpanded = diagnosticsExpanded,
+                onToggle = { diagnosticsExpanded = !diagnosticsExpanded }
+            ) {
+                item {
+                    DiagnosticsSettingsCard(
+                        currentRetention = currentRetention,
+                        onSelectRetention = { policy ->
+                            AppSettingsManager.setLogRetentionPolicy(policy)
+                            val purged = AppLogHub.pruneExpiredLogs(policy)
+                            val msg = if (purged > 0) "Retention: ${policy.displayName} ($purged old logs purged)"
+                                      else "Retention: ${policy.displayName}"
+                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        },
+                        onOpenLogViewer = onOpenLogViewer,
+                        onClearLogs = {
+                            AppLogHub.clear()
+                            Toast.makeText(context, "Diagnostic logs cleared", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
             }
+
+            // ══ ABOUT ═════════════════════════════════════════════════════════
+            settingsSection(
+                title = "About",
+                emoji = "ℹ️",
+                accentColor = Color(0xFF94A3B8),
+                isExpanded = aboutExpanded,
+                onToggle = { aboutExpanded = !aboutExpanded }
+            ) {
+                item {
+                    AboutInfoCard(
+                        onResetDefaults = {
+                            AppSettingsManager.resetToDefaults()
+                            Toast.makeText(context, "Settings reset to defaults", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+            }
+
+            item { Spacer(Modifier.height(32.dp)) }
         }
     }
 }
+
+/**
+ * Extension on LazyListScope that renders a collapsible section header + animated content block.
+ * The header is always visible; the content block slides in/out with spring animation.
+ */
+private fun LazyListScope.settingsSection(
+    title: String,
+    emoji: String,
+    accentColor: Color,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    content: LazyListScope.() -> Unit,
+) {
+    item(key = "section_header_$title") {
+        SettingsSectionHeader(
+            title = title,
+            emoji = emoji,
+            accentColor = accentColor,
+            isExpanded = isExpanded,
+            onToggle = onToggle,
+        )
+    }
+    if (isExpanded) {
+        content()
+        item(key = "section_spacer_$title") { Spacer(Modifier.height(4.dp)) }
+    }
+}
+
+@Composable
+private fun SettingsSectionHeader(
+    title: String,
+    emoji: String,
+    accentColor: Color,
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    val chevronAngle by animateFloatAsState(
+        targetValue = if (isExpanded) 0f else -90f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+        label = "chevron_$title"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable(onClick = onToggle)
+            .background(accentColor.copy(alpha = if (isExpanded) 0.08f else 0.04f))
+            .border(BorderStroke(1.dp, accentColor.copy(alpha = if (isExpanded) 0.25f else 0.12f)), RoundedCornerShape(10.dp))
+            .padding(horizontal = 14.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(emoji, fontSize = 16.sp)
+            Text(
+                text = title.uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                color = accentColor,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 1.5.sp,
+                fontSize = 11.sp
+            )
+        }
+
+        // Animated chevron: ▼ when expanded, ▶ when collapsed
+        Surface(
+            shape = RoundedCornerShape(4.dp),
+            color = accentColor.copy(alpha = 0.12f)
+        ) {
+            Text(
+                text = "▼",
+                modifier = Modifier
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .rotate(chevronAngle),
+                color = accentColor,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
 
 @Composable
 private fun SystemManualSettingsCard(onOpenSystemManual: () -> Unit) {
@@ -941,4 +1068,110 @@ private fun McpServersSettingsCard(context: Context) {
     }
 }
 
+@Composable
+private fun GhostAgentSettingsCard(context: android.content.Context) {
+    val isConnected = GhostAgentManager.isAccessibilityServiceConnected()
+    val isBubbleVisible = GhostAgentManager.isBubbleVisible()
+    val statusColor = if (isConnected) Color(0xFF34D399) else Amber
 
+    IsometricCard(glowColor = Violet) {
+        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Title row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("👻", fontSize = 18.sp)
+                    Text(
+                        text = "GHOST AGENT",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Violet,
+                        letterSpacing = 1.sp,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = statusColor.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = if (isConnected) "● A11Y ON" else "○ A11Y OFF",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = "Automates multi-step tasks across any app using Accessibility Service. Enable A11y access in system settings to start.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp,
+                lineHeight = 15.sp
+            )
+
+            // Floating Bubble toggle row (Switch)
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = GlassSurfaceDeep,
+                border = BorderStroke(1.dp, if (isBubbleVisible) Violet.copy(alpha = 0.4f) else GlassBorder)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Floating Bubble",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 13.sp
+                        )
+                        Text(
+                            text = "Always-on 👻 overlay over other apps",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            fontSize = 10.sp
+                        )
+                    }
+                    Switch(
+                        checked = isBubbleVisible,
+                        onCheckedChange = { enabled ->
+                            if (enabled) GhostAgentManager.showFloatingBubble(context)
+                            else GhostAgentManager.hideFloatingBubble(context)
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Violet,
+                            checkedTrackColor = Violet.copy(alpha = 0.35f),
+                            uncheckedThumbColor = TextTertiary,
+                            uncheckedTrackColor = GlassSurfaceElevated
+                        )
+                    )
+                }
+            }
+
+            // Open Accessibility Settings button
+            LiquidGlassButton(
+                onClick = {
+                    context.startActivity(
+                        android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                glowColor = if (isConnected) Color(0xFF34D399) else Amber,
+                text = if (isConnected) "✓ Accessibility Service Active" else "⚠ Enable Accessibility Service →"
+            )
+        }
+    }
+}

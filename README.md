@@ -1,6 +1,6 @@
 # MotherOfAllApps (MOAA) ⚡🛠️
 
-> **A high-performance, modular Android utility and developer suite featuring an embedded LAN FTP Server & Remote Client, full-spectrum NFC Studio, Local LLM Gateway & AI Chat, real-time Sensor Telemetry, and a centralized System Log Hub.**
+> **A high-performance, modular Android utility and developer suite featuring an embedded LAN FTP Server & Remote Client, full-spectrum 3×3 NFC Tools Studio, Local LLM Gateway & MCP Router, CyberChat AI, real-time Sensor Telemetry, and a centralized System Log Hub.**
 
 ---
 
@@ -16,11 +16,14 @@
 ## 📖 Table of Contents
 - [Overview](#-overview)
 - [Application Architecture](#-application-architecture)
+  - [System Flow & Component Diagram](#system-flow--component-diagram)
+  - [LLM Gateway & MCP Tool Loopback Architecture](#llm-gateway--mcp-tool-loopback-architecture)
+  - [NFC Tools 3×3 Matrix & IC Protocol Stack](#nfc-tools-33-matrix--ic-protocol-stack)
 - [Core Tool Suite](#-core-tool-suite)
   - [1. LAN FTP Server](#1-lan-ftp-server)
   - [2. Remote FTP Client](#2-remote-ftp-client)
-  - [3. NFC Tag Master & Studio](#3-nfc-tag-master--studio)
-  - [4. Local LLM Gateway & Proxy](#4-local-llm-gateway--proxy)
+  - [3. NFC Tools Studio (3×3 Suite)](#3-nfc-tools-studio-33-suite)
+  - [4. Local LLM Gateway & MCP Proxy](#4-local-llm-gateway--mcp-proxy)
   - [5. CyberChat AI Studio](#5-cyberchat-ai-studio)
   - [6. Sensors Live & Hardware Telemetry](#6-sensors-live--hardware-telemetry)
   - [7. Centralized System Log Hub](#7-centralized-system-log-hub)
@@ -32,7 +35,7 @@
 - [User Guide & Workflows](#-user-guide--workflows)
   - [Quick Start: Wi-Fi File Sharing](#quick-start-wi-fi-file-sharing)
   - [Quick Start: Connecting Desktop Ollama to CyberChat](#quick-start-connecting-desktop-ollama-to-cyberchat)
-  - [Quick Start: Writing Custom NFC Payloads](#quick-start-writing-custom-nfc-payloads)
+  - [Quick Start: Using NFC Tools](#quick-start-using-nfc-tools)
   - [Pinning Tools to Android Homescreen](#pinning-tools-to-android-homescreen)
 - [Building & Testing](#-building--testing)
 - [Security & Privacy](#-security--privacy)
@@ -42,9 +45,9 @@
 
 ## 🌟 Overview
 
-**MotherOfAllApps (MOAA)** is designed as an all-in-one developer and power-user Swiss Army knife for Android. Built entirely on modern **Android 14+ (API 34–37)** foundations using **Jetpack Compose** and **Kotlin Coroutines/Flow**, MOAA provides robust offline-first utilities without third-party tracking, ads, or heavyweight cloud dependencies.
+**MotherOfAllApps (MOAA)** is an all-in-one developer and power-user Swiss Army knife for Android. Built entirely on modern **Android 14+ (API 34–37)** foundations using **Jetpack Compose** and **Kotlin Coroutines/Flow**, MOAA provides robust offline-first utilities without third-party tracking, ads, or heavyweight cloud dependencies.
 
-Whether you need to transfer large files wirelessly at gigabit LAN speeds, inspect NFC ICs, route LLM queries across local desktop nodes and cloud APIs with automatic failover, monitor physical hardware sensors at microsecond intervals, or debug background system events, MOAA consolidates these workflows into a single coherent system.
+Whether you need to transfer large files wirelessly at gigabit LAN speeds, inspect NFC silicon memory pages, route LLM queries across local desktop nodes and cloud APIs with automatic failover and MCP tool calling, monitor physical hardware sensors at microsecond intervals, or debug background system events, MOAA consolidates these workflows into a single coherent system.
 
 ---
 
@@ -52,42 +55,130 @@ Whether you need to transfer large files wirelessly at gigabit LAN speeds, inspe
 
 MOAA follows a **Modular Clean Architecture** separation of concerns, ensuring that individual tools remain completely decoupled from the host dashboard and from one another.
 
+### System Flow & Component Diagram
+
+```mermaid
+graph TD
+    subgraph HostContainer["Host Container UI (MainActivity)"]
+        Dashboard["Dashboard Screen (3-Tab Dynamic Glass Hub)"]
+        Settings["Settings Tab (Default LLM & MCP Server Toggles)"]
+        LogViewer["Logs Tab (AppLogHub Live Diagnostic Viewer)"]
+    end
+
+    subgraph Navigation["Navigation Layer"]
+        HostNavHost["HostNavHost (Jetpack Compose Navigation)"]
+    end
+
+    subgraph CoreTools["Core Modular Tool Suite"]
+        FtpServer["LAN FTP Server (:2121)"]
+        FtpClient["Remote FTP Client"]
+        NfcTools["NFC Tools (3x3 Matrix Suite)"]
+        LlmGateway["LLM Gateway (:8080) & MCP Router"]
+        CyberChat["CyberChat AI Studio"]
+        Sensors["Sensors Live Telemetry"]
+    end
+
+    subgraph Diagnostics["Diagnostics & Telemetry Engine"]
+        AppLogHub["AppLogHub Event Bus (Universal Diagnostics)"]
+    end
+
+    Dashboard --> HostNavHost
+    Settings --> HostNavHost
+    LogViewer --> HostNavHost
+    HostNavHost --> FtpServer
+    HostNavHost --> FtpClient
+    HostNavHost --> NfcTools
+    HostNavHost --> LlmGateway
+    HostNavHost --> CyberChat
+    HostNavHost --> Sensors
+
+    FtpServer -.->|Telemetry| AppLogHub
+    FtpClient -.->|Telemetry| AppLogHub
+    NfcTools -.->|Tag Logs| AppLogHub
+    LlmGateway -.->|Routing Logs| AppLogHub
+    CyberChat -.->|Events| AppLogHub
+    Sensors -.->|Telemetry| AppLogHub
+    AppLogHub --> LogViewer
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            Host Container UI                                │
-│       (Dashboard Screen, Dynamic Grid Layout, Search & Launcher Shortcuts)  │
-└──────────────────────────────────────┬──────────────────────────────────────┘
-                                       │ Navigation & Dependency Dispatch
-┌──────────────────────────────────────┴──────────────────────────────────────┐
-│                            Navigation Layer                                 │
-│                 HostNavHost (Jetpack Compose Navigation)                    │
-└──────┬────────────┬────────────┬────────────┬────────────┬───────────┬──────┘
-       │            │            │            │            │           │
-       ▼            ▼            ▼            ▼            ▼           ▼
- ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
- │ LAN FTP  │ │   FTP    │ │ NFC Tag  │ │   LLM    │ │CyberChat │ │ Sensors  │
- │  Server  │ │  Client  │ │  Master  │ │ Gateway  │ │ AI Studio│ │   Live   │
- └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
-      │            │            │            │            │            │
-      └────────────┴────────────┴─────┬──────┴────────────┴────────────┘
-                                      │ Telemetry & Operational Streams
-                                      ▼
-                        ┌───────────────────────────┐
-                        │        AppLogHub          │
-                        │ (Universal Diagnostics &  │
-                        │  Retention Memory Engine) │
-                        └─────────────┬─────────────┘
-                                      ▼
-                        ┌───────────────────────────┐
-                        │     System Logs Tool      │
-                        └───────────────────────────┘
+
+---
+
+### LLM Gateway & MCP Tool Loopback Architecture
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / CyberChat UI
+    participant Gateway as LLM Gateway (:8080)
+    participant Router as LlmRouterEngine
+    participant MCP as MCP Registry / Servers
+    participant Cloud as Cloud LLM (Gemini / OpenAI)
+    participant Local as LAN LLM (Ollama / LM Studio)
+
+    User->>Gateway: POST /v1/chat/completions (with Prompt)
+    Gateway->>Router: Route Request (Failover Priority)
+    Router->>MCP: Query Active Tools Schema
+    MCP-->>Router: Built-in + LAN MCP Tools Schema
+    
+    alt Local Node Online
+        Router->>Local: Forward Completion + Tools Schema
+        Local-->>Router: Return ToolCall (e.g. get_device_sensors)
+    else Local Node Offline / Rate Limited (Failover)
+        Router->>Cloud: Fallback to Gemini / OpenAI
+        Cloud-->>Router: Return ToolCall (e.g. get_device_sensors)
+    end
+
+    Router->>MCP: Execute Tool (get_device_sensors)
+    MCP-->>Router: Return Sensor JSON Readings
+    
+    alt Continue Synthesis
+        Router->>Local: Send Tool Result
+        Local-->>Router: Final Synthesized AI Response
+    else Cloud Synthesis
+        Router->>Cloud: Send Tool Result
+        Cloud-->>Router: Final Synthesized AI Response
+    end
+
+    Router-->>Gateway: HTTP 200 Stream / JSON
+    Gateway-->>User: Render Markdown & Interactive Tool Card
 ```
+
+---
+
+### NFC Tools 3×3 Matrix & IC Protocol Stack
+
+```mermaid
+graph TD
+    subgraph MatrixGrid["NFC Tools 3×3 Isometric Matrix"]
+        M1["1. Scan & Info<br/>(UID, Tech, ATQA, SAK)"]
+        M2["2. Write Studio<br/>(NDEF Text, URL, Wi-Fi, vCard)"]
+        M3["3. Clone & Wipe<br/>(NDEF Clone, Factory Wipe, Lock)"]
+        M4["4. Silicon Pages<br/>(Fast-Read Hex Memory Map)"]
+        M5["5. Mifare Decode<br/>(Key A/B Sector Analyzer)"]
+        M6["6. Chip Database<br/>(NTAG, Mifare, FeliCa Specs)"]
+        M7["7. Amiibo / Game<br/>(Type-2 Tag Presets & Keys)"]
+        M8["8. Apps Guide<br/>(NFC Tools, NXP TagWriter)"]
+        M9["9. Tag Logs<br/>(Real-time Diagnostic Stream)"]
+    end
+
+    subgraph TagHardware["Physical Tag & Silicon ICs"]
+        NTAG["NTAG 213 / 215 / 216 (NFC Forum Type 2)"]
+        Mifare["Mifare Classic 1K/4K / Ultralight C / DESFire EV3"]
+        FeliCa["Sony FeliCa Lite-S (NFC Forum Type 3)"]
+        IsoDep["ISO 14443-4 Smartcards & ePassports"]
+        VTag["ISO 15693 / ICODE SLIX (Vicinity Tags)"]
+    end
+
+    MatrixGrid <==>|IsoDep / NfcA / NfcV / MifareClassic / Ndef| TagHardware
+```
+
+---
 
 ### Module Structure
 ```
 mother_of_all_apps/
 ├── app/                                # Primary Android Application Module
-│   └── src/main/java/dev/motherofallapps/host/
+│   └── src/main/java/dev/pritam/host/
 │       ├── config/                     # Tool Registry metadata and definitions
 │       ├── ftp/                        # RFC-compliant FTP Server engine & service
 │       ├── host/                       # Host app state & tool loader
@@ -99,7 +190,7 @@ mother_of_all_apps/
 │       │   ├── llmchat/                # CyberChat AI UI, repository & personas
 │       │   ├── llmgateway/             # Loopback HTTP server (8080) & router
 │       │   ├── logviewer/              # System Logs UI & filters
-│       │   ├── nfc/                    # NFC reader/writer, NDEF & HCE emulator
+│       │   ├── nfc/                    # NFC 3x3 Suite, NDEF, Memory Map & Sector Analyzer
 │       │   └── sensors/                # Hardware sensor manager & sampling engine
 │       └── ui/                         # Host Theme, Navigation, & Dashboard
 └── plugin-api/                         # Lightweight interfaces for tool contracts
@@ -127,19 +218,19 @@ Mount and interact with remote FTP servers directly from your phone.
 - **Remote File Manager**: Browse remote directories with breadcrumb navigation, create/delete directories, rename files, and upload/download with transfer queues.
 - **Full Operational Logging**: File transfer starts, completions, and errors are automatically broadcast to **System Logs**.
 
-### 3. NFC Tag Master & Studio
-Comprehensive contactless RFID/NFC diagnosis and payload creation toolkit.
-- **Multi-Technology Reader**: Reads NDEF, Mifare Classic, Mifare Ultralight, ISO 14443-4 (IsoDep), and FeliCa (NfcF) tag ICs.
-- **NDEF Payload Studio**: Compose and write standard records:
-  - Text & Markdown notes
-  - Web URLs
-  - Wi-Fi Network Credentials (WPA2/WPA3 auto-join)
-  - vCard Contact Cards
-  - Android App Launchers (AAR package dispatch)
-- **HCE Emulation**: Emulate virtual NFC smart cards using Host Card Emulation.
-- **Raw APDU Console**: Execute raw ISO 7816-4 APDU command sequences with real-time hex response analysis.
+### 3. NFC Tools Studio (3×3 Suite)
+Comprehensive contactless RFID/NFC diagnosis and payload creation toolkit organized in a 3×3 matrix grid:
+- 🔍 **Scan & Info**: Tag hardware UID, RF technologies (NfcA, IsoDep, Ndef), ATQA, SAK, and memory capacity inspection.
+- ✍️ **Write Studio**: Compose and write standard NDEF records: Text/Markdown, Web URLs, Wi-Fi Network Credentials (WPA2/WPA3), vCard Contacts, and Android App Launchers (AAR).
+- 🧬 **Clone & Wipe**: Clone NDEF payload payloads to write cache, format/wipe tags to factory clean state, and apply permanent read-only lock protection.
+- 🗄️ **Silicon Pages**: Fast-read raw hex memory page browser with byte ASCII mapping and ASCII preview.
+- 🔐 **Mifare Decode**: Sector trailer and data block analyzer for Mifare Classic (1K/4K) using standard Key A/B keys.
+- 📚 **Chip Database**: Reference datasheets and specs for NTAG213/215/216, Mifare Classic, Mifare Ultralight C, Mifare DESFire EV3, Sony FeliCa Lite-S, and NXP ICODE SLIX.
+- 🎮 **Amiibo / Game**: Preset guides, page layout definitions, and key slot specifications for Type-2 NTAG215 game accessories.
+- 📱 **Apps Guide**: Curated companion apps recommendations (NFC Tools by wakdev, NXP TagWriter, NXP TagInfo).
+- 📜 **Tag Logs**: Real-time diagnostic event stream with one-tap clipboard export.
 
-### 4. Local LLM Gateway & Proxy
+### 4. Local LLM Gateway & MCP Proxy
 An embedded loopback proxy server running on `http://127.0.0.1:8080` that unifies cloud LLM accounts and desktop local LLM engines.
 - **OpenAI-Compatible REST API**:
   - `POST /v1/chat/completions` (JSON responses & SSE chunked streaming)
@@ -179,9 +270,9 @@ Real-time physical sensor inspection and dynamic hardware monitoring.
 
 ### 7. Centralized System Log Hub
 Universal diagnostic bus for the entire application.
-- **Cross-Tool Stream**: Aggregates operations from FTP Server, FTP Client, NFC Scanner, LLM Gateway, and Sensors.
+- **Cross-Tool Stream**: Aggregates operations from FTP Server, FTP Client, NFC Tools, LLM Gateway, and Sensors.
 - **Multiselect Filtering**: Filter logs by severity (`VERBOSE`, `DEBUG`, `INFO`, `WARN`, `ERROR`) and originating tool ID.
-- **Unknown Data Badging**: Highlights file paths, NFC payloads, raw hex data, and connection events.
+- **Highlighted Badging**: Highlights file paths, NFC payloads, raw hex data, and connection events.
 - **Memory Retention Policies**: Configurable auto-purge window (1 Hour, 1 Day, 1 Week, 1 Month, or Unlimited).
 
 ---
@@ -191,7 +282,7 @@ Universal diagnostic bus for the entire application.
 ### Adding a New Tool Plugin
 All tools in MOAA are statically defined in `ToolRegistryConfig.kt` and routed through `HostNavHost.kt`. To add a new tool:
 
-1. **Define the Tool Metadata** in `dev/motherofallapps/host/config/ToolRegistryConfig.kt`:
+1. **Define the Tool Metadata** in `dev/pritam/host/config/ToolRegistryConfig.kt`:
 ```kotlin
 ToolDefinition(
     id = "my-custom-tool",
@@ -207,7 +298,7 @@ ToolDefinition(
 )
 ```
 
-2. **Add the Navigation Route** in `dev/motherofallapps/host/ui/navigation/HostNavHost.kt`:
+2. **Add the Navigation Route** in `dev/pritam/host/ui/navigation/HostNavHost.kt`:
 ```kotlin
 object HostRoutes {
     const val MY_CUSTOM_TOOL = "my_custom_tool"
@@ -249,8 +340,8 @@ Set `"stream": true` in the request body to receive standard `data: { ... }` Ser
 ### Logging with AppLogHub
 Log system operations and user actions into the centralized **System Logs** hub:
 ```kotlin
-import dev.motherofallapps.host.logging.AppLogHub
-import dev.motherofallapps.host.logging.LogLevel
+import dev.pritam.host.logging.AppLogHub
+import dev.pritam.host.logging.LogLevel
 
 AppLogHub.log(
     toolId = "my-custom-tool",
@@ -292,12 +383,14 @@ MOAA includes a fully automated GitHub Actions pipeline ([.github/workflows/rele
 3. Tap **Discover LAN Hosts** or manually add a host with `http://<DESKTOP_IP>:11434`.
 4. Open **CyberChat AI** from the dashboard and start chatting. If your desktop goes to sleep, the Gateway automatically falls back to your configured cloud account.
 
-### Quick Start: Writing Custom NFC Payloads
-1. Open **NFC Tag Master** from the dashboard.
-2. Select the **Write NDEF** tab.
-3. Choose a payload type (e.g., *Wi-Fi Network* or *URL*).
-4. Enter the details and tap **Prepare Write**.
-5. Tap your physical NFC tag against the back of your phone to write the payload.
+### Quick Start: Using NFC Tools
+1. Open **NFC Tools** from the dashboard.
+2. Select any tile from the **3×3 Matrix**:
+   - **Scan & Info**: Hold a physical tag near the back of the device to read UID, tech type, and NDEF messages.
+   - **Write Studio**: Select a payload type (e.g., *Wi-Fi Network* or *URL*), input details, tap **Prepare Write**, and hold the tag to program.
+   - **Clone & Wipe**: Clone scanned payloads, wipe to blank NDEF, or lock.
+   - **Silicon Pages & Mifare Decode**: Inspect raw page memory and sector keys.
+   - **Chip Database & Amiibo Presets**: Browse datasheets and game memory layouts.
 
 ### Pinning Tools to Android Homescreen
 1. On the **Dashboard**, find the tool you use frequently (e.g., *CyberChat AI* or *Sensors Live*).

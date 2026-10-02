@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    namespace = "dev.motherofallapps.host"
+    namespace = "dev.pritam.host"
 
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "dev.motherofallapps.host"
+        applicationId = "dev.pritam.host"
         minSdk = 34
         targetSdk = 36
         versionCode = 1

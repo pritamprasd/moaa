@@ -37,6 +37,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -56,6 +58,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -90,6 +93,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val currentColumns by AppSettingsManager.galleryColumnCount.collectAsStateWithLifecycle()
+    val currentPadding by AppSettingsManager.dashboardPaddingDp.collectAsStateWithLifecycle()
     val currentRetention by AppSettingsManager.logRetentionPolicy.collectAsStateWithLifecycle()
 
     // ── Section expanded state ─────────────────────────────────────────────
@@ -143,6 +147,14 @@ fun SettingsScreen(
                         onSelectColumns = {
                             AppSettingsManager.setGalleryColumnCount(it)
                             Toast.makeText(context, "Gallery layout set to $it column${if (it > 1) "s" else ""}", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+                item {
+                    DashboardPaddingSettingsCard(
+                        currentPadding = currentPadding,
+                        onPaddingChange = {
+                            AppSettingsManager.setDashboardPadding(it)
                         }
                     )
                 }
@@ -436,6 +448,113 @@ private fun GalleryLayoutSettingsCard(
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DashboardPaddingSettingsCard(
+    currentPadding: Int,
+    onPaddingChange: (Int) -> Unit,
+) {
+    val presetDescription = when {
+        currentPadding <= 10 -> "High Density / Compact"
+        currentPadding <= 16 -> "Balanced"
+        currentPadding <= 22 -> "Comfortable (Default)"
+        else -> "Spacious / Relaxed"
+    }
+
+    IsometricCard(glowColor = Cyan) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "DASHBOARD PADDING & SPACING",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Cyan,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Cyan.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, Cyan.copy(alpha = 0.3f))
+                ) {
+                    Text(
+                        text = "$currentPadding dp",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Cyan,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Adjust outer screen margins and card spacing ($presetDescription)",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            // Padding Slider (8dp to 32dp in steps of 2dp)
+            Slider(
+                value = currentPadding.toFloat(),
+                onValueChange = { onPaddingChange(it.toInt()) },
+                valueRange = 8f..32f,
+                steps = 11,
+                colors = SliderDefaults.colors(
+                    thumbColor = Cyan,
+                    activeTrackColor = Cyan,
+                    inactiveTrackColor = GlassBorder
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(6.dp))
+
+            // Preset Quick Buttons Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    10 to "Compact (10dp)",
+                    18 to "Default (18dp)",
+                    26 to "Spacious (26dp)"
+                ).forEach { (dpValue, label) ->
+                    val isSel = currentPadding == dpValue
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
+                        border = BorderStroke(1.dp, if (isSel) Cyan else GlassBorder),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onPaddingChange(dpValue) }
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSel) Cyan else TextSecondary,
+                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 10.sp,
+                            modifier = Modifier
+                                .padding(vertical = 6.dp)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }

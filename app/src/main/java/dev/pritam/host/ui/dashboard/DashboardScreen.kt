@@ -95,6 +95,7 @@ fun DashboardScreen(
     onOpenSettings: () -> Unit = {},
 ) {
     val columnCount by AppSettingsManager.galleryColumnCount.collectAsStateWithLifecycle()
+    val dashboardPaddingDp by AppSettingsManager.dashboardPaddingDp.collectAsStateWithLifecycle()
     var isSearchExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
@@ -170,7 +171,7 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 14.dp)
+                .padding(horizontal = dashboardPaddingDp.dp)
         ) {
             // Smooth Animated Search Bar (Appears directly below Header)
             AnimatedVisibility(
@@ -215,9 +216,9 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
 
-            // Tool Gallery Grid (Columns dynamically bound to AppSettingsManager)
+            // Tool Gallery Grid (Columns and padding dynamically bound to AppSettingsManager)
             if (filteredTools.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -238,18 +239,21 @@ fun DashboardScreen(
                     }
                 }
             } else {
+                val itemSpacing = (dashboardPaddingDp * 0.65f).coerceIn(8f, 20f).dp
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(columnCount),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(itemSpacing),
+                    verticalArrangement = Arrangement.spacedBy(itemSpacing),
+                    contentPadding = PaddingValues(bottom = 28.dp, top = 2.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                ) {                    items(filteredTools, key = { it.id.value }) { tool ->
+                ) {
+                    items(filteredTools, key = { it.id.value }) { tool ->
                         ExpandableToolGalleryCard(
                             tool = tool,
                             columnCount = columnCount,
+                            dashboardPaddingDp = dashboardPaddingDp,
                             onLaunch = { onToolClick(tool) }
                         )
                     }
@@ -268,6 +272,7 @@ fun DashboardScreen(
 private fun ExpandableToolGalleryCard(
     tool: ToolInfo,
     columnCount: Int,
+    dashboardPaddingDp: Int = 18,
     onLaunch: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -338,11 +343,13 @@ private fun ExpandableToolGalleryCard(
                     )
             )
 
+            val innerPadding = if (columnCount >= 3) 8.dp else (dashboardPaddingDp * 0.72f).coerceIn(10f, 18f).dp
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onLaunch() }
-                    .padding(if (columnCount >= 3) 8.dp else 14.dp)
+                    .padding(innerPadding)
             ) {
                 // Top Row: Icon + Name + Modern Animated Chevron Expander
                 Row(

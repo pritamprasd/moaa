@@ -31,10 +31,17 @@ object AppSettingsManager {
     private val _logRetentionPolicy = MutableStateFlow(LogRetentionPolicy.ONE_DAY)
     val logRetentionPolicy: StateFlow<LogRetentionPolicy> = _logRetentionPolicy.asStateFlow()
 
+    private val _dashboardPaddingDp = MutableStateFlow(18) // 8 to 32 dp
+    val dashboardPaddingDp: StateFlow<Int> = _dashboardPaddingDp.asStateFlow()
+
     fun setGalleryColumnCount(count: Int) {
         if (count in 1..4) {
             _galleryColumnCount.value = count
         }
+    }
+
+    fun setDashboardPadding(paddingDp: Int) {
+        _dashboardPaddingDp.value = paddingDp.coerceIn(8, 32)
     }
 
     fun setVibrationFeedback(enabled: Boolean) {
@@ -47,6 +54,7 @@ object AppSettingsManager {
 
     fun resetToDefaults() {
         _galleryColumnCount.value = 2
+        _dashboardPaddingDp.value = 18
         _isVibrationFeedbackEnabled.value = true
         _logRetentionPolicy.value = LogRetentionPolicy.ONE_DAY
     }

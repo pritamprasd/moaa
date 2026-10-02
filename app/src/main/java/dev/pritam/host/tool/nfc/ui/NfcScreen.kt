@@ -362,19 +362,14 @@ private fun NfcGridCell(
 ) {
     val shape = RoundedCornerShape(12.dp)
     Surface(
-        modifier = modifier
-            .height(68.dp)
-            .clip(shape)
-            .clickable { onClick() }
-            .border(
-                BorderStroke(
-                    1.dp,
-                    if (isSelected) accentColor else Color(0x33475569)
-                ),
-                shape
-            ),
+        onClick = onClick,
+        modifier = modifier.height(68.dp),
         color = if (isSelected) accentColor.copy(alpha = 0.16f) else Color(0x280F172A),
-        shape = shape
+        shape = shape,
+        border = BorderStroke(
+            1.dp,
+            if (isSelected) accentColor else Color(0x33475569)
+        )
     ) {
         Column(
             modifier = Modifier

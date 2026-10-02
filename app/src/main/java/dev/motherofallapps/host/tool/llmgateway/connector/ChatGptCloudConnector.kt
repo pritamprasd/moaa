@@ -38,12 +38,24 @@ class ChatGptCloudConnector : LlmConnector {
 
             val messagesArray = JSONArray()
             request.messages.forEach { msg ->
-                messagesArray.put(JSONObject().apply {
+                val mObj = JSONObject().apply {
                     put("role", msg.role)
                     put("content", msg.content)
-                })
+                    if (msg.toolCallId != null) {
+                        put("tool_call_id", msg.toolCallId)
+                    }
+                }
+                messagesArray.put(mObj)
             }
             put("messages", messagesArray)
+
+            if (request.tools.isNotEmpty()) {
+                val toolsArr = JSONArray()
+                request.tools.forEach { t ->
+                    toolsArr.put(t.toOpenAiToolJson())
+                }
+                put("tools", toolsArr)
+            }
         }
 
         val url = URL(endpoint)
@@ -81,12 +93,29 @@ class ChatGptCloudConnector : LlmConnector {
 
             val jsonResponse = JSONObject(responseBody)
             var content = ""
+            val toolCallsList = mutableListOf<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall>()
+
             if (jsonResponse.has("choices")) {
                 val choices = jsonResponse.getJSONArray("choices")
                 if (choices.length() > 0) {
                     val choice = choices.getJSONObject(0)
                     if (choice.has("message")) {
-                        content = choice.getJSONObject("message").optString("content", "")
+                        val msgObj = choice.getJSONObject("message")
+                        content = msgObj.optString("content", "")
+                        if (msgObj.has("tool_calls")) {
+                            val tcArr = msgObj.getJSONArray("tool_calls")
+                            for (i in 0 until tcArr.length()) {
+                                val tc = tcArr.getJSONObject(i)
+                                val fn = tc.optJSONObject("function") ?: JSONObject()
+                                toolCallsList.add(
+                                    dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall(
+                                        id = tc.optString("id", UUID.randomUUID().toString()),
+                                        name = fn.optString("name", ""),
+                                        argumentsJson = fn.optString("arguments", "{}")
+                                    )
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -96,7 +125,8 @@ class ChatGptCloudConnector : LlmConnector {
                 model = jsonResponse.optString("model", targetModel),
                 content = content,
                 profileUsed = profile.name,
-                latencyMs = latency
+                latencyMs = latency,
+                toolCalls = toolCallsList
             )
         } finally {
             conn.disconnect()

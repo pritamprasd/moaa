@@ -82,6 +82,7 @@ fun LlmChatScreen(
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val serverTelemetry by viewModel.serverTelemetry.collectAsStateWithLifecycle()
     val gatewayProfiles by viewModel.gatewayProfiles.collectAsStateWithLifecycle()
+    val mcpServers by viewModel.mcpServers.collectAsStateWithLifecycle()
 
     var showSessionsDrawer by remember { mutableStateOf(false) }
     var showPersonaDialog by remember { mutableStateOf(false) }
@@ -179,7 +180,24 @@ fun LlmChatScreen(
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        val activeMcpTools = mcpServers.filter { it.isEnabled }.flatMap { it.discoveredTools }.count { it.isEnabled }
+                        if (activeMcpTools > 0) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Cyan.copy(alpha = 0.15f),
+                                border = BorderStroke(1.dp, Cyan.copy(alpha = 0.3f))
+                            ) {
+                                Text(
+                                    text = "🛠️ $activeMcpTools MCP Tools",
+                                    color = Cyan,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+
                         Surface(
                             shape = RoundedCornerShape(4.dp),
                             color = Color(activePersona.accentColorHex).copy(alpha = 0.15f),

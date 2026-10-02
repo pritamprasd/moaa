@@ -6,8 +6,12 @@ import dev.motherofallapps.host.tool.llmgateway.connector.ChatGptCloudConnector
 import dev.motherofallapps.host.tool.llmgateway.connector.DesktopLocalConnector
 import dev.motherofallapps.host.tool.llmgateway.connector.GeminiCloudConnector
 import dev.motherofallapps.host.tool.llmgateway.connector.LlmConnector
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolResult
+import dev.motherofallapps.host.tool.llmgateway.mcp.storage.McpServerRepository
 import dev.motherofallapps.host.tool.llmgateway.model.ChatCompletionRequest
 import dev.motherofallapps.host.tool.llmgateway.model.ChatCompletionResponse
+import dev.motherofallapps.host.tool.llmgateway.model.ChatMessage
 import dev.motherofallapps.host.tool.llmgateway.model.ChatStreamChunk
 import dev.motherofallapps.host.tool.llmgateway.model.LlmProfile
 import dev.motherofallapps.host.tool.llmgateway.model.ProfileStatus
@@ -15,7 +19,6 @@ import dev.motherofallapps.host.tool.llmgateway.model.RouterResult
 import dev.motherofallapps.host.tool.llmgateway.storage.LlmProfileRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
@@ -23,7 +26,10 @@ import kotlinx.coroutines.withContext
 import java.net.ConnectException
 import java.net.SocketTimeoutException
 
-class LlmRouterEngine(private val repository: LlmProfileRepository) {
+class LlmRouterEngine(
+    private val repository: LlmProfileRepository,
+    private val mcpRepository: McpServerRepository? = null
+) {
 
     private val desktopConnector = DesktopLocalConnector()
     private val geminiConnector = GeminiCloudConnector()
@@ -37,7 +43,7 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
         }
     }
 
-    suspend fun routeChat(request: ChatCompletionRequest): RouterResult<ChatCompletionResponse> = withContext(Dispatchers.IO) {
+    suspend fun routeChat(rawRequest: ChatCompletionRequest): RouterResult<ChatCompletionResponse> = withContext(Dispatchers.IO) {
         val allProfiles = repository.profiles.value
         val candidateProfiles = allProfiles.filter { it.isEnabled }.sortedBy { it.priorityOrder }
 
@@ -52,6 +58,14 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
             return@withContext RouterResult.AllTargetsExhausted(mapOf("error" to "No enabled profiles in gateway pool"))
         }
 
+        // Auto-inject active MCP tools if none explicitly specified
+        val effectiveTools = if (rawRequest.tools.isEmpty() && mcpRepository != null) {
+            mcpRepository.getAllActiveTools()
+        } else {
+            rawRequest.tools
+        }
+        val request = rawRequest.copy(tools = effectiveTools)
+
         val attemptedProfiles = mutableListOf<String>()
         val errorMap = mutableMapOf<String, String>()
 
@@ -62,15 +76,23 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
                 toolName = "LLM Gateway",
                 level = LogLevel.INFO,
                 tag = "Routing",
-                message = "LLM GATEWAY [ROUTING] Attempting target #${index + 1}: '${profile.name}' (${profile.providerType})"
+                message = "LLM GATEWAY [ROUTING] Attempting target #${index + 1}: '${profile.name}' (${profile.providerType})" +
+                        if (effectiveTools.isNotEmpty()) " with ${effectiveTools.size} MCP tools" else ""
             )
 
             try {
                 val connector = getConnectorFor(profile)
-                val response = connector.executeChat(profile, request)
+                val initialResponse = connector.executeChat(profile, request)
+
+                // Handle automated Tool Calling loop
+                val finalResponse = if (initialResponse.toolCalls.isNotEmpty() && request.autoExecuteTools && mcpRepository != null) {
+                    executeToolLoop(profile, connector, request, initialResponse)
+                } else {
+                    initialResponse
+                }
 
                 // Mark profile as active/healthy
-                repository.updateStatus(profile.id, ProfileStatus.ACTIVE, response.latencyMs)
+                repository.updateStatus(profile.id, ProfileStatus.ACTIVE, finalResponse.latencyMs)
 
                 if (attemptedProfiles.size == 1) {
                     AppLogHub.log(
@@ -78,10 +100,10 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
                         toolName = "LLM Gateway",
                         level = LogLevel.INFO,
                         tag = "Success",
-                        message = "LLM GATEWAY [RESPONSE] '${profile.name}' responded in ${response.latencyMs}ms (${response.content.length} chars)"
+                        message = "LLM GATEWAY [RESPONSE] '${profile.name}' responded in ${finalResponse.latencyMs}ms (${finalResponse.content.length} chars)"
                     )
                     return@withContext RouterResult.Success(
-                        data = response.copy(fallbackAttempted = emptyList()),
+                        data = finalResponse.copy(fallbackAttempted = emptyList()),
                         profileUsed = profile.name
                     )
                 } else {
@@ -94,7 +116,7 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
                         message = "LLM GATEWAY [FAILOVER RECOVERY] Successfully recovered on fallback target '${profile.name}' after ${fallbacks.size} failed attempts: $fallbacks"
                     )
                     return@withContext RouterResult.FallbackSuccess(
-                        data = response.copy(fallbackAttempted = fallbacks),
+                        data = finalResponse.copy(fallbackAttempted = fallbacks),
                         attemptedProfiles = fallbacks,
                         finalProfile = profile.name
                     )
@@ -137,7 +159,62 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
         RouterResult.AllTargetsExhausted(errorMap)
     }
 
-    fun routeChatStream(request: ChatCompletionRequest): Flow<RouterResult<ChatStreamChunk>> = flow {
+    private suspend fun executeToolLoop(
+        profile: LlmProfile,
+        connector: LlmConnector,
+        originalRequest: ChatCompletionRequest,
+        initialResponse: ChatCompletionResponse
+    ): ChatCompletionResponse {
+        val repo = mcpRepository ?: return initialResponse
+        val toolCalls = initialResponse.toolCalls
+        val toolResults = mutableListOf<McpToolResult>()
+
+        AppLogHub.log(
+            toolId = "llm-gateway",
+            toolName = "LLM Gateway",
+            level = LogLevel.INFO,
+            tag = "MCP",
+            message = "LLM GATEWAY [TOOL CALL LOOP] Executing ${toolCalls.size} tool calls requested by model '${initialResponse.model}'"
+        )
+
+        val updatedMessages = originalRequest.messages.toMutableList()
+        // Add assistant tool-call declaration
+        updatedMessages.add(
+            ChatMessage(
+                role = "assistant",
+                content = initialResponse.content,
+                toolCalls = toolCalls
+            )
+        )
+
+        // Execute each tool call
+        for (call in toolCalls) {
+            val result = repo.executeToolCall(call)
+            toolResults.add(result)
+            updatedMessages.add(
+                ChatMessage(
+                    role = "tool",
+                    content = result.content,
+                    toolCallId = call.id
+                )
+            )
+        }
+
+        // Send follow-up request with tool results to obtain the final answer
+        val followUpRequest = originalRequest.copy(
+            messages = updatedMessages,
+            autoExecuteTools = false // prevent infinite loops
+        )
+
+        val followUpResponse = connector.executeChat(profile, followUpRequest)
+        return followUpResponse.copy(
+            toolCalls = toolCalls,
+            toolResults = toolResults,
+            latencyMs = initialResponse.latencyMs + followUpResponse.latencyMs
+        )
+    }
+
+    fun routeChatStream(rawRequest: ChatCompletionRequest): Flow<RouterResult<ChatStreamChunk>> = flow {
         val allProfiles = repository.profiles.value
         val candidateProfiles = allProfiles.filter { it.isEnabled }.sortedBy { it.priorityOrder }
 
@@ -145,6 +222,13 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
             emit(RouterResult.AllTargetsExhausted(mapOf("error" to "No enabled profiles in gateway pool")))
             return@flow
         }
+
+        val effectiveTools = if (rawRequest.tools.isEmpty() && mcpRepository != null) {
+            mcpRepository.getAllActiveTools()
+        } else {
+            rawRequest.tools
+        }
+        val request = rawRequest.copy(tools = effectiveTools)
 
         val attemptedProfiles = mutableListOf<String>()
         val errorMap = mutableMapOf<String, String>()
@@ -182,7 +266,6 @@ class LlmRouterEngine(private val repository: LlmProfileRepository) {
                 repository.updateStatus(profile.id, newStatus)
 
                 if (hasEmittedAnyChunk) {
-                    // Stream already started and broke midway, cannot smoothly fallback mid-sentence
                     AppLogHub.log(
                         toolId = "llm-gateway",
                         toolName = "LLM Gateway",

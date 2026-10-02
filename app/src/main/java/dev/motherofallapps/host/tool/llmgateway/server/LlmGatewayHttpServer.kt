@@ -3,6 +3,10 @@ package dev.motherofallapps.host.tool.llmgateway.server
 import dev.motherofallapps.host.logging.AppLogHub
 import dev.motherofallapps.host.logging.LogLevel
 import dev.motherofallapps.host.tool.llmgateway.engine.LlmRouterEngine
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpServerProfile
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpTransportType
+import dev.motherofallapps.host.tool.llmgateway.mcp.storage.McpServerRepository
 import dev.motherofallapps.host.tool.llmgateway.model.ChatCompletionRequest
 import dev.motherofallapps.host.tool.llmgateway.model.ChatMessage
 import dev.motherofallapps.host.tool.llmgateway.model.RouterResult
@@ -40,6 +44,7 @@ data class GatewayServerTelemetry(
 class LlmGatewayHttpServer(
     private val repository: LlmProfileRepository,
     private val routerEngine: LlmRouterEngine,
+    private val mcpRepository: McpServerRepository? = null,
     val port: Int = 8080
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -150,14 +155,7 @@ class LlmGatewayHttpServer(
 
             when {
                 uri.startsWith("/v1/chat/completions") && method == "POST" -> {
-                    val bodyChars = CharArray(contentLength)
-                    var read = 0
-                    while (read < contentLength) {
-                        val r = input.read(bodyChars, read, contentLength - read)
-                        if (r == -1) break
-                        read += r
-                    }
-                    val body = String(bodyChars, 0, read)
+                    val body = readRequestBody(input, contentLength)
                     handleChatCompletions(body, output)
                 }
 
@@ -171,6 +169,24 @@ class LlmGatewayHttpServer(
 
                 uri.startsWith("/v1/models") && method == "GET" -> {
                     handleGetModels(output)
+                }
+
+                uri.startsWith("/v1/mcp/servers") && method == "GET" -> {
+                    handleGetMcpServers(output)
+                }
+
+                uri.startsWith("/v1/mcp/servers") && method == "POST" -> {
+                    val body = readRequestBody(input, contentLength)
+                    handleAddMcpServer(body, output)
+                }
+
+                uri.startsWith("/v1/mcp/tools") && method == "GET" -> {
+                    handleGetMcpTools(output)
+                }
+
+                uri.startsWith("/v1/mcp/tools/call") && method == "POST" -> {
+                    val body = readRequestBody(input, contentLength)
+                    handleCallMcpTool(body, output)
                 }
 
                 else -> {
@@ -188,6 +204,18 @@ class LlmGatewayHttpServer(
                 // Ignored
             }
         }
+    }
+
+    private fun readRequestBody(input: BufferedReader, contentLength: Int): String {
+        if (contentLength <= 0) return ""
+        val bodyChars = CharArray(contentLength)
+        var read = 0
+        while (read < contentLength) {
+            val r = input.read(bodyChars, read, contentLength - read)
+            if (r == -1) break
+            read += r
+        }
+        return String(bodyChars, 0, read)
     }
 
     private suspend fun handleChatCompletions(body: String, output: OutputStream) {
@@ -284,6 +312,7 @@ class LlmGatewayHttpServer(
             put("failovers_triggered", t.failoversTriggered)
             put("active_profiles_count", profiles.count { it.isEnabled })
             put("total_profiles_count", profiles.size)
+            put("active_mcp_tools_count", mcpRepository?.getAllActiveTools()?.size ?: 0)
         }
         sendJsonResponse(output, 200, json.toString())
     }
@@ -338,6 +367,117 @@ class LlmGatewayHttpServer(
         sendJsonResponse(output, 200, json.toString())
     }
 
+    private fun handleGetMcpServers(output: OutputStream) {
+        val repo = mcpRepository
+        val arr = JSONArray()
+        if (repo != null) {
+            repo.servers.value.forEach { s ->
+                arr.put(JSONObject().apply {
+                    put("id", s.id)
+                    put("name", s.name)
+                    put("transport_type", s.transportType.name)
+                    put("endpoint_url", s.endpointUrl)
+                    put("is_enabled", s.isEnabled)
+                    put("status", s.status.name)
+                    put("latency_ms", s.latencyMs)
+                    put("tools_count", s.discoveredTools.size)
+                    put("last_synced_at", s.lastSyncedAt)
+                })
+            }
+        }
+        val json = JSONObject().apply {
+            put("servers", arr)
+        }
+        sendJsonResponse(output, 200, json.toString())
+    }
+
+    private fun handleAddMcpServer(body: String, output: OutputStream) {
+        val repo = mcpRepository ?: run {
+            sendJsonResponse(output, 500, JSONObject().put("error", "MCP repository not available").toString())
+            return
+        }
+
+        try {
+            val json = JSONObject(body)
+            val name = json.optString("name", "New MCP Server")
+            val transportStr = json.optString("transport_type", "HTTP_JSONRPC")
+            val transport = try { McpTransportType.valueOf(transportStr) } catch (e: Exception) { McpTransportType.HTTP_JSONRPC }
+            val endpoint = json.optString("endpoint_url", "")
+
+            val server = McpServerProfile(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                transportType = transport,
+                endpointUrl = endpoint,
+                isEnabled = true
+            )
+            repo.addServer(server)
+
+            sendJsonResponse(output, 201, JSONObject().apply {
+                put("status", "CREATED")
+                put("id", server.id)
+                put("name", server.name)
+            }.toString())
+        } catch (e: Exception) {
+            sendJsonResponse(output, 400, JSONObject().put("error", "Invalid JSON: ${e.message}").toString())
+        }
+    }
+
+    private fun handleGetMcpTools(output: OutputStream) {
+        val repo = mcpRepository
+        val arr = JSONArray()
+        if (repo != null) {
+            val tools = repo.getAllActiveTools()
+            tools.forEach { t ->
+                arr.put(JSONObject().apply {
+                    put("name", t.name)
+                    put("description", t.description)
+                    put("server_profile_id", t.serverProfileId)
+                    put("parameters", t.inputSchema.toJson())
+                })
+            }
+        }
+        val json = JSONObject().apply {
+            put("tools", arr)
+        }
+        sendJsonResponse(output, 200, json.toString())
+    }
+
+    private suspend fun handleCallMcpTool(body: String, output: OutputStream) {
+        val repo = mcpRepository ?: run {
+            sendJsonResponse(output, 500, JSONObject().put("error", "MCP repository not available").toString())
+            return
+        }
+
+        try {
+            val json = JSONObject(body)
+            val name = json.optString("name", "")
+            val argsObj = json.optJSONObject("arguments") ?: JSONObject()
+
+            if (name.isBlank()) {
+                sendJsonResponse(output, 400, JSONObject().put("error", "Missing tool 'name' parameter").toString())
+                return
+            }
+
+            val call = McpToolCall(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                argumentsJson = argsObj.toString()
+            )
+            val result = repo.executeToolCall(call)
+
+            sendJsonResponse(output, 200, JSONObject().apply {
+                put("tool", result.toolName)
+                put("call_id", result.callId)
+                put("is_error", result.isError)
+                put("content", result.content)
+                put("latency_ms", result.latencyMs)
+            }.toString())
+        } catch (e: Exception) {
+            sendJsonResponse(output, 400, JSONObject().put("error", "Tool execution error: ${e.message}").toString())
+        }
+    }
+
     private fun parseChatRequest(body: String): ChatCompletionRequest {
         if (body.isBlank()) return ChatCompletionRequest()
         return try {
@@ -346,6 +486,7 @@ class LlmGatewayHttpServer(
             val temp = if (json.has("temperature")) json.optDouble("temperature", 0.7) else null
             val maxTokens = if (json.has("max_tokens")) json.optInt("max_tokens") else null
             val stream = json.optBoolean("stream", false)
+            val autoExecute = json.optBoolean("auto_execute_tools", true)
 
             val messages = mutableListOf<ChatMessage>()
             if (json.has("messages")) {
@@ -366,7 +507,8 @@ class LlmGatewayHttpServer(
                 messages = messages,
                 temperature = temp,
                 maxTokens = maxTokens,
-                stream = stream
+                stream = stream,
+                autoExecuteTools = autoExecute
             )
         } catch (e: Exception) {
             ChatCompletionRequest()
@@ -385,8 +527,22 @@ class LlmGatewayHttpServer(
                     put("message", JSONObject().apply {
                         put("role", "assistant")
                         put("content", resp.content)
+                        if (resp.toolCalls.isNotEmpty()) {
+                            val tcArr = JSONArray()
+                            resp.toolCalls.forEach { tc ->
+                                tcArr.put(JSONObject().apply {
+                                    put("id", tc.id)
+                                    put("type", "function")
+                                    put("function", JSONObject().apply {
+                                        put("name", tc.name)
+                                        put("arguments", tc.argumentsJson)
+                                    })
+                                })
+                            }
+                            put("tool_calls", tcArr)
+                        }
                     })
-                    put("finish_reason", "stop")
+                    put("finish_reason", if (resp.toolCalls.isNotEmpty()) "tool_calls" else "stop")
                 })
             }
             put("choices", choices)
@@ -394,6 +550,18 @@ class LlmGatewayHttpServer(
                 put("profile_used", resp.profileUsed)
                 put("latency_ms", resp.latencyMs)
                 put("fallback_attempts", JSONArray(fallbacks))
+                if (resp.toolResults.isNotEmpty()) {
+                    val trArr = JSONArray()
+                    resp.toolResults.forEach { tr ->
+                        trArr.put(JSONObject().apply {
+                            put("call_id", tr.callId)
+                            put("tool", tr.toolName)
+                            put("is_error", tr.isError)
+                            put("content", tr.content)
+                        })
+                    }
+                    put("mcp_tool_results", trArr)
+                }
             })
         }
     }
@@ -423,7 +591,10 @@ class LlmGatewayHttpServer(
     private fun sendJsonResponse(output: OutputStream, statusCode: Int, body: String) {
         val statusText = when (statusCode) {
             200 -> "OK"
+            201 -> "Created"
+            400 -> "Bad Request"
             404 -> "Not Found"
+            500 -> "Internal Server Error"
             502 -> "Bad Gateway"
             else -> "Response"
         }
@@ -442,7 +613,7 @@ class LlmGatewayHttpServer(
     private fun sendCorsResponse(output: OutputStream) {
         val header = "HTTP/1.1 204 No Content\r\n" +
                 "Access-Control-Allow-Origin: *\r\n" +
-                "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n" +
+                "Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE\r\n" +
                 "Access-Control-Allow-Headers: *\r\n" +
                 "Connection: close\r\n\r\n"
         output.write(header.toByteArray(Charsets.UTF_8))

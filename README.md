@@ -145,6 +145,12 @@ An embedded loopback proxy server running on `http://127.0.0.1:8080` that unifie
   - `POST /v1/chat/completions` (JSON responses & SSE chunked streaming)
   - `GET /v1/models`
   - `GET /v1/gateway/status` & `GET /v1/gateway/profiles`
+  - `GET /v1/mcp/servers`, `POST /v1/mcp/servers`, `GET /v1/mcp/tools`, `POST /v1/mcp/tools/call`
+- **Model Context Protocol (MCP) Tool Integration**:
+  - **Built-in Device Tools**: Query live device hardware sensors (`get_device_sensors`), check FTP server status (`get_ftp_server_status`), query system logs (`query_system_logs`), retrieve gateway health metrics (`get_gateway_status`), and compute math expressions (`calculate_math_expression`).
+  - **Remote / LAN MCP Servers**: Connect to remote JSON-RPC 2.0 / SSE MCP servers running on your LAN or desktop with customizable authentication headers.
+  - **Automated Tool Execution Loop**: `LlmRouterEngine` injects active MCP tools into completion requests for Gemini and OpenAI/Ollama, detects tool call requests, invokes the target MCP tool, and returns the computed results back to the LLM automatically.
+  - **Interactive Schema Inspector & Test Runner**: Discover, inspect JSON Schema definitions, and test-run individual tools directly in the UI.
 - **Hybrid Provider Routing**:
   - **Cloud Accounts**: Google Gemini (Pro/Flash via OAuth or API Key), OpenAI ChatGPT (OAuth or API Key).
   - **Desktop LAN Nodes**: Ollama (`:11434`), LM Studio (`:1234`), vLLM / LocalAI (`:8000`).
@@ -153,6 +159,7 @@ An embedded loopback proxy server running on `http://127.0.0.1:8080` that unifie
 
 ### 5. CyberChat AI Studio
 Interactive conversational AI interface powered by the local LLM Gateway.
+- **MCP Tool Calling & Interactive Accordions**: When an LLM invokes an MCP tool, CyberChat renders collapsible interactive tool invocation cards displaying arguments, status, and JSON outputs directly in the chat bubble.
 - **Multi-Session Thread Manager**: Organize multiple independent chat threads with persistent local JSON storage.
 - **AI Persona Presets**:
   - ⚡ **Code Architect**: Senior Kotlin & Android Clean Architecture engineer (temp `0.2`).

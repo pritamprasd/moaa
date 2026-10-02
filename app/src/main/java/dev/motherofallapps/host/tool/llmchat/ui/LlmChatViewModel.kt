@@ -35,6 +35,7 @@ class LlmChatViewModel(application: Application) : AndroidViewModel(application)
     private val gatewayRouter = LlmGatewayManager.getRouterEngine(application)
     private val gatewayServer = LlmGatewayManager.getHttpServer(application)
     private val gatewayProfileRepo = LlmGatewayManager.getRepository(application)
+    private val gatewayMcpRepo = LlmGatewayManager.getMcpRepository(application)
 
     val sessions: StateFlow<List<ChatSession>> = repository.sessions
 
@@ -47,6 +48,7 @@ class LlmChatViewModel(application: Application) : AndroidViewModel(application)
 
     val serverTelemetry: StateFlow<GatewayServerTelemetry> = gatewayServer.telemetry
     val gatewayProfiles: StateFlow<List<LlmProfile>> = gatewayProfileRepo.profiles
+    val mcpServers: StateFlow<List<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpServerProfile>> = gatewayMcpRepo.servers
 
     private val _inputPrompt = MutableStateFlow("")
     val inputPrompt: StateFlow<String> = _inputPrompt.asStateFlow()

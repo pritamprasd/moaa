@@ -73,13 +73,15 @@ class GeminiCloudConnector : LlmConnector {
 
             val jsonResponse = JSONObject(responseBody)
             val content = extractGeminiText(jsonResponse)
+            val toolCalls = extractGeminiToolCalls(jsonResponse)
 
             ChatCompletionResponse(
                 id = "gemini-${UUID.randomUUID()}",
                 model = cleanModel,
                 content = content,
                 profileUsed = profile.name,
-                latencyMs = latency
+                latencyMs = latency,
+                toolCalls = toolCalls
             )
         } finally {
             conn.disconnect()
@@ -290,6 +292,24 @@ class GeminiCloudConnector : LlmConnector {
             root.put("systemInstruction", sysObj)
         }
 
+        if (request.tools.isNotEmpty()) {
+            val fnDecls = JSONArray()
+            request.tools.forEach { t ->
+                val fnObj = JSONObject().apply {
+                    put("name", t.name)
+                    put("description", t.description)
+                    put("parameters", t.inputSchema.toJson())
+                }
+                fnDecls.put(fnObj)
+            }
+            val toolsArray = JSONArray().apply {
+                put(JSONObject().apply {
+                    put("functionDeclarations", fnDecls)
+                })
+            }
+            root.put("tools", toolsArray)
+        }
+
         val genConfig = JSONObject()
         request.temperature?.let { genConfig.put("temperature", it) }
         request.maxTokens?.let { genConfig.put("maxOutputTokens", it) }
@@ -315,5 +335,34 @@ class GeminiCloudConnector : LlmConnector {
             sb.append(part.optString("text", ""))
         }
         return sb.toString()
+    }
+
+    private fun extractGeminiToolCalls(json: JSONObject): List<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall> {
+        val list = mutableListOf<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall>()
+        if (!json.has("candidates")) return list
+        val candidates = json.getJSONArray("candidates")
+        if (candidates.length() == 0) return list
+        val cand = candidates.getJSONObject(0)
+        if (!cand.has("content")) return list
+        val content = cand.getJSONObject("content")
+        if (!content.has("parts")) return list
+        val parts = content.getJSONArray("parts")
+        for (i in 0 until parts.length()) {
+            val part = parts.getJSONObject(i)
+            if (part.has("functionCall")) {
+                val fc = part.getJSONObject("functionCall")
+                val fnName = fc.optString("name", "")
+                val fnArgs = fc.optJSONObject("args")?.toString() ?: "{}"
+                if (fnName.isNotBlank()) {
+                    list.add(
+                        dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall(
+                            name = fnName,
+                            argumentsJson = fnArgs
+                        )
+                    )
+                }
+            }
+        }
+        return list
     }
 }

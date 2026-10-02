@@ -24,6 +24,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -155,6 +160,15 @@ fun ChatMessageBubble(
 
                     Spacer(Modifier.height(6.dp))
 
+                    // MCP Tool Calls & Execution Badges
+                    if (message.toolCalls.isNotEmpty() || message.toolResults.isNotEmpty()) {
+                        McpToolCallsAccordion(
+                            toolCalls = message.toolCalls,
+                            toolResults = message.toolResults
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
+
                     // Message Body with Code Block Formatting
                     if (message.content.isBlank() && message.isStreaming) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -272,3 +286,107 @@ private fun FormattedContent(content: String, context: Context) {
         }
     }
 }
+
+@Composable
+private fun McpToolCallsAccordion(
+    toolCalls: List<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall>,
+    toolResults: List<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolResult>
+) {
+    var isExpanded by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(8.dp)
+
+    Surface(
+        shape = shape,
+        color = Color(0x280284C7),
+        border = BorderStroke(1.dp, Cyan.copy(alpha = 0.4f)),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("🛠️", fontSize = 12.sp)
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text = "MCP Tools (${toolCalls.size.coerceAtLeast(toolResults.size)}): ${toolCalls.joinToString { it.name }.ifBlank { toolResults.joinToString { it.toolName } }}",
+                        color = Cyan,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 9.sp,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1
+                    )
+                }
+
+                Text(
+                    text = if (isExpanded) "Hide ▲" else "View ▼",
+                    color = Cyan,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            AnimatedVisibility(visible = isExpanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    toolCalls.forEach { call ->
+                        val matchingResult = toolResults.firstOrNull { it.callId == call.id || it.toolName == call.name }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(GlassSurfaceDeep)
+                                .padding(6.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = "▶ Tool Call: ${call.name}",
+                                    color = Cyan,
+                                    fontSize = 9.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (call.argumentsJson.isNotBlank() && call.argumentsJson != "{}") {
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = "Args: ${call.argumentsJson}",
+                                        color = TextSecondary,
+                                        fontSize = 8.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+                                if (matchingResult != null) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = "Result Output (${matchingResult.latencyMs}ms):",
+                                        color = if (matchingResult.isError) Rose else Color(0xFF34D399),
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = matchingResult.content.take(300) + if (matchingResult.content.length > 300) "..." else "",
+                                        color = TextPrimary,
+                                        fontSize = 8.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        lineHeight = 11.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

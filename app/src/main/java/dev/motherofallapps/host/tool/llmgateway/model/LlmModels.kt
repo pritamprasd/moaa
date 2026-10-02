@@ -1,5 +1,9 @@
 package dev.motherofallapps.host.tool.llmgateway.model
 
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolDefinition
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolResult
+
 enum class ProviderCategory(val displayName: String, val icon: String) {
     CLOUD_OAUTH("Cloud Account (OAuth / Key)", "☁️"),
     DESKTOP_LOCAL_HOST("Desktop Local LAN Host", "🖥️")
@@ -49,8 +53,10 @@ sealed class RouterResult<out T> {
 }
 
 data class ChatMessage(
-    val role: String, // "system", "user", "assistant"
-    val content: String
+    val role: String, // "system", "user", "assistant", "tool"
+    val content: String,
+    val toolCalls: List<McpToolCall> = emptyList(),
+    val toolCallId: String? = null
 )
 
 data class ChatCompletionRequest(
@@ -58,7 +64,9 @@ data class ChatCompletionRequest(
     val messages: List<ChatMessage> = emptyList(),
     val temperature: Double? = 0.7,
     val maxTokens: Int? = null,
-    val stream: Boolean = false
+    val stream: Boolean = false,
+    val tools: List<McpToolDefinition> = emptyList(),
+    val autoExecuteTools: Boolean = true
 )
 
 data class ChatCompletionResponse(
@@ -67,7 +75,9 @@ data class ChatCompletionResponse(
     val content: String,
     val profileUsed: String,
     val latencyMs: Long,
-    val fallbackAttempted: List<String> = emptyList()
+    val fallbackAttempted: List<String> = emptyList(),
+    val toolCalls: List<McpToolCall> = emptyList(),
+    val toolResults: List<McpToolResult> = emptyList()
 )
 
 data class ChatStreamChunk(
@@ -76,7 +86,9 @@ data class ChatStreamChunk(
     val deltaContent: String,
     val finishReason: String? = null,
     val profileUsed: String,
-    val fallbackAttempted: List<String> = emptyList()
+    val fallbackAttempted: List<String> = emptyList(),
+    val toolCalls: List<McpToolCall> = emptyList(),
+    val toolResults: List<McpToolResult> = emptyList()
 )
 
 data class DiscoveredHost(

@@ -93,9 +93,13 @@ fun LlmGatewayScreen(
     val scanProgress by viewModel.scanProgress.collectAsStateWithLifecycle()
     val discoveredHosts by viewModel.discoveredHosts.collectAsStateWithLifecycle()
     val pingingIds by viewModel.pingingProfileIds.collectAsStateWithLifecycle()
+    val mcpServers by viewModel.mcpServers.collectAsStateWithLifecycle()
+    val isTestingMcpTool by viewModel.isTestingMcpTool.collectAsStateWithLifecycle()
+    val lastMcpToolResult by viewModel.lastMcpToolResult.collectAsStateWithLifecycle()
 
     var showAddCloudDialog by remember { mutableStateOf(false) }
     var showAddDesktopDialog by remember { mutableStateOf(false) }
+    var showAddMcpServerDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -148,7 +152,7 @@ fun LlmGatewayScreen(
                 .padding(horizontal = 16.dp)
         ) {
             // Tabs Bar
-            val tabTitles = listOf("1. ACCOUNTS & HOSTS", "2. ROUTING & FAILOVER", "3. STATUS & LIVE TEST")
+            val tabTitles = listOf("1. HOSTS", "2. ROUTING", "3. MCP SERVERS", "4. LIVE TEST")
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = GlassSurfaceDeep,
@@ -173,7 +177,7 @@ fun LlmGatewayScreen(
                         text = {
                             Text(
                                 text = title,
-                                fontSize = 10.sp,
+                                fontSize = 9.sp,
                                 fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
                                 color = if (selectedTab == index) Cyan else TextSecondary
                             )
@@ -206,7 +210,21 @@ fun LlmGatewayScreen(
                     onToggleEnabled = { viewModel.toggleProfileEnabled(it) }
                 )
 
-                2 -> StatusAndLiveTestTab(
+                2 -> dev.motherofallapps.host.tool.llmgateway.ui.components.McpServersTab(
+                    servers = mcpServers,
+                    isTestingTool = isTestingMcpTool,
+                    lastToolResult = lastMcpToolResult,
+                    onAddServerClick = { showAddMcpServerDialog = true },
+                    onToggleServerEnabled = { serverId, isEnabled -> viewModel.toggleMcpServerEnabled(serverId, isEnabled) },
+                    onToggleToolEnabled = { serverId, toolName, isEnabled -> viewModel.toggleMcpToolEnabled(serverId, toolName, isEnabled) },
+                    onSyncServerTools = { serverId -> viewModel.syncMcpServerTools(serverId) },
+                    onPingServer = { serverId -> viewModel.pingMcpServer(serverId) },
+                    onDeleteServer = { serverId -> viewModel.deleteMcpServer(serverId) },
+                    onTestRunTool = { toolName, argsJson -> viewModel.testRunMcpTool(toolName, argsJson) },
+                    onClearTestResult = { viewModel.clearMcpTestResult() }
+                )
+
+                3 -> StatusAndLiveTestTab(
                     viewModel = viewModel,
                     serverTelemetry = serverTelemetry
                 )
@@ -230,6 +248,16 @@ fun LlmGatewayScreen(
             onSave = {
                 viewModel.addCustomProfile(it)
                 showAddDesktopDialog = false
+            }
+        )
+    }
+
+    if (showAddMcpServerDialog) {
+        dev.motherofallapps.host.tool.llmgateway.ui.components.AddMcpServerDialog(
+            onDismiss = { showAddMcpServerDialog = false },
+            onAddServer = {
+                viewModel.addMcpServer(it)
+                showAddMcpServerDialog = false
             }
         )
     }

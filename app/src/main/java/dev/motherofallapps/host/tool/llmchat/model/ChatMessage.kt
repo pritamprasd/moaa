@@ -1,13 +1,15 @@
 package dev.motherofallapps.host.tool.llmchat.model
 
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall
+import dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolResult
 import java.util.UUID
 
 /**
- * Single chat message within a session.
+ * Single chat message within a session with support for MCP tool calls.
  */
 data class ChatMessage(
     val id: String = UUID.randomUUID().toString(),
-    val role: String, // "user", "assistant", "system"
+    val role: String, // "user", "assistant", "system", "tool"
     val content: String,
     val timestamp: Long = System.currentTimeMillis(),
     val modelUsed: String? = null,
@@ -16,4 +18,6 @@ data class ChatMessage(
     val failoverTrail: List<String> = emptyList(),
     val isStreaming: Boolean = false,
     val isError: Boolean = false,
+    val toolCalls: List<McpToolCall> = emptyList(),
+    val toolResults: List<McpToolResult> = emptyList()
 )

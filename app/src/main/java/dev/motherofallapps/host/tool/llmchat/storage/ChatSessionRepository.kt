@@ -65,6 +65,38 @@ class ChatSessionRepository(private val context: Context) {
                         trail.add(trailArray.getString(k))
                     }
 
+                    val toolCallsList = mutableListOf<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall>()
+                    val tcArr = mObj.optJSONArray("toolCalls")
+                    if (tcArr != null) {
+                        for (k in 0 until tcArr.length()) {
+                            val tcObj = tcArr.getJSONObject(k)
+                            toolCallsList.add(
+                                dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolCall(
+                                    id = tcObj.optString("id", UUID.randomUUID().toString()),
+                                    name = tcObj.optString("name", ""),
+                                    argumentsJson = tcObj.optString("argumentsJson", "{}")
+                                )
+                            )
+                        }
+                    }
+
+                    val toolResultsList = mutableListOf<dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolResult>()
+                    val trArr = mObj.optJSONArray("toolResults")
+                    if (trArr != null) {
+                        for (k in 0 until trArr.length()) {
+                            val trObj = trArr.getJSONObject(k)
+                            toolResultsList.add(
+                                dev.motherofallapps.host.tool.llmgateway.mcp.model.McpToolResult(
+                                    callId = trObj.optString("callId", ""),
+                                    toolName = trObj.optString("toolName", ""),
+                                    isError = trObj.optBoolean("isError", false),
+                                    content = trObj.optString("content", ""),
+                                    latencyMs = trObj.optLong("latencyMs", 0)
+                                )
+                            )
+                        }
+                    }
+
                     parsedMessages.add(
                         ChatMessage(
                             id = mObj.optString("id", UUID.randomUUID().toString()),
@@ -76,7 +108,9 @@ class ChatSessionRepository(private val context: Context) {
                             latencyMs = mObj.optLong("latencyMs", 0),
                             failoverTrail = trail,
                             isStreaming = false,
-                            isError = mObj.optBoolean("isError", false)
+                            isError = mObj.optBoolean("isError", false),
+                            toolCalls = toolCallsList,
+                            toolResults = toolResultsList
                         )
                     )
                 }
@@ -145,6 +179,32 @@ class ChatSessionRepository(private val context: Context) {
                             val trailArr = JSONArray()
                             msg.failoverTrail.forEach { trailArr.put(it) }
                             mObj.put("failoverTrail", trailArr)
+
+                            if (msg.toolCalls.isNotEmpty()) {
+                                val tcArr = JSONArray()
+                                msg.toolCalls.forEach { tc ->
+                                    tcArr.put(JSONObject().apply {
+                                        put("id", tc.id)
+                                        put("name", tc.name)
+                                        put("argumentsJson", tc.argumentsJson)
+                                    })
+                                }
+                                mObj.put("toolCalls", tcArr)
+                            }
+
+                            if (msg.toolResults.isNotEmpty()) {
+                                val trArr = JSONArray()
+                                msg.toolResults.forEach { tr ->
+                                    trArr.put(JSONObject().apply {
+                                        put("callId", tr.callId)
+                                        put("toolName", tr.toolName)
+                                        put("isError", tr.isError)
+                                        put("content", tr.content)
+                                        put("latencyMs", tr.latencyMs)
+                                    })
+                                }
+                                mObj.put("toolResults", trArr)
+                            }
 
                             msgArr.put(mObj)
                         }

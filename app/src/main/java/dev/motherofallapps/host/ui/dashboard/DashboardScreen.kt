@@ -1,8 +1,14 @@
 package dev.motherofallapps.host.ui.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -26,9 +32,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -38,7 +47,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,13 +55,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,7 +69,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.motherofallapps.host.R
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.motherofallapps.host.config.ToolRegistryConfig
+import dev.motherofallapps.host.settings.AppSettingsManager
 import dev.motherofallapps.host.ui.theme.Cyan
 import dev.motherofallapps.host.ui.theme.Rose
 import dev.motherofallapps.host.ui.theme.SpaceBackground
@@ -70,9 +80,7 @@ import dev.motherofallapps.host.ui.theme.SurfaceElevated
 import dev.motherofallapps.host.ui.theme.TextPrimary
 import dev.motherofallapps.host.ui.theme.TextSecondary
 import dev.motherofallapps.host.ui.theme.Violet
-import dev.motherofallapps.pluginapi.ToolId
 import dev.motherofallapps.pluginapi.ToolInfo
-import dev.motherofallapps.pluginapi.ToolState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -80,8 +88,10 @@ fun DashboardScreen(
     tools: List<ToolInfo>,
     modifier: Modifier = Modifier,
     onToolClick: (ToolInfo) -> Unit = {},
+    onOpenSettings: () -> Unit = {},
 ) {
-    var columnCount by remember { mutableIntStateOf(2) } // 1, 2, 3, or 4 columns
+    val columnCount by AppSettingsManager.galleryColumnCount.collectAsStateWithLifecycle()
+    var isSearchExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
     val filteredTools = remember(tools, searchQuery) {
@@ -98,7 +108,7 @@ fun DashboardScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = SpaceBackground,
+        containerColor = Color.Transparent,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -111,7 +121,7 @@ fun DashboardScreen(
                             letterSpacing = 1.5.sp
                         )
                         Text(
-                            text = "${tools.size} TOOLS READY · MODULAR SUITE",
+                            text = "${tools.size} MODULES READY · $columnCount-COL GALLERY",
                             style = MaterialTheme.typography.labelSmall,
                             color = Cyan,
                             fontSize = 9.sp,
@@ -119,7 +129,45 @@ fun DashboardScreen(
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = SpaceBackground)
+                actions = {
+                    // Search Expand Icon Button with active glow toggle
+                    IconButton(
+                        onClick = {
+                            isSearchExpanded = !isSearchExpanded
+                            if (!isSearchExpanded) searchQuery = ""
+                        },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(if (isSearchExpanded) Cyan.copy(alpha = 0.2f) else Color(0x221E293B))
+                                .border(BorderStroke(1.dp, if (isSearchExpanded) Cyan else dev.motherofallapps.host.ui.theme.GlassBorder), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            IsometricSearchIcon(color = if (isSearchExpanded) Cyan else TextPrimary)
+                        }
+                    }
+
+                    // Settings Icon Button
+                    IconButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(Color(0x221E293B))
+                                .border(BorderStroke(1.dp, dev.motherofallapps.host.ui.theme.GlassBorder), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            IsometricSettingsIcon(color = TextPrimary)
+                        }
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         }
     ) { innerPadding ->
@@ -127,19 +175,53 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 14.dp)
         ) {
-            // 1. Gallery Controls Header: Column Selector & Search
-            GalleryControlsHeader(
-                currentColumns = columnCount,
-                onSelectColumns = { columnCount = it },
-                searchQuery = searchQuery,
-                onSearchChange = { searchQuery = it }
-            )
+            // Smooth Animated Search Bar (Appears directly below Header)
+            AnimatedVisibility(
+                visible = isSearchExpanded,
+                enter = expandVertically(
+                    animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+                ) + fadeIn(animationSpec = tween(250)),
+                exit = shrinkVertically(
+                    animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)
+                ) + fadeOut(animationSpec = tween(200))
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        placeholder = { Text("Search tools by name, tag, or description...", fontSize = 12.sp, color = TextSecondary) },
+                        singleLine = true,
+                        leadingIcon = {
+                            IsometricSearchIcon(color = Cyan)
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                TextButton(onClick = { searchQuery = "" }) {
+                                    Text("Clear", color = Rose, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Cyan,
+                            unfocusedBorderColor = Color(0xFF334155),
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedContainerColor = SurfaceDeep,
+                            unfocusedContainerColor = SurfaceDeep
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(52.dp)
+                    )
+                }
+            }
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(4.dp))
 
-            // 2. Dynamic Responsive Grid View
+            // Tool Gallery Grid (Columns dynamically bound to AppSettingsManager)
             if (filteredTools.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -147,27 +229,32 @@ fun DashboardScreen(
                         .weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "No tools match '$searchQuery'",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "No tools found matching '$searchQuery'",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = TextSecondary
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(onClick = { searchQuery = "" }) {
+                            Text("Clear Search Filter", color = Cyan)
+                        }
+                    }
                 }
             } else {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(columnCount),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(bottom = 24.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f)
-                ) {
-                    items(filteredTools, key = { it.id.value }) { tool ->
-                        DynamicGalleryToolCard(
+                ) {                    items(filteredTools, key = { it.id.value }) { tool ->
+                        ExpandableToolGalleryCard(
                             tool = tool,
                             columnCount = columnCount,
-                            onClick = { onToolClick(tool) }
+                            onLaunch = { onToolClick(tool) }
                         )
                     }
                 }
@@ -176,342 +263,292 @@ fun DashboardScreen(
     }
 }
 
-@Composable
-private fun GalleryControlsHeader(
-    currentColumns: Int,
-    onSelectColumns: (Int) -> Unit,
-    searchQuery: String,
-    onSearchChange: (String) -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "TOOL GALLERY LAYOUT",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextSecondary,
-                letterSpacing = 1.sp,
-                fontSize = 10.sp
-            )
-
-            // Column Switcher Buttons: 1 Col, 2 Col, 3 Col, 4 Col
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                ColumnButton(label = "1 Col", count = 1, current = currentColumns, onSelect = onSelectColumns)
-                ColumnButton(label = "2 Col", count = 2, current = currentColumns, onSelect = onSelectColumns)
-                ColumnButton(label = "3 Col", count = 3, current = currentColumns, onSelect = onSelectColumns)
-                ColumnButton(label = "4 Col", count = 4, current = currentColumns, onSelect = onSelectColumns)
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        // Search bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchChange,
-            placeholder = { Text("Search tools by name or purpose...", fontSize = 12.sp) },
-            singleLine = true,
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    TextButton(onClick = { onSearchChange("") }) {
-                        Text("Clear", fontSize = 10.sp, color = TextSecondary)
-                    }
-                }
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Cyan,
-                unfocusedBorderColor = Color(0xFF334155),
-                focusedTextColor = TextPrimary,
-                unfocusedTextColor = TextPrimary
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-}
-
-@Composable
-private fun ColumnButton(
-    label: String,
-    count: Int,
-    current: Int,
-    onSelect: (Int) -> Unit,
-) {
-    val isSelected = count == current
-    val shape = RoundedCornerShape(6.dp)
-
-    Surface(
-        modifier = Modifier
-            .clip(shape)
-            .clickable { onSelect(count) }
-            .border(
-                BorderStroke(1.dp, if (isSelected) Cyan else Color(0xFF334155)),
-                shape
-            ),
-        color = if (isSelected) Cyan.copy(alpha = 0.2f) else SurfaceDeep,
-        shape = shape
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = if (isSelected) Cyan else TextSecondary,
-            fontSize = 10.sp,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-    }
-}
-
 /**
- * Responsive Isometric Tool Card adjusting dynamically across 1, 2, 3, and 4 column layouts.
+ * Modern Isometric Tool Card with expandable metadata drawer.
+ * No hardcoded version or "open" labels. Clicking chevron reveals full description,
+ * version, category, author, and required permissions.
  */
 @Composable
-private fun DynamicGalleryToolCard(
+private fun ExpandableToolGalleryCard(
     tool: ToolInfo,
     columnCount: Int,
-    onClick: () -> Unit,
+    onLaunch: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val context = LocalContext.current
+    var isExpanded by remember { mutableStateOf(false) }
 
-    val (accentColor, iconType) = when (tool.id.value) {
-        "ftp-server" -> Cyan to "ftp"
-        "nfc-tool" -> Rose to "nfc"
-        "log-viewer" -> Violet to "logs"
-        else -> Cyan to "generic"
+    val definition = remember(tool.id.value) {
+        ToolRegistryConfig.findToolDefinition(tool.id.value)
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() }
-    ) {
-        // Isometric 3D Drop Shadow
+    val accentColor = when (tool.id.value) {
+        "ftp-server" -> Cyan
+        "ftp-client" -> Color(0xFF34D399)
+        "nfc-tool" -> Rose
+        "log-viewer" -> Violet
+        else -> Cyan
+    }
+
+    val iconType = definition?.iconType ?: "generic"
+    val shape = RoundedCornerShape(12.dp)
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        // 1. Liquid Glass Depth Refraction Shadow
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .offset(x = 3.dp, y = 3.dp)
+                .offset(x = 2.dp, y = 4.dp)
                 .clip(shape)
-                .background(Color(0xFF070A10))
+                .background(Color(0x60030712))
+                .border(
+                    BorderStroke(1.dp, accentColor.copy(alpha = 0.2f)),
+                    shape
+                )
         )
 
-        // Main Card Surface
-        Surface(
+        // 2. Main Frosted Acrylic Glass Layer
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            if (isExpanded) accentColor.copy(alpha = 0.15f) else Color(0x401E293B),
+                            Color(0x220F172A)
+                        )
+                    )
+                )
                 .border(
                     BorderStroke(
                         1.dp,
                         Brush.linearGradient(
                             listOf(
-                                accentColor.copy(alpha = 0.6f),
-                                Color(0xFF1E293B)
+                                dev.motherofallapps.host.ui.theme.GlassBorderHighlight,
+                                if (isExpanded) accentColor else accentColor.copy(alpha = 0.65f),
+                                dev.motherofallapps.host.ui.theme.GlassBorder,
+                                accentColor.copy(alpha = 0.25f)
                             )
                         )
                     ),
                     shape
-                ),
-            color = SurfaceElevated.copy(alpha = 0.95f),
-            shape = shape
-        ) {
-            when (columnCount) {
-                1 -> OneColumnLayout(tool, accentColor, iconType)
-                2 -> TwoColumnLayout(tool, accentColor, iconType)
-                3 -> ThreeColumnLayout(tool, accentColor, iconType)
-                4 -> FourColumnLayout(tool, accentColor, iconType)
-            }
-        }
-    }
-}
-
-@Composable
-private fun OneColumnLayout(tool: ToolInfo, accentColor: Color, iconType: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        ToolIsometricIcon(iconType = iconType, color = accentColor, size = 52.dp)
-
-        Spacer(Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = tool.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
                 )
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = accentColor.copy(alpha = 0.15f)
+        ) {
+            // Specular Top Shine Line
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.White.copy(alpha = 0.4f),
+                                accentColor.copy(alpha = 0.5f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onLaunch() }
+                    .padding(if (columnCount >= 3) 8.dp else 12.dp)
+            ) {
+                // Top Row: Icon + Name + Modern Animated Chevron Expander
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "READY",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = accentColor,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 9.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        ToolIsometricIcon(
+                            iconType = iconType,
+                            color = accentColor,
+                            size = if (columnCount == 1) 42.dp else if (columnCount == 2) 34.dp else 26.dp
+                        )
+
+                        Spacer(Modifier.width(8.dp))
+
+                        Text(
+                            text = tool.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            maxLines = if (columnCount >= 3) 1 else 2,
+                            overflow = TextOverflow.Ellipsis,
+                            fontSize = if (columnCount == 1) 14.sp else if (columnCount == 2) 12.sp else 10.sp
+                        )
+                    }
+
+                    // Modern Smooth Chevron Expander
+                    TileExpandChevron(
+                        isExpanded = isExpanded,
+                        accentColor = accentColor,
+                        onClick = { isExpanded = !isExpanded }
                     )
                 }
+
+                // Short tagline (hidden in 4-column compact mode for cleanliness)
+                if (columnCount <= 3 && !isExpanded) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = definition?.shortTagline ?: tool.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        fontSize = if (columnCount == 1) 11.sp else 9.sp,
+                        maxLines = if (columnCount == 1) 2 else 1,
+                        overflow = TextOverflow.Ellipsis,
+                        lineHeight = 13.sp
+                    )
+                }
+
+                // Expanded Metadata Drawer
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(SurfaceDeep)
+                                .padding(8.dp)
+                        ) {
+                            Column {
+                                Text(
+                                    text = definition?.description ?: tool.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextPrimary,
+                                    fontSize = 10.sp,
+                                    lineHeight = 14.sp
+                                )
+
+                                Spacer(Modifier.height(6.dp))
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Version: ${tool.version}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = accentColor,
+                                        fontSize = 9.sp,
+                                        fontFamily = FontFamily.Monospace,
+                                        fontWeight = FontWeight.Bold
+                                    )
+
+                                    Text(
+                                        text = definition?.category ?: "Tool Module",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextSecondary,
+                                        fontSize = 9.sp
+                                    )
+                                }
+
+                                if (!definition?.requiredPermissions.isNullOrEmpty()) {
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        text = "Permissions: ${definition.requiredPermissions.joinToString(", ")}",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextSecondary,
+                                        fontSize = 8.sp,
+                                        fontFamily = FontFamily.Monospace
+                                    )
+                                }
+
+                                Spacer(Modifier.height(8.dp))
+
+                                OutlinedButton(
+                                    onClick = {
+                                        definition?.let {
+                                            dev.motherofallapps.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, it)
+                                        }
+                                    },
+                                    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.8f)),
+                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.fillMaxWidth().height(28.dp)
+                                ) {
+                                    Text("📌 Add to Home Screen", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
             }
-
-            Spacer(Modifier.height(4.dp))
-
-            Text(
-                text = tool.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = TextSecondary,
-                fontSize = 11.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            Text(
-                text = "v${tool.version} · Installed · Tap to launch",
-                style = MaterialTheme.typography.labelSmall,
-                color = accentColor,
-                fontSize = 10.sp
-            )
         }
     }
 }
 
+/**
+ * 3D Isometric Search Icon
+ */
 @Composable
-private fun TwoColumnLayout(tool: ToolInfo, accentColor: Color, iconType: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(14.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            ToolIsometricIcon(iconType = iconType, color = accentColor, size = 42.dp)
+private fun IsometricSearchIcon(color: Color) {
+    Canvas(modifier = Modifier.size(20.dp)) {
+        val cx = size.width * 0.4f
+        val cy = size.height * 0.4f
+        val r = size.width * 0.3f
 
-            Surface(
-                shape = RoundedCornerShape(4.dp),
-                color = accentColor.copy(alpha = 0.15f)
-            ) {
-                Text(
-                    text = "READY",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accentColor,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 8.sp,
-                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        Text(
-            text = tool.name,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+        drawCircle(
+            color = color,
+            radius = r,
+            center = Offset(cx, cy),
+            style = Stroke(width = 1.8.dp.toPx())
         )
-
-        Spacer(Modifier.height(4.dp))
-
-        Text(
-            text = tool.description,
-            style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
-            fontSize = 10.sp,
-            maxLines = 3,
-            lineHeight = 14.sp,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = "v${tool.version} · Open →",
-            style = MaterialTheme.typography.labelSmall,
-            color = accentColor,
-            fontWeight = FontWeight.Bold,
-            fontSize = 9.sp
+        drawLine(
+            color = color,
+            start = Offset(cx + r * 0.7f, cy + r * 0.7f),
+            end = Offset(size.width * 0.9f, size.height * 0.9f),
+            strokeWidth = 2.dp.toPx(),
+            cap = StrokeCap.Round
         )
     }
 }
 
+/**
+ * 3D Isometric Settings Gear Icon
+ */
 @Composable
-private fun ThreeColumnLayout(tool: ToolInfo, accentColor: Color, iconType: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        ToolIsometricIcon(iconType = iconType, color = accentColor, size = 36.dp)
+private fun IsometricSettingsIcon(color: Color) {
+    Canvas(modifier = Modifier.size(20.dp)) {
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val outerR = size.width * 0.4f
+        val innerR = size.width * 0.18f
 
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            text = tool.name,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            fontSize = 11.sp,
-            overflow = TextOverflow.Ellipsis
+        drawCircle(
+            color = color,
+            radius = outerR,
+            center = Offset(cx, cy),
+            style = Stroke(width = 1.8.dp.toPx())
+        )
+        drawCircle(
+            color = color,
+            radius = innerR,
+            center = Offset(cx, cy),
+            style = Stroke(width = 1.5.dp.toPx())
         )
 
-        Spacer(Modifier.height(4.dp))
-
-        Text(
-            text = tool.description,
-            style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
-            fontSize = 9.sp,
-            textAlign = TextAlign.Center,
-            maxLines = 2,
-            lineHeight = 12.sp,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-private fun FourColumnLayout(tool: ToolInfo, accentColor: Color, iconType: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        ToolIsometricIcon(iconType = iconType, color = accentColor, size = 28.dp)
-
-        Spacer(Modifier.height(4.dp))
-
-        Text(
-            text = tool.name,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary,
-            textAlign = TextAlign.Center,
-            maxLines = 1,
-            fontSize = 9.sp,
-            overflow = TextOverflow.Ellipsis
-        )
+        // 4 isometric gear teeth notches
+        val toothLen = 3.dp.toPx()
+        drawLine(color, Offset(cx, cy - outerR - toothLen), Offset(cx, cy - outerR + 1), strokeWidth = 2.dp.toPx())
+        drawLine(color, Offset(cx, cy + outerR - 1), Offset(cx, cy + outerR + toothLen), strokeWidth = 2.dp.toPx())
+        drawLine(color, Offset(cx - outerR - toothLen, cy), Offset(cx - outerR + 1, cy), strokeWidth = 2.dp.toPx())
+        drawLine(color, Offset(cx + outerR - 1, cy), Offset(cx + outerR + toothLen, cy), strokeWidth = 2.dp.toPx())
     }
 }
 
@@ -546,22 +583,42 @@ private fun ToolIsometricIcon(
                         color = color.copy(alpha = 0.8f),
                         topLeft = Offset(cx - w * 0.35f, cy - h * 0.3f),
                         size = Size(w * 0.7f, h * 0.6f),
-                        style = Stroke(width = 2.dp.toPx())
+                        style = Stroke(width = 1.5.dp.toPx())
                     )
                     drawLine(
                         color = color,
                         start = Offset(cx - w * 0.25f, cy),
                         end = Offset(cx + w * 0.25f, cy),
-                        strokeWidth = 1.5.dp.toPx()
+                        strokeWidth = 1.2.dp.toPx()
                     )
-                    drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx + w * 0.2f, cy - h * 0.15f))
-                    drawCircle(color = Violet, radius = 2.dp.toPx(), center = Offset(cx + w * 0.2f, cy + h * 0.15f))
+                    drawCircle(color = color, radius = 1.8.dp.toPx(), center = Offset(cx + w * 0.2f, cy - h * 0.15f))
+                }
+                "ftp-client" -> {
+                    // Isometric Cloud & Remote Stream Arrow
+                    val path = Path().apply {
+                        moveTo(cx, cy + h * 0.3f)
+                        lineTo(cx - w * 0.22f, cy + h * 0.05f)
+                        lineTo(cx - w * 0.08f, cy + h * 0.05f)
+                        lineTo(cx - w * 0.08f, cy - h * 0.25f)
+                        lineTo(cx + w * 0.08f, cy - h * 0.25f)
+                        lineTo(cx + w * 0.08f, cy + h * 0.05f)
+                        lineTo(cx + w * 0.22f, cy + h * 0.05f)
+                        close()
+                    }
+                    drawPath(path, color = color, style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round))
+                    drawLine(
+                        color = color.copy(alpha = 0.6f),
+                        start = Offset(cx - w * 0.32f, cy + h * 0.38f),
+                        end = Offset(cx + w * 0.32f, cy + h * 0.38f),
+                        strokeWidth = 1.8.dp.toPx(),
+                        cap = StrokeCap.Round
+                    )
                 }
                 "nfc" -> {
                     // Isometric Concentric NFC Loops
-                    drawCircle(color = color, radius = w * 0.42f, style = Stroke(width = 1.8.dp.toPx()))
-                    drawCircle(color = color.copy(alpha = 0.6f), radius = w * 0.25f, style = Stroke(width = 1.4.dp.toPx()))
-                    drawCircle(color = color, radius = 2.5.dp.toPx())
+                    drawCircle(color = color, radius = w * 0.42f, style = Stroke(width = 1.5.dp.toPx()))
+                    drawCircle(color = color.copy(alpha = 0.6f), radius = w * 0.25f, style = Stroke(width = 1.2.dp.toPx()))
+                    drawCircle(color = color, radius = 2.dp.toPx())
                 }
                 "logs" -> {
                     // Terminal Prompt with Heartbeat pulse
@@ -570,20 +627,84 @@ private fun ToolIsometricIcon(
                         lineTo(cx - w * 0.1f, cy)
                         lineTo(cx - w * 0.35f, cy + h * 0.2f)
                     }
-                    drawPath(path, color = color, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
+                    drawPath(path, color = color, style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round))
                     drawLine(
                         color = color,
                         start = Offset(cx + w * 0.05f, cy + h * 0.2f),
                         end = Offset(cx + w * 0.35f, cy + h * 0.2f),
-                        strokeWidth = 2.dp.toPx()
+                        strokeWidth = 1.5.dp.toPx()
                     )
+                }
+                "sensors" -> {
+                    // 3D Gyroscope / Sensor Orbit Rings & Core Node
+                    drawCircle(color = color.copy(alpha = 0.8f), radius = w * 0.38f, style = Stroke(width = 1.4.dp.toPx()))
+                    drawOval(
+                        color = color.copy(alpha = 0.6f),
+                        topLeft = Offset(cx - w * 0.35f, cy - h * 0.16f),
+                        size = Size(w * 0.7f, h * 0.32f),
+                        style = Stroke(width = 1.2.dp.toPx())
+                    )
+                    drawCircle(color = color, radius = 2.5.dp.toPx(), center = Offset(cx, cy))
+                    drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx, cy - h * 0.38f), end = Offset(cx, cy + h * 0.38f), strokeWidth = 1.dp.toPx())
                 }
                 else -> {
                     // Generic Cyber Chip
-                    drawRect(color = color, topLeft = Offset(cx - w * 0.3f, cy - h * 0.3f), size = Size(w * 0.6f, h * 0.6f), style = Stroke(2.dp.toPx()))
-                    drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx, cy))
+                    drawRect(color = color, topLeft = Offset(cx - w * 0.3f, cy - h * 0.3f), size = Size(w * 0.6f, h * 0.6f), style = Stroke(1.5.dp.toPx()))
+                    drawCircle(color = color, radius = 1.8.dp.toPx(), center = Offset(cx, cy))
                 }
             }
+        }
+    }
+}
+
+/**
+ * Modern animated chevron expander icon for tool cards.
+ * Smoothly rotates 180 degrees with spring physics and glows when active.
+ */
+@Composable
+private fun TileExpandChevron(
+    isExpanded: Boolean,
+    accentColor: Color,
+    onClick: () -> Unit,
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (isExpanded) 180f else 0f,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessLow),
+        label = "chevronRotation"
+    )
+
+    Box(
+        modifier = Modifier
+            .size(26.dp)
+            .clip(CircleShape)
+            .background(if (isExpanded) accentColor.copy(alpha = 0.2f) else SurfaceDeep)
+            .border(
+                BorderStroke(1.dp, if (isExpanded) accentColor else Color(0xFF334155)),
+                CircleShape
+            )
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier
+                .size(12.dp)
+                .graphicsLayer(rotationZ = rotation)
+        ) {
+            val strokeWidth = 1.8.dp.toPx()
+            val w = size.width
+            val h = size.height
+
+            val path = Path().apply {
+                moveTo(w * 0.18f, h * 0.38f)
+                lineTo(w * 0.5f, h * 0.68f)
+                lineTo(w * 0.82f, h * 0.38f)
+            }
+
+            drawPath(
+                path = path,
+                color = if (isExpanded) accentColor else TextSecondary,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+            )
         }
     }
 }

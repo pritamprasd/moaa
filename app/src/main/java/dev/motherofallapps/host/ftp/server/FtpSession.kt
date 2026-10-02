@@ -463,10 +463,10 @@ class FtpSession(
             outStream.flush()
             inStream.close()
 
-            log(FtpLogLevel.TRANSFER, "Download finished: ${target.name} ($totalSent bytes) for $sessionId")
+            log(FtpLogLevel.TRANSFER, "FILE OPERATION [DOWNLOAD] Finished: '${target.name}' ($totalSent bytes) <- '${fileSystem.toVirtualPath(target)}' for $sessionId")
             sendResponse(226, "Transfer complete")
         } catch (e: Exception) {
-            log(FtpLogLevel.ERROR, "Download failed for ${target.name}: ${e.message}")
+            log(FtpLogLevel.ERROR, "FILE OPERATION [DOWNLOAD] Failed for '${target.name}': ${e.message}")
             sendResponse(426, "Data connection error: ${e.message}")
         } finally {
             try { dataSocket.close() } catch (ignored: Exception) {}
@@ -491,7 +491,7 @@ class FtpSession(
         val offset = restartOffset
         restartOffset = 0L
 
-        log(FtpLogLevel.TRANSFER, "Uploading ${target.name} (append: $append) from $sessionId")
+        log(FtpLogLevel.TRANSFER, "FILE OPERATION [UPLOAD] Started: '${target.name}' (append: $append) from $sessionId")
         sendResponse(150, "Opening data connection for file upload")
 
         try {
@@ -510,10 +510,10 @@ class FtpSession(
             outStream.flush()
             outStream.close()
 
-            log(FtpLogLevel.TRANSFER, "Upload finished: ${target.name} ($totalReceived bytes) from $sessionId")
+            log(FtpLogLevel.TRANSFER, "FILE OPERATION [UPLOAD] Finished: '${target.name}' ($totalReceived bytes) -> '${fileSystem.toVirtualPath(target)}' from $sessionId")
             sendResponse(226, "Transfer complete")
         } catch (e: Exception) {
-            log(FtpLogLevel.ERROR, "Upload failed for ${target.name}: ${e.message}")
+            log(FtpLogLevel.ERROR, "FILE OPERATION [UPLOAD] Failed for '${target.name}': ${e.message}")
             sendResponse(426, "Data transfer failed: ${e.message}")
         } finally {
             try { dataSocket.close() } catch (ignored: Exception) {}
@@ -525,7 +525,7 @@ class FtpSession(
         val target = fileSystem.resolve(currentVirtualDir, arg)
         if (target != null && target.exists() && target.isFile) {
             if (target.delete()) {
-                log(FtpLogLevel.INFO, "Deleted file ${target.name} by $sessionId")
+                log(FtpLogLevel.INFO, "FILE OPERATION [DELETE] Deleted file: '${target.name}' at '${fileSystem.toVirtualPath(target)}' by $sessionId")
                 sendResponse(250, "File deleted successfully")
             } else {
                 sendResponse(550, "Failed to delete file")
@@ -539,7 +539,7 @@ class FtpSession(
         val target = fileSystem.resolve(currentVirtualDir, arg)
         if (target != null && !target.exists()) {
             if (target.mkdirs()) {
-                log(FtpLogLevel.INFO, "Created directory ${target.name} by $sessionId")
+                log(FtpLogLevel.INFO, "FILE OPERATION [MKDIR] Created directory: '${target.name}' at '${fileSystem.toVirtualPath(target)}' by $sessionId")
                 sendResponse(257, "\"${fileSystem.toVirtualPath(target)}\" created")
             } else {
                 sendResponse(550, "Failed to create directory")
@@ -553,7 +553,7 @@ class FtpSession(
         val target = fileSystem.resolve(currentVirtualDir, arg)
         if (target != null && target.exists() && target.isDirectory) {
             if (target.delete()) {
-                log(FtpLogLevel.INFO, "Removed directory ${target.name} by $sessionId")
+                log(FtpLogLevel.INFO, "FILE OPERATION [RMDDIR] Removed directory: '${target.name}' by $sessionId")
                 sendResponse(250, "Directory removed")
             } else {
                 sendResponse(550, "Directory not empty or cannot be removed")
@@ -584,7 +584,7 @@ class FtpSession(
         val dest = fileSystem.resolve(currentVirtualDir, arg)
         if (dest != null && !dest.exists()) {
             if (source.renameTo(dest)) {
-                log(FtpLogLevel.INFO, "Renamed ${source.name} to ${dest.name} by $sessionId")
+                log(FtpLogLevel.INFO, "FILE OPERATION [MOVE/RENAME] '${source.name}' -> '${dest.name}' at '${fileSystem.toVirtualPath(dest)}' by $sessionId")
                 sendResponse(250, "File renamed successfully")
             } else {
                 sendResponse(550, "Rename operation failed")

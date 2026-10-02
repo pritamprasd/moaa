@@ -69,15 +69,39 @@ object AppLogHub {
         }
 
         _logs.update { current ->
+            val policy = dev.motherofallapps.host.settings.AppSettingsManager.logRetentionPolicy.value
+            val cutoff = if (policy.durationMs < Long.MAX_VALUE) System.currentTimeMillis() - policy.durationMs else 0L
+
             val updated = ArrayList<ToolLog>(current.size + 1)
             updated.add(entry)
-            updated.addAll(current)
+            for (item in current) {
+                if (cutoff <= 0L || item.timestampMs >= cutoff) {
+                    updated.add(item)
+                }
+            }
+
             if (updated.size > MAX_LOG_BUFFER_SIZE) {
                 updated.subList(0, MAX_LOG_BUFFER_SIZE)
             } else {
                 updated
             }
         }
+    }
+
+    /**
+     * Explicitly prunes logs older than the given retention policy.
+     * @return Number of purged log entries.
+     */
+    fun pruneExpiredLogs(policy: dev.motherofallapps.host.settings.LogRetentionPolicy): Int {
+        if (policy.durationMs == Long.MAX_VALUE) return 0
+        val cutoff = System.currentTimeMillis() - policy.durationMs
+        var purgedCount = 0
+        _logs.update { current ->
+            val filtered = current.filter { it.timestampMs >= cutoff }
+            purgedCount = current.size - filtered.size
+            filtered
+        }
+        return purgedCount
     }
 
     fun clear() {
@@ -88,6 +112,23 @@ object AppLogHub {
             level = LogLevel.INFO,
             tag = "LogHub",
             message = "Log buffer cleared by user"
+        )
+    }
+
+    fun logClipboardOperation(
+        toolId: String,
+        toolName: String,
+        operationType: String, // e.g. "COPY", "PASTE", "CUT"
+        label: String,
+        content: String
+    ) {
+        val preview = if (content.length > 80) content.take(77) + "..." else content
+        log(
+            toolId = toolId,
+            toolName = toolName,
+            level = LogLevel.INFO,
+            tag = "Clipboard",
+            message = "CLIPBOARD OPERATION [$operationType] '$label' (${content.length} chars): \"$preview\""
         )
     }
 

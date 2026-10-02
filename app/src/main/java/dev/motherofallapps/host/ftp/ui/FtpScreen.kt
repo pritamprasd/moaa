@@ -84,7 +84,7 @@ fun FtpScreen(
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = SpaceBackground,
+        containerColor = Color.Transparent,
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -107,7 +107,7 @@ fun FtpScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = SpaceBackground
+                    containerColor = Color.Transparent
                 )
             )
         }
@@ -269,5 +269,12 @@ private fun copyToClipboard(context: Context, label: String, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     val clip = ClipData.newPlainText(label, text)
     clipboard.setPrimaryClip(clip)
+    dev.motherofallapps.host.logging.AppLogHub.logClipboardOperation(
+        toolId = "ftp-server",
+        toolName = "LAN FTP Server",
+        operationType = "COPY",
+        label = label,
+        content = text
+    )
     Toast.makeText(context, "Copied $label to clipboard", Toast.LENGTH_SHORT).show()
 }

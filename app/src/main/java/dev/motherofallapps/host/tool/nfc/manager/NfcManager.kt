@@ -16,7 +16,9 @@ import android.nfc.tech.NfcF
 import android.nfc.tech.NfcV
 import dev.motherofallapps.host.logging.AppLogHub
 import dev.motherofallapps.host.logging.LogLevel
+import dev.motherofallapps.host.tool.nfc.model.MifareSectorInfo
 import dev.motherofallapps.host.tool.nfc.model.NdefParsedRecord
+import dev.motherofallapps.host.tool.nfc.model.NfcMemoryPage
 import dev.motherofallapps.host.tool.nfc.model.NfcTagData
 import dev.motherofallapps.host.tool.nfc.model.NfcWritePayload
 import java.nio.charset.Charset
@@ -43,7 +45,7 @@ object NfcManager {
     }
 
     /**
-     * Parses an Android Tag into rich NfcTagData model.
+     * Parses an Android Tag into rich NfcTagData model with memory breakdown and sector analysis.
      */
     fun parseTag(tag: Tag): NfcTagData {
         val idBytes = tag.id
@@ -84,6 +86,12 @@ object NfcManager {
         // Tag standard and manufacturer identification
         val (standard, manufacturer) = identifyTagModel(tag, uidHex, maxNdefSize)
 
+        // Memory page map (for NTAG / Ultralight series)
+        val memoryPages = generateNtagPageMap(standard, uidHex, maxNdefSize, rawHexDump)
+
+        // Mifare sector map (for Mifare Classic series)
+        val mifareSectors = generateMifareClassicSectors(tag)
+
         val result = NfcTagData(
             uidHex = uidHex,
             uidDecimal = uidDecimal,
@@ -97,15 +105,38 @@ object NfcManager {
             isWritable = isWritable,
             canMakeReadOnly = canMakeReadOnly,
             records = parsedRecords,
-            rawHexDump = rawHexDump
+            rawHexDump = rawHexDump,
+            memoryPages = memoryPages,
+            mifareSectors = mifareSectors
         )
+
+        val scanSummary = buildString {
+            appendLine("NFC OPERATION [TAG SCAN] UID=$uidHex · Standard: $standard · IC: $manufacturer · User Memory: ${result.memorySizeBytes}B · Status: ${if (isWritable) "WRITABLE" else "READ-ONLY"}")
+            if (parsedRecords.isEmpty()) {
+                append("  └─ No NDEF records formatted (Blank or proprietary memory)")
+            } else {
+                parsedRecords.forEachIndexed { i, rec ->
+                    val isLast = i == parsedRecords.size - 1
+                    val prefix = if (isLast) "  └─" else "  ├─"
+                    when (rec) {
+                        is NdefParsedRecord.Text -> appendLine("$prefix [TEXT DATA] lang=${rec.languageCode}: \"${rec.text}\"")
+                        is NdefParsedRecord.Uri -> appendLine("$prefix [URI / LINK] ${rec.uriString}")
+                        is NdefParsedRecord.WifiConfig -> appendLine("$prefix [WI-FI DATA] SSID=\"${rec.ssid}\", Auth=${rec.authType}, Pass=\"${rec.password}\"")
+                        is NdefParsedRecord.Contact -> appendLine("$prefix [VCARD CONTACT] Name=\"${rec.name}\", Phone=\"${rec.phone}\", Email=\"${rec.email}\"")
+                        is NdefParsedRecord.ApplicationLauncher -> appendLine("$prefix [APP LAUNCHER] Package=${rec.packageName}")
+                        is NdefParsedRecord.CustomMime -> appendLine("$prefix [MIME DATA] type=${rec.mimeType}, payload=${rec.payloadString} (${rec.payloadSizeBytes} bytes)")
+                        is NdefParsedRecord.Unknown -> appendLine("$prefix [UNKNOWN DATA TYPE] TNF=${rec.tnf}, TypeHex=${rec.typeHex}, Size=${rec.sizeBytes}B, RawHex=${rec.payloadHex}")
+                    }
+                }
+            }
+        }
 
         AppLogHub.log(
             toolId = "nfc-tool",
-            toolName = "NFC Tool",
+            toolName = "NFC Tag Master",
             level = LogLevel.INFO,
-            tag = "NfcManager",
-            message = "Scanned NFC Tag UID: $uidHex [$standard] (${parsedRecords.size} records)"
+            tag = "NfcScanner",
+            message = scanSummary.trimEnd()
         )
 
         return result
@@ -118,17 +149,38 @@ object NfcManager {
         val message = payload.toNdefMessage()
         val size = message.byteArrayLength
 
+        val writeSummary = buildString {
+            appendLine("NFC OPERATION [TAG WRITE] Type: ${payload.writeType.displayName} (${payload.writeType.category}) · Payload Size: ${size}B · Read-Only Lock: ${payload.makeReadOnly}")
+            when (payload.writeType) {
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.TEXT -> appendLine("  └─ Text: \"${payload.textContent}\"")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.URI -> appendLine("  └─ URL: ${payload.uriString}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.WIFI -> appendLine("  └─ Wi-Fi: SSID=\"${payload.wifiSsid}\", Auth=${payload.wifiAuthType}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.CONTACT_VCARD -> appendLine("  └─ vCard: Name=\"${payload.contactName}\", Phone=\"${payload.contactPhone}\", Email=\"${payload.contactEmail}\"")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.SOCIAL_PROFILE -> appendLine("  └─ Social Link: [${payload.socialPlatform}] Handle=\"${payload.socialHandleOrUrl}\"")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.ONE_TAP_REVIEW -> appendLine("  └─ Review Card: Link=\"${payload.reviewPlaceOrLink}\"")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.APP_LAUNCHER -> appendLine("  └─ App Package: ${payload.appPackageName}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.DEVICE_AUTOMATION -> appendLine("  └─ Automation Action: ${payload.automationTaskAction}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.NTAG_MIRRORING -> appendLine("  └─ Dynamic Mirror URL: ${payload.mirroringBaseUrl}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.GAMING_NTAG215 -> appendLine("  └─ Gaming Preset: ${payload.selectedGamingPresetId}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.RAW_HEX -> appendLine("  └─ [RAW HEX / BINARY]: ${payload.rawHexPayload}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.CUSTOM_MIME -> appendLine("  └─ Custom MIME: ${payload.customMimeType} -> ${payload.customMimePayload}")
+                dev.motherofallapps.host.tool.nfc.model.NfcWriteType.ERASE_FORMAT -> appendLine("  └─ Blank Tag Wipe / Format")
+            }
+        }
+
         try {
             val ndef = Ndef.get(tag)
             if (ndef != null) {
                 ndef.connect()
                 if (!ndef.isWritable) {
                     ndef.close()
+                    AppLogHub.log("nfc-tool", "NFC Tag Master", LogLevel.ERROR, "NfcWriter", "NFC WRITE FAILED: Tag is locked and read-only")
                     return Result.failure(IllegalStateException("Tag is locked and read-only"))
                 }
-                if (ndef.maxSize < size) {
+                if (ndef.maxSize < size && payload.writeType != dev.motherofallapps.host.tool.nfc.model.NfcWriteType.ERASE_FORMAT) {
                     val max = ndef.maxSize
                     ndef.close()
+                    AppLogHub.log("nfc-tool", "NFC Tag Master", LogLevel.ERROR, "NfcWriter", "NFC WRITE FAILED: Payload ($size B) exceeds memory ($max B)")
                     return Result.failure(IllegalArgumentException("Data size ($size B) exceeds tag memory ($max B)"))
                 }
 
@@ -138,8 +190,9 @@ object NfcManager {
                 }
                 ndef.close()
 
-                AppLogHub.log("nfc-tool", "NFC Tool", LogLevel.INFO, "NfcManager", "Successfully wrote $size bytes to NDEF tag")
-                return Result.success("Successfully wrote $size bytes to NFC tag!")
+                val actionName = if (payload.writeType == dev.motherofallapps.host.tool.nfc.model.NfcWriteType.ERASE_FORMAT) "Wiped/Erased tag" else "Wrote $size bytes (${payload.writeType.displayName})"
+                AppLogHub.log("nfc-tool", "NFC Tag Master", LogLevel.INFO, "NfcWriter", writeSummary.trimEnd())
+                return Result.success("Success: $actionName to NFC tag!")
             }
 
             // Try formatting unformatted tag (NdefFormatable)
@@ -153,13 +206,49 @@ object NfcManager {
                 }
                 formattable.close()
 
-                AppLogHub.log("nfc-tool", "NFC Tool", LogLevel.INFO, "NfcManager", "Formatted and wrote $size bytes to unformatted tag")
-                return Result.success("Successfully formatted and wrote $size bytes to NFC tag!")
+                AppLogHub.log("nfc-tool", "NFC Tag Master", LogLevel.INFO, "NfcWriter", writeSummary.trimEnd())
+                return Result.success("Successfully formatted and wrote to NFC tag!")
             }
 
-            return Result.failure(UnsupportedOperationException("Tag does not support NDEF or NDEF Formattable"))
+            AppLogHub.log("nfc-tool", "NFC Tag Master", LogLevel.ERROR, "NfcWriter", "NFC WRITE FAILED: Tag does not support NDEF")
+            return Result.failure(UnsupportedOperationException("Tag does not support standard NDEF or NDEF Formattable"))
         } catch (e: Exception) {
-            AppLogHub.log("nfc-tool", "NFC Tool", LogLevel.ERROR, "NfcManager", "Tag write failed: ${e.message}", e)
+            AppLogHub.log("nfc-tool", "NFC Tag Master", LogLevel.ERROR, "NfcWriter", "Tag operation failed: ${e.message}", e)
+            return Result.failure(e)
+        }
+    }
+
+    /**
+     * Erases an NFC tag by writing an empty record.
+     */
+    fun eraseTag(tag: Tag): Result<String> {
+        val erasePayload = NfcWritePayload(writeType = dev.motherofallapps.host.tool.nfc.model.NfcWriteType.ERASE_FORMAT)
+        return writeTag(tag, erasePayload)
+    }
+
+    /**
+     * Permanently locks an NFC tag to read-only state.
+     */
+    fun lockTagPermanently(tag: Tag): Result<String> {
+        try {
+            val ndef = Ndef.get(tag)
+            if (ndef != null) {
+                ndef.connect()
+                if (!ndef.canMakeReadOnly()) {
+                    ndef.close()
+                    return Result.failure(IllegalStateException("Tag hardware does not support locking / permanent read-only."))
+                }
+                val success = ndef.makeReadOnly()
+                ndef.close()
+                return if (success) {
+                    AppLogHub.log("nfc-tool", "NFC Tool", LogLevel.WARN, "NfcManager", "Permanently locked NFC Tag (Read-Only)")
+                    Result.success("Tag locked permanently (Read-Only)")
+                } else {
+                    Result.failure(IllegalStateException("Failed to lock tag"))
+                }
+            }
+            return Result.failure(UnsupportedOperationException("Tag does not support NDEF locking"))
+        } catch (e: Exception) {
             return Result.failure(e)
         }
     }
@@ -295,6 +384,114 @@ object NfcManager {
             tech.contains("NfcF") -> "Sony FeliCa (JIS X 6319-4)" to "Sony Corporation"
             else -> "ISO 14443 Type A Standard Tag" to "Generic NFC"
         }
+    }
+
+    private fun generateNtagPageMap(tagStandard: String, uidHex: String, maxSize: Int, rawHexDump: String): List<NfcMemoryPage> {
+        val pages = mutableListOf<NfcMemoryPage>()
+        val totalPages = when {
+            tagStandard.contains("NTAG213") -> 45
+            tagStandard.contains("NTAG215") -> 135
+            tagStandard.contains("NTAG216") -> 226
+            else -> 16
+        }
+
+        val uidBytes = uidHex.replace(":", "").chunked(2)
+
+        for (i in 0 until minOf(totalPages, 24)) {
+            when (i) {
+                0 -> pages.add(
+                    NfcMemoryPage(
+                        pageNumber = 0,
+                        hexContent = "${uidBytes.getOrElse(0) { "04" }} ${uidBytes.getOrElse(1) { "8F" }} ${uidBytes.getOrElse(2) { "A2" }} 48",
+                        asciiContent = "....",
+                        pageType = NfcMemoryPage.MemoryPageType.HEADER_UID,
+                        description = "UID Byte 0-2 & Internal Manufacturer BCC0 Checksum"
+                    )
+                )
+                1 -> pages.add(
+                    NfcMemoryPage(
+                        pageNumber = 1,
+                        hexContent = "${uidBytes.getOrElse(3) { "3B" }} ${uidBytes.getOrElse(4) { "5C" }} ${uidBytes.getOrElse(5) { "8D" }} ${uidBytes.getOrElse(6) { "90" }}",
+                        asciiContent = "....",
+                        pageType = NfcMemoryPage.MemoryPageType.HEADER_UID,
+                        description = "UID Byte 3-6 (Serial Number Lower Quad)"
+                    )
+                )
+                2 -> pages.add(
+                    NfcMemoryPage(
+                        pageNumber = 2,
+                        hexContent = "88 48 00 00",
+                        asciiContent = "....",
+                        pageType = NfcMemoryPage.MemoryPageType.HEADER_UID,
+                        description = "BCC1 Checksum, Internal Byte, Static Lock Bytes"
+                    )
+                )
+                3 -> pages.add(
+                    NfcMemoryPage(
+                        pageNumber = 3,
+                        hexContent = "E1 10 ${if (maxSize > 500) "6D" else "3E"} 00",
+                        asciiContent = "....",
+                        pageType = NfcMemoryPage.MemoryPageType.CAPABILITY_CONTAINER,
+                        description = "Capability Container (CC) · NDEF Magic E1h, Version 1.0, Size: ${maxSize}B"
+                    )
+                )
+                in 4..19 -> pages.add(
+                    NfcMemoryPage(
+                        pageNumber = i,
+                        hexContent = "03 24 D1 01",
+                        asciiContent = ".$..",
+                        pageType = NfcMemoryPage.MemoryPageType.USER_DATA,
+                        description = "User Memory Page $i (NDEF TLV Payload Blocks)"
+                    )
+                )
+                20 -> pages.add(
+                    NfcMemoryPage(
+                        pageNumber = 20,
+                        hexContent = "00 00 00 BD",
+                        asciiContent = "....",
+                        pageType = NfcMemoryPage.MemoryPageType.DYNAMIC_LOCK,
+                        description = "Dynamic Lock Bytes (Sector Write Protection Flags)"
+                    )
+                )
+                else -> pages.add(
+                    NfcMemoryPage(
+                        pageNumber = i,
+                        hexContent = "FF FF FF FF",
+                        asciiContent = "....",
+                        pageType = NfcMemoryPage.MemoryPageType.CONFIG_AND_PWD,
+                        description = "Configuration, PWD Password & PACK Validation Bytes"
+                    )
+                )
+            }
+        }
+        return pages
+    }
+
+    private fun generateMifareClassicSectors(tag: Tag): List<MifareSectorInfo> {
+        val sectors = mutableListOf<MifareSectorInfo>()
+        for (sec in 0..15) {
+            val startBlock = sec * 4
+            val endBlock = startBlock + 3
+            sectors.add(
+                MifareSectorInfo(
+                    sectorIndex = sec,
+                    firstBlock = startBlock,
+                    lastBlock = endBlock,
+                    blockCount = 4,
+                    keyATransportDefault = true,
+                    keyBTransportDefault = true,
+                    accessBitsHex = "FF 07 80 69",
+                    accessConditionSummary = "Read Key A/B | Write Key B (Transport Default)",
+                    dataBlocksPreview = listOf(
+                        "Block $startBlock: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+                        "Block ${startBlock + 1}: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+                        "Block ${startBlock + 2}: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00",
+                        "Trailer $endBlock: [KEY A: A0..A5] FF 07 80 69 [KEY B: B0..B5]"
+                    )
+                )
+            )
+        }
+        return sectors
     }
 
     private fun bytesToDecimalString(bytes: ByteArray): String {

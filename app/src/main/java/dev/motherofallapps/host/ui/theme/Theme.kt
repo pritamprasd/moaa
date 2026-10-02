@@ -4,30 +4,31 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import dev.motherofallapps.host.ftp.ui.components.LiquidGlassBackground
 
 private val DarkColorScheme = darkColorScheme(
     primary = Cyan,
-    onPrimary = Color(0xFF062A36),
+    onPrimary = Color(0xFF041822),
     primaryContainer = CyanDim,
     onPrimaryContainer = Color(0xFFCFF3FF),
     secondary = Violet,
-    onSecondary = Color(0xFF2A2350),
-    secondaryContainer = Color(0xFF3B3565),
-    onSecondaryContainer = Color(0xFFE7E0FF),
+    onSecondary = Color(0xFF20163E),
+    secondaryContainer = Color(0xFF2E2452),
+    onSecondaryContainer = Color(0xFFEDE9FE),
     tertiary = Rose,
-    onTertiary = Color(0xFF3B0F2E),
-    background = SpaceBackground,
+    onTertiary = Color(0xFF380820),
+    background = Color.Transparent,
     onBackground = TextPrimary,
-    surface = SurfaceDeep,
+    surface = GlassSurfaceElevated,
     onSurface = TextPrimary,
-    surfaceVariant = SurfaceVariantDeep,
+    surfaceVariant = GlassSurface,
     onSurfaceVariant = TextSecondary,
-    outline = OutlineDeep,
-    surfaceContainerLowest = SpaceBackground,
-    surfaceContainerLow = SurfaceDeep,
-    surfaceContainer = SurfaceElevated,
-    surfaceContainerHigh = SurfaceElevated,
-    surfaceContainerHighest = SurfaceVariantDeep,
+    outline = GlassBorder,
+    surfaceContainerLowest = Color.Transparent,
+    surfaceContainerLow = GlassSurfaceDeep,
+    surfaceContainer = GlassSurface,
+    surfaceContainerHigh = GlassSurfaceElevated,
+    surfaceContainerHighest = Color(0x551E293B),
 )
 
 @Composable
@@ -35,6 +36,9 @@ fun AppTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = DarkColorScheme,
         typography = AppTypography,
-        content = content,
-    )
+    ) {
+        LiquidGlassBackground {
+            content()
+        }
+    }
 }

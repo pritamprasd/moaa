@@ -15,15 +15,17 @@ import dev.motherofallapps.host.tool.nfc.manager.NfcManager
 class MainActivity : ComponentActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
+    private val container = HostApplicationContainer()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         handleNfcIntent(intent)
+        handleShortcutIntent(intent)
 
         setContent {
-            HostApp(container = remember { HostApplicationContainer() })
+            HostApp(container = container)
         }
     }
 
@@ -40,6 +42,14 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleNfcIntent(intent)
+        handleShortcutIntent(intent)
+    }
+
+    private fun handleShortcutIntent(intent: Intent?) {
+        val targetToolId = intent?.getStringExtra(dev.motherofallapps.host.shortcut.ShortcutUtils.EXTRA_TARGET_TOOL_ID)
+        if (!targetToolId.isNullOrBlank()) {
+            container.state.setPendingTargetToolId(targetToolId)
+        }
     }
 
     private fun enableNfcReaderMode() {

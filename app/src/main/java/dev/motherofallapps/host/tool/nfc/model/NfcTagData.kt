@@ -5,7 +5,7 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Detailed representation of a scanned NFC tag.
+ * Detailed representation of a scanned NFC tag with silicon breakdown.
  */
 data class NfcTagData(
     val uidHex: String,
@@ -22,10 +22,15 @@ data class NfcTagData(
     val records: List<NdefParsedRecord>,
     val scannedAtEpochMs: Long = System.currentTimeMillis(),
     val rawHexDump: String = "",
+    val memoryPages: List<NfcMemoryPage> = emptyList(),
+    val mifareSectors: List<MifareSectorInfo> = emptyList(),
 ) {
     val formattedScannedTime: String
         get() = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(scannedAtEpochMs))
 
     val technologiesString: String
         get() = technologies.joinToString(", ")
+
+    val isAmiiboCompatible: Boolean
+        get() = (tagStandard.contains("NTAG215", ignoreCase = true) || memorySizeBytes in 490..524)
 }

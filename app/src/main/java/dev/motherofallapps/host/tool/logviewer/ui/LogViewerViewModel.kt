@@ -2,6 +2,7 @@ package dev.motherofallapps.host.tool.logviewer.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.motherofallapps.host.config.ToolRegistryConfig
 import dev.motherofallapps.host.logging.AppLogHub
 import dev.motherofallapps.host.logging.LogLevel
 import dev.motherofallapps.host.logging.ToolLog
@@ -13,8 +14,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 data class LogFilterState(
-    val selectedToolId: String? = null,
-    val selectedLevel: LogLevel? = null,
+    val selectedToolIds: Set<String> = emptySet(), // Empty means all tools
+    val selectedLevels: Set<LogLevel> = emptySet(), // Empty means all levels
     val searchQuery: String = "",
     val isAutoScroll: Boolean = true,
 )
@@ -37,8 +38,8 @@ class LogViewerViewModel : ViewModel() {
 
     val filteredLogs: StateFlow<List<ToolLog>> = combine(rawLogs, _filterState) { logs, filter ->
         logs.filter { log ->
-            val matchesTool = filter.selectedToolId == null || log.toolId == filter.selectedToolId
-            val matchesLevel = filter.selectedLevel == null || log.level == filter.selectedLevel
+            val matchesTool = filter.selectedToolIds.isEmpty() || filter.selectedToolIds.contains(log.toolId)
+            val matchesLevel = filter.selectedLevels.isEmpty() || filter.selectedLevels.contains(log.level)
             val matchesSearch = filter.searchQuery.isBlank() ||
                     log.message.contains(filter.searchQuery, ignoreCase = true) ||
                     log.tag.contains(filter.searchQuery, ignoreCase = true) ||
@@ -59,12 +60,43 @@ class LogViewerViewModel : ViewModel() {
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LogViewerStats())
 
-    fun setToolFilter(toolId: String?) {
-        _filterState.value = _filterState.value.copy(selectedToolId = toolId)
+    fun toggleLevel(level: LogLevel) {
+        val current = _filterState.value.selectedLevels
+        val updated = if (current.contains(level)) current - level else current + level
+        _filterState.value = _filterState.value.copy(selectedLevels = updated)
     }
 
-    fun setLevelFilter(level: LogLevel?) {
-        _filterState.value = _filterState.value.copy(selectedLevel = level)
+    fun clearLevelFilters() {
+        _filterState.value = _filterState.value.copy(selectedLevels = emptySet())
+    }
+
+    fun selectAllLevels() {
+        _filterState.value = _filterState.value.copy(selectedLevels = LogLevel.entries.toSet())
+    }
+
+    fun toggleTool(toolId: String) {
+        val current = _filterState.value.selectedToolIds
+        val updated = if (current.contains(toolId)) current - toolId else current + toolId
+        _filterState.value = _filterState.value.copy(selectedToolIds = updated)
+    }
+
+    fun clearToolFilters() {
+        _filterState.value = _filterState.value.copy(selectedToolIds = emptySet())
+    }
+
+    fun getAvailableTools(): List<Pair<String, String>> {
+        val list = mutableListOf(
+            "host-system" to "System Core"
+        )
+        ToolRegistryConfig.INSTALLED_TOOLS.forEach {
+            list.add(it.id to it.name)
+        }
+        AppLogHub.getKnownTools().forEach { toolId ->
+            if (list.none { it.first == toolId }) {
+                list.add(toolId to toolId.replaceFirstChar { it.uppercase() })
+            }
+        }
+        return list
     }
 
     fun setSearchQuery(query: String) {

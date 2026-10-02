@@ -22,6 +22,10 @@ val GlassSurfaceElevated = Color(0x481E293B) // ~28% translucent frost
 val GlassSurfaceDeep = Color(0x220F172A) // ~13% translucent deep frost
 val GlassSurfaceUltra = Color(0x180F172A) // ~9% ultra subtle glass
 
+// High-contrast, low-transparency dialog surface (eliminates background bleed-through)
+val GlassDialogSurface = Color(0xF00F172A) // ~94% solid acrylic dark slate
+val GlassDialogSurfaceSolid = Color(0xFF0F172A)
+
 // Glass Specular Borders & Highlights
 val GlassBorder = Color(0x2EFFFFFF) // Crisp translucent light refraction
 val GlassBorderHighlight = Color(0x55FFFFFF) // Specular top edge glint

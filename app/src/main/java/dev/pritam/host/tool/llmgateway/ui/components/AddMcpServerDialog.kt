@@ -64,7 +64,7 @@ fun AddMcpServerDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = shape,
-            color = SurfaceDeep,
+            color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(1.dp, dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush),
             modifier = Modifier.fillMaxWidth()
         ) {

@@ -65,7 +65,7 @@ fun PersonaConfigDialog(
                 .fillMaxWidth()
                 .clip(shape)
                 .border(BorderStroke(1.dp, RainbowGlassBorderBrush), shape),
-            color = GlassSurfaceElevated,
+            color = MaterialTheme.colorScheme.surface,
             shape = shape
         ) {
             Column(

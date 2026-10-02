@@ -3,10 +3,13 @@ package dev.pritam.host.ui.theme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.pritam.host.ftp.ui.components.LiquidGlassBackground
+import dev.pritam.host.settings.AppSettingsManager
 
-private val DarkColorScheme = darkColorScheme(
+private val BaseDarkColorScheme = darkColorScheme(
     primary = Cyan,
     onPrimary = Color(0xFF041822),
     primaryContainer = CyanDim,
@@ -19,22 +22,32 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = Color(0xFF380820),
     background = Color.Transparent,
     onBackground = TextPrimary,
-    surface = GlassSurfaceElevated,
+    surface = GlassDialogSurface,
     onSurface = TextPrimary,
     surfaceVariant = GlassSurface,
     onSurfaceVariant = TextSecondary,
     outline = GlassBorder,
     surfaceContainerLowest = Color.Transparent,
     surfaceContainerLow = GlassSurfaceDeep,
-    surfaceContainer = GlassSurface,
-    surfaceContainerHigh = GlassSurfaceElevated,
-    surfaceContainerHighest = Color(0x551E293B),
+    surfaceContainer = GlassDialogSurface,
+    surfaceContainerHigh = GlassDialogSurface,
+    surfaceContainerHighest = GlassDialogSurface,
 )
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
+    val dialogOpacity by AppSettingsManager.dialogOpacityPercent.collectAsStateWithLifecycle()
+    val dynamicDialogSurface = AppSettingsManager.getDialogSurfaceColor(dialogOpacity)
+
+    val colorScheme = BaseDarkColorScheme.copy(
+        surface = dynamicDialogSurface,
+        surfaceContainer = dynamicDialogSurface,
+        surfaceContainerHigh = dynamicDialogSurface,
+        surfaceContainerHighest = dynamicDialogSurface,
+    )
+
     MaterialTheme(
-        colorScheme = DarkColorScheme,
+        colorScheme = colorScheme,
         typography = AppTypography,
     ) {
         LiquidGlassBackground {

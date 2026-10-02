@@ -94,6 +94,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val currentColumns by AppSettingsManager.galleryColumnCount.collectAsStateWithLifecycle()
     val currentPadding by AppSettingsManager.dashboardPaddingDp.collectAsStateWithLifecycle()
+    val currentOpacity by AppSettingsManager.dialogOpacityPercent.collectAsStateWithLifecycle()
     val currentRetention by AppSettingsManager.logRetentionPolicy.collectAsStateWithLifecycle()
 
     // ── Section expanded state ─────────────────────────────────────────────
@@ -155,6 +156,14 @@ fun SettingsScreen(
                         currentPadding = currentPadding,
                         onPaddingChange = {
                             AppSettingsManager.setDashboardPadding(it)
+                        }
+                    )
+                }
+                item {
+                    DialogOpacitySettingsCard(
+                        currentOpacity = currentOpacity,
+                        onOpacityChange = {
+                            AppSettingsManager.setDialogOpacity(it)
                         }
                     )
                 }
@@ -554,6 +563,161 @@ private fun DashboardPaddingSettingsCard(
                                 .padding(vertical = 6.dp)
                                 .fillMaxWidth(),
                             textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DialogOpacitySettingsCard(
+    currentOpacity: Int,
+    onOpacityChange: (Int) -> Unit,
+) {
+    val opacityDescription = when {
+        currentOpacity <= 60 -> "High Transparency (Translucent)"
+        currentOpacity <= 80 -> "Medium Frost (Aero Glass)"
+        currentOpacity <= 95 -> "High Contrast Acrylic (Recommended)"
+        else -> "100% Solid Opaque"
+    }
+
+    IsometricCard(glowColor = Cyan) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "DIALOG & POPUP OPACITY",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Cyan,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Cyan.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, Cyan.copy(alpha = 0.3f))
+                ) {
+                    Text(
+                        text = "$currentOpacity%",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Cyan,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Controls background bleed-through for dialogs and popups ($opacityDescription)",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            // Opacity Slider (50% to 100% in steps of 5%)
+            Slider(
+                value = currentOpacity.toFloat(),
+                onValueChange = { onOpacityChange(it.toInt()) },
+                valueRange = 50f..100f,
+                steps = 9,
+                colors = SliderDefaults.colors(
+                    thumbColor = Cyan,
+                    activeTrackColor = Cyan,
+                    inactiveTrackColor = GlassBorder
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(Modifier.height(6.dp))
+
+            // Preset Quick Buttons Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    70 to "Frost (70%)",
+                    94 to "Focus (94%)",
+                    100 to "Solid (100%)"
+                ).forEach { (opacityVal, label) ->
+                    val isSel = currentOpacity == opacityVal
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
+                        border = BorderStroke(1.dp, if (isSel) Cyan else GlassBorder),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(6.dp))
+                            .clickable { onOpacityChange(opacityVal) }
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSel) Cyan else TextSecondary,
+                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 10.sp,
+                            modifier = Modifier
+                                .padding(vertical = 6.dp)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Live Dialog Surface Preview Box
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = AppSettingsManager.getDialogSurfaceColor(currentOpacity),
+                border = BorderStroke(1.dp, RainbowGlassBorderBrush),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "PREVIEW: Dialog Content Clarity",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        )
+                        Text(
+                            text = "Background visibility is dimmed according to this setting",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            fontSize = 10.sp
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = Cyan.copy(alpha = 0.2f),
+                        border = BorderStroke(1.dp, Cyan)
+                    ) {
+                        Text(
+                            text = "OK",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Cyan,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 10.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 }

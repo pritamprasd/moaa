@@ -67,7 +67,7 @@ fun ChatSessionDrawer(
                 .fillMaxWidth()
                 .clip(shape)
                 .border(BorderStroke(1.dp, RainbowGlassBorderBrush), shape),
-            color = GlassSurfaceElevated,
+            color = MaterialTheme.colorScheme.surface,
             shape = shape
         ) {
             Column(modifier = Modifier.padding(18.dp)) {
@@ -202,7 +202,7 @@ fun ChatSessionDrawer(
                     .fillMaxWidth()
                     .clip(shape)
                     .border(BorderStroke(1.dp, Cyan), shape),
-                color = GlassSurfaceElevated,
+                color = MaterialTheme.colorScheme.surface,
                 shape = shape
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {

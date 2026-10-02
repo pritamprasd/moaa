@@ -1524,7 +1524,7 @@ private fun WriteTagWaitingDialog(
     Dialog(onDismissRequest = onCancel) {
         Surface(
             modifier = Modifier.fillMaxWidth().clip(shape).border(BorderStroke(1.dp, Rose), shape),
-            color = SurfaceElevated,
+            color = MaterialTheme.colorScheme.surface,
             shape = shape
         ) {
             Column(modifier = Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {

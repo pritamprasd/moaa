@@ -67,7 +67,7 @@ fun AddCloudProfileDialog(
                 .fillMaxWidth()
                 .clip(shape)
                 .border(BorderStroke(1.dp, RainbowGlassBorderBrush), shape),
-            color = GlassSurfaceElevated,
+            color = MaterialTheme.colorScheme.surface,
             shape = shape
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
@@ -228,7 +228,7 @@ fun AddDesktopHostDialog(
                 .fillMaxWidth()
                 .clip(shape)
                 .border(BorderStroke(1.dp, GlassBorderHighlight), shape),
-            color = GlassSurfaceElevated,
+            color = MaterialTheme.colorScheme.surface,
             shape = shape
         ) {
             Column(modifier = Modifier.padding(20.dp)) {

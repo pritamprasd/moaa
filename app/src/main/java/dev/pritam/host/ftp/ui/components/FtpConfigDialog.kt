@@ -62,7 +62,7 @@ fun FtpConfigDialog(
                 .fillMaxWidth()
                 .clip(shape)
                 .border(BorderStroke(1.dp, Cyan.copy(alpha = 0.5f)), shape),
-            color = SurfaceElevated,
+            color = MaterialTheme.colorScheme.surface,
             shape = shape,
         ) {
             Column(modifier = Modifier.padding(22.dp)) {

@@ -23,6 +23,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
 
+        // Initialize App Settings persistence and values
+        dev.pritam.host.settings.AppSettingsManager.init(applicationContext)
+
         // Initialize Ghost Agent repository and notification channel
         GhostAgentManager.init(applicationContext)
 

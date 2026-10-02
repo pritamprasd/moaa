@@ -110,6 +110,18 @@ object ToolRegistryConfig {
             iconType = "brain",
             accentColorHex = 0xFF10B981, // Emerald
             requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
+        ),
+        ToolDefinition(
+            id = "llm-chat",
+            name = "CyberChat AI",
+            shortTagline = "Local LLM chat studio powered by LLM Gateway failover proxy.",
+            description = "Full-featured interactive conversational AI client powered by the LLM Gateway loopback proxy. Features real-time token streaming, multi-turn thread history management, customizable AI personas (Code Architect, Cyberpunk Hacker, Hardware Specialist, Creative Muse), markdown & code formatting with one-click copy, temperature sliders, and instant failover between Cloud Gemini/OpenAI and Desktop Ollama.",
+            version = "1.0.0",
+            category = "AI & Local LLM Gateway",
+            author = "AI Core",
+            iconType = "chat",
+            accentColorHex = 0xFF38BDF8, // Sky Cyan
+            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE")
         )
     )
 

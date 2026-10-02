@@ -289,6 +289,7 @@ private fun ExpandableToolGalleryCard(
         "log-viewer" -> Violet
         "sensors" -> Color(0xFFF59E0B)
         "llm-gateway" -> Color(0xFF10B981)
+        "llm-chat" -> Color(0xFF38BDF8)
         else -> Cyan
     }
 
@@ -651,6 +652,23 @@ private fun ToolIsometricIcon(
                     drawCircle(color = color, radius = 2.8.dp.toPx(), center = leftNode)
                     drawCircle(color = color, radius = 2.8.dp.toPx(), center = rightNode)
                     drawCircle(color = color, radius = 3.8.dp.toPx(), center = centerNode)
+                }
+                "chat" -> {
+                    // Isometric Speech Bubble with glowing communication nodes
+                    val bubblePath = Path().apply {
+                        moveTo(cx - w * 0.35f, cy - h * 0.28f)
+                        lineTo(cx + w * 0.35f, cy - h * 0.28f)
+                        lineTo(cx + w * 0.35f, cy + h * 0.12f)
+                        lineTo(cx - w * 0.05f, cy + h * 0.12f)
+                        lineTo(cx - w * 0.25f, cy + h * 0.32f)
+                        lineTo(cx - w * 0.2f, cy + h * 0.12f)
+                        lineTo(cx - w * 0.35f, cy + h * 0.12f)
+                        close()
+                    }
+                    drawPath(bubblePath, color = color.copy(alpha = 0.85f), style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round))
+                    drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx - w * 0.16f, cy - h * 0.08f))
+                    drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx, cy - h * 0.08f))
+                    drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx + w * 0.16f, cy - h * 0.08f))
                 }
                 else -> {
                     // Generic Cyber Chip

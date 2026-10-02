@@ -12,6 +12,7 @@ import dev.motherofallapps.host.ftp.ui.FtpScreen
 import dev.motherofallapps.host.host.HostAppState
 import dev.motherofallapps.host.settings.ui.SettingsScreen
 import dev.motherofallapps.host.tool.ftpclient.ui.FtpClientScreen
+import dev.motherofallapps.host.tool.llmchat.ui.LlmChatScreen
 import dev.motherofallapps.host.tool.llmgateway.ui.LlmGatewayScreen
 import dev.motherofallapps.host.tool.logviewer.ui.LogViewerScreen
 import dev.motherofallapps.host.tool.nfc.ui.NfcScreen
@@ -26,6 +27,7 @@ object HostRoutes {
     const val LOG_VIEWER = "log_viewer"
     const val SENSORS = "sensors"
     const val LLM_GATEWAY = "llm_gateway"
+    const val LLM_CHAT = "llm_chat"
     const val SETTINGS = "settings"
 }
 
@@ -46,6 +48,7 @@ fun HostNavHost(
                 "log-viewer" -> HostRoutes.LOG_VIEWER
                 "sensors" -> HostRoutes.SENSORS
                 "llm-gateway" -> HostRoutes.LLM_GATEWAY
+                "llm-chat" -> HostRoutes.LLM_CHAT
                 else -> null
             }
             if (route != null) {
@@ -74,6 +77,7 @@ fun HostNavHost(
                         "log-viewer" -> navController.navigate(HostRoutes.LOG_VIEWER)
                         "sensors" -> navController.navigate(HostRoutes.SENSORS)
                         "llm-gateway" -> navController.navigate(HostRoutes.LLM_GATEWAY)
+                        "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
                     }
                 },
                 onOpenSettings = {
@@ -124,6 +128,14 @@ fun HostNavHost(
 
         composable(HostRoutes.LLM_GATEWAY) {
             LlmGatewayScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(HostRoutes.LLM_CHAT) {
+            LlmChatScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.motherofallapps.host.ftp.ui.components.LiquidGlassButton
@@ -108,7 +109,11 @@ fun ChatMessageBubble(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
                             Surface(
                                 shape = RoundedCornerShape(4.dp),
                                 color = if (isUser) Cyan.copy(alpha = 0.2f) else if (message.isError) Rose.copy(alpha = 0.2f) else Color(0xFF34D399).copy(alpha = 0.2f)
@@ -128,10 +133,14 @@ fun ChatMessageBubble(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = TextSecondary,
                                     fontSize = 9.sp,
-                                    fontFamily = FontFamily.Monospace
+                                    fontFamily = FontFamily.Monospace,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
+
+                        Spacer(Modifier.width(6.dp))
 
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text(

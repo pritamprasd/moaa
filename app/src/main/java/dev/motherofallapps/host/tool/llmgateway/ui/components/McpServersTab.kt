@@ -308,7 +308,7 @@ private fun McpServerCard(
                     ) {
                         Text(server.transportType.badge, fontSize = 18.sp)
                         Spacer(Modifier.width(8.dp))
-                        Column {
+                        Column(modifier = Modifier.weight(1f, fill = false)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = server.name,
@@ -317,8 +317,8 @@ private fun McpServerCard(
                                     color = if (server.isEnabled) TextPrimary else TextSecondary,
                                     fontSize = 13.sp
                                 )
-                                Spacer(Modifier.width(6.dp))
                                 if (isBuiltin) {
+                                    Spacer(Modifier.width(6.dp))
                                     Box(
                                         modifier = Modifier
                                             .clip(RoundedCornerShape(4.dp))
@@ -340,7 +340,12 @@ private fun McpServerCard(
                         }
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Spacer(Modifier.width(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
                         // Status Badge
                         Box(
                             modifier = Modifier
@@ -356,8 +361,6 @@ private fun McpServerCard(
                             )
                         }
 
-                        Spacer(Modifier.width(8.dp))
-
                         Switch(
                             checked = server.isEnabled,
                             onCheckedChange = onToggleEnabled,
@@ -366,8 +369,7 @@ private fun McpServerCard(
                                 checkedTrackColor = Cyan,
                                 uncheckedThumbColor = TextSecondary,
                                 uncheckedTrackColor = GlassSurface
-                            ),
-                            modifier = Modifier.size(36.dp)
+                            )
                         )
                     }
                 }

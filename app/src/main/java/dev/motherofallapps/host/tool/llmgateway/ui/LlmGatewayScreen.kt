@@ -152,7 +152,7 @@ fun LlmGatewayScreen(
                 .padding(horizontal = 16.dp)
         ) {
             // Tabs Bar
-            val tabTitles = listOf("1. HOSTS", "2. ROUTING", "3. MCP SERVERS", "4. LIVE TEST")
+            val tabTitles = listOf("1. HOSTS", "2. ROUTING", "3. MCP", "4. TEST")
             TabRow(
                 selectedTabIndex = selectedTab,
                 containerColor = GlassSurfaceDeep,
@@ -732,7 +732,7 @@ private fun StatusAndLiveTestTab(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "LOCAL HTTP IPC SERVER STATUS",
                                 style = MaterialTheme.typography.labelSmall,
@@ -749,6 +749,8 @@ private fun StatusAndLiveTestTab(
                                 fontFamily = FontFamily.Monospace
                             )
                         }
+
+                        Spacer(Modifier.width(8.dp))
 
                         LiquidGlassButton(
                             onClick = { viewModel.toggleServer() },
@@ -883,7 +885,9 @@ private fun StatusAndLiveTestTab(
                 ) {
                     // Preset query chip
                     Row(
-                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         val presets = listOf("Quantum in 10 words", "Write Kotlin sum function", "Ollama status ping")
@@ -898,6 +902,8 @@ private fun StatusAndLiveTestTab(
                             }
                         }
                     }
+
+                    Spacer(Modifier.width(8.dp))
 
                     LiquidGlassButton(
                         onClick = { viewModel.sendTestPrompt() },

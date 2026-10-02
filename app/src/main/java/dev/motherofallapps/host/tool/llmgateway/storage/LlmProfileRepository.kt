@@ -100,6 +100,22 @@ class LlmProfileRepository(context: Context) {
         }
     }
 
+    fun setDefaultProfile(profileId: String) {
+        val current = _profiles.value.toMutableList()
+        val index = current.indexOfFirst { it.id == profileId }
+        if (index != -1) {
+            val target = current.removeAt(index).copy(isEnabled = true)
+            current.add(0, target)
+            current.forEachIndexed { idx, p -> current[idx] = p.copy(priorityOrder = idx) }
+            saveProfiles(current)
+        }
+    }
+
+    fun getDefaultProfile(): LlmProfile? {
+        return _profiles.value.firstOrNull { it.isEnabled } ?: _profiles.value.firstOrNull()
+    }
+
+
     fun updateStatus(profileId: String, status: ProfileStatus, latencyMs: Long = 0L) {
         val current = _profiles.value.toMutableList()
         val index = current.indexOfFirst { it.id == profileId }

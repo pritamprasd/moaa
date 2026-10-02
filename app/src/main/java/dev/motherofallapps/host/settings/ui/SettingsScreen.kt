@@ -28,6 +28,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -48,7 +50,9 @@ import dev.motherofallapps.host.ftp.ui.components.LiquidGlassButton
 import dev.motherofallapps.host.ftp.ui.components.RainbowGlassBorderBrush
 import dev.motherofallapps.host.logging.AppLogHub
 import dev.motherofallapps.host.settings.AppSettingsManager
+import dev.motherofallapps.host.ui.theme.Amber
 import dev.motherofallapps.host.ui.theme.Cyan
+import dev.motherofallapps.host.ui.theme.Emerald
 import dev.motherofallapps.host.ui.theme.GlassBorder
 import dev.motherofallapps.host.ui.theme.GlassBorderHighlight
 import dev.motherofallapps.host.ui.theme.GlassSurface
@@ -57,6 +61,7 @@ import dev.motherofallapps.host.ui.theme.GlassSurfaceElevated
 import dev.motherofallapps.host.ui.theme.Rose
 import dev.motherofallapps.host.ui.theme.TextPrimary
 import dev.motherofallapps.host.ui.theme.TextSecondary
+import dev.motherofallapps.host.ui.theme.TextTertiary
 import dev.motherofallapps.host.ui.theme.Violet
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,7 +117,22 @@ fun SettingsScreen(
                 )
             }
 
-            // 2. Diagnostics & Telemetry Card (With Auto-Delete Policy)
+            // 2. Default LLM Routing Card
+            item {
+                DefaultLlmSettingsCard(context = context)
+            }
+
+            // 3. MCP Servers & Tools On/Off Card
+            item {
+                McpServersSettingsCard(context = context)
+            }
+
+            // 4. LLM Gateway Server Card
+            item {
+                LlmGatewaySettingsCard(context = context)
+            }
+
+            // 5. Diagnostics & Telemetry Card (With Auto-Delete Policy)
             item {
                 DiagnosticsSettingsCard(
                     currentRetention = currentRetention,
@@ -134,17 +154,12 @@ fun SettingsScreen(
                 )
             }
 
-            // 3. LLM Gateway Server Card
-            item {
-                LlmGatewaySettingsCard(context = context)
-            }
-
-            // 4. Homescreen Shortcuts Card
+            // 6. Homescreen Shortcuts Card
             item {
                 HomescreenShortcutsCard(context = context)
             }
 
-            // 5. About & Version Info Card
+            // 7. About & Version Info Card
             item {
                 AboutInfoCard(
                     onResetDefaults = {
@@ -160,6 +175,7 @@ fun SettingsScreen(
         }
     }
 }
+
 
 @Composable
 private fun GalleryLayoutSettingsCard(
@@ -570,4 +586,302 @@ private fun AboutInfoCard(
         }
     }
 }
+
+@Composable
+private fun DefaultLlmSettingsCard(context: Context) {
+    val repository = dev.motherofallapps.host.tool.llmgateway.manager.LlmGatewayManager.getRepository(context)
+    val profiles by repository.profiles.collectAsStateWithLifecycle()
+    val defaultProfile = profiles.firstOrNull { it.isEnabled } ?: profiles.firstOrNull()
+
+    IsometricCard(glowColor = Cyan) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "DEFAULT LLM ROUTE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Cyan,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Cyan.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = "PRIORITY #1",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Cyan,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Select the primary model used for CyberChat and default requests. If offline or rate-limited, requests fail over to the next priority target in pool.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                profiles.forEach { profile ->
+                    val isDefault = profile.id == defaultProfile?.id
+                    val borderColor = if (isDefault) Cyan else GlassBorder
+                    val surfaceColor = if (isDefault) Cyan.copy(alpha = 0.12f) else GlassSurfaceDeep
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = surfaceColor,
+                        border = BorderStroke(1.dp, borderColor),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                if (!isDefault) {
+                                    repository.setDefaultProfile(profile.id)
+                                    Toast.makeText(context, "Default LLM set to: ${profile.name}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                // Radio selection indicator
+                                Box(
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .border(
+                                            width = 2.dp,
+                                            color = if (isDefault) Cyan else TextSecondary.copy(alpha = 0.5f),
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isDefault) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(10.dp)
+                                                .background(Cyan, CircleShape)
+                                        )
+                                    }
+                                }
+
+                                Spacer(Modifier.width(10.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(
+                                            text = profile.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (isDefault) Cyan else TextPrimary,
+                                            fontWeight = if (isDefault) FontWeight.Bold else FontWeight.Medium,
+                                            fontSize = 13.sp
+                                        )
+                                        if (isDefault) {
+                                            Surface(
+                                                shape = RoundedCornerShape(3.dp),
+                                                color = Cyan.copy(alpha = 0.2f)
+                                            ) {
+                                                Text(
+                                                    text = "DEFAULT",
+                                                    color = Cyan,
+                                                    fontSize = 8.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Spacer(Modifier.height(2.dp))
+                                    Text(
+                                        text = "${profile.providerType} • ${profile.targetModel ?: "auto"} • ${if (profile.isEnabled) "Enabled" else "Disabled"}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextSecondary,
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+
+                            // Status Indicator
+                            val statusColor = when (profile.status) {
+                                dev.motherofallapps.host.tool.llmgateway.model.ProfileStatus.ACTIVE -> Emerald
+                                dev.motherofallapps.host.tool.llmgateway.model.ProfileStatus.IDLE -> TextSecondary
+                                dev.motherofallapps.host.tool.llmgateway.model.ProfileStatus.RATE_LIMITED -> Amber
+                                dev.motherofallapps.host.tool.llmgateway.model.ProfileStatus.HOST_UNREACHABLE -> Rose
+                                dev.motherofallapps.host.tool.llmgateway.model.ProfileStatus.EXPIRED -> Rose
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = statusColor.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = profile.status.name,
+                                    color = statusColor,
+                                    fontSize = 8.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun McpServersSettingsCard(context: Context) {
+    val mcpRepository = dev.motherofallapps.host.tool.llmgateway.manager.LlmGatewayManager.getMcpRepository(context)
+    val servers by mcpRepository.servers.collectAsStateWithLifecycle()
+    val activeToolsCount = servers.filter { it.isEnabled }.sumOf { s -> s.discoveredTools.count { it.isEnabled } }
+
+    IsometricCard(glowColor = Violet) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "MCP TOOL SERVERS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Violet,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Violet.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = "$activeToolsCount ACTIVE TOOLS",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Violet,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Turn Model Context Protocol servers on or off. Active tools (hardware sensors, FTP, system logs, remote APIs) are dynamically exposed to LLMs for tool calling.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                servers.forEach { server ->
+                    val isBuiltin = server.transportType == dev.motherofallapps.host.tool.llmgateway.mcp.model.McpTransportType.BUILTIN_DEVICE
+                    val enabledTools = server.discoveredTools.count { it.isEnabled }
+                    val totalTools = server.discoveredTools.size
+
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = GlassSurfaceDeep,
+                        border = BorderStroke(1.dp, if (server.isEnabled) Violet.copy(alpha = 0.5f) else GlassBorder),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = server.name,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (server.isEnabled) TextPrimary else TextSecondary,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 13.sp
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(3.dp),
+                                        color = if (isBuiltin) Emerald.copy(alpha = 0.15f) else Cyan.copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = if (isBuiltin) "BUILTIN" else server.transportType.name,
+                                            color = if (isBuiltin) Emerald else Cyan,
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = if (isBuiltin) "$enabledTools of $totalTools device tools active" else "${server.endpointUrl.ifBlank { "No endpoint" }} • $enabledTools tools",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = TextSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+
+                            Spacer(Modifier.width(8.dp))
+
+                            Switch(
+                                checked = server.isEnabled,
+                                onCheckedChange = { isChecked ->
+                                    mcpRepository.toggleServerEnabled(server.id, isChecked)
+                                    Toast.makeText(
+                                        context,
+                                        "MCP Server '${server.name}' ${if (isChecked) "Enabled" else "Disabled"}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Violet,
+                                    checkedTrackColor = Violet.copy(alpha = 0.35f),
+                                    uncheckedThumbColor = TextTertiary,
+                                    uncheckedTrackColor = GlassSurfaceElevated
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 

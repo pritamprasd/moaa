@@ -32,9 +32,12 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -345,7 +348,7 @@ private fun ExpandableToolGalleryCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { onLaunch() }
-                    .padding(if (columnCount >= 3) 8.dp else 12.dp)
+                    .padding(if (columnCount >= 3) 8.dp else 14.dp)
             ) {
                 // Top Row: Icon + Name + Modern Animated Chevron Expander
                 Row(
@@ -386,15 +389,15 @@ private fun ExpandableToolGalleryCard(
 
                 // Short tagline (hidden in 4-column compact mode for cleanliness)
                 if (columnCount <= 3 && !isExpanded) {
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         text = definition?.shortTagline ?: tool.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary,
-                        fontSize = if (columnCount == 1) 11.sp else 9.sp,
-                        maxLines = if (columnCount == 1) 2 else 1,
+                        fontSize = if (columnCount == 1) 11.sp else 10.sp,
+                        maxLines = if (columnCount <= 2) 2 else 1,
                         overflow = TextOverflow.Ellipsis,
-                        lineHeight = 13.sp
+                        lineHeight = 14.sp
                     )
                 }
 
@@ -509,37 +512,18 @@ private fun IsometricSearchIcon(color: Color) {
 }
 
 /**
- * 3D Isometric Settings Gear Icon
+ * Settings Gear Icon
  */
 @Composable
 private fun IsometricSettingsIcon(color: Color) {
-    Canvas(modifier = Modifier.size(20.dp)) {
-        val cx = size.width / 2f
-        val cy = size.height / 2f
-        val outerR = size.width * 0.4f
-        val innerR = size.width * 0.18f
-
-        drawCircle(
-            color = color,
-            radius = outerR,
-            center = Offset(cx, cy),
-            style = Stroke(width = 1.8.dp.toPx())
-        )
-        drawCircle(
-            color = color,
-            radius = innerR,
-            center = Offset(cx, cy),
-            style = Stroke(width = 1.5.dp.toPx())
-        )
-
-        // 4 isometric gear teeth notches
-        val toothLen = 3.dp.toPx()
-        drawLine(color, Offset(cx, cy - outerR - toothLen), Offset(cx, cy - outerR + 1), strokeWidth = 2.dp.toPx())
-        drawLine(color, Offset(cx, cy + outerR - 1), Offset(cx, cy + outerR + toothLen), strokeWidth = 2.dp.toPx())
-        drawLine(color, Offset(cx - outerR - toothLen, cy), Offset(cx - outerR + 1, cy), strokeWidth = 2.dp.toPx())
-        drawLine(color, Offset(cx + outerR - 1, cy), Offset(cx + outerR + toothLen, cy), strokeWidth = 2.dp.toPx())
-    }
+    Icon(
+        imageVector = Icons.Default.Settings,
+        contentDescription = "Settings",
+        tint = color,
+        modifier = Modifier.size(18.dp)
+    )
 }
+
 
 /**
  * Custom Canvas rendering vivid Isometric 3D Icons for each tool type.

@@ -129,14 +129,35 @@ fun LlmChatScreen(
                     }
                 },
                 actions = {
-                    TextButton(onClick = { showSessionsDrawer = true }) {
-                        Text("💬 Chats", color = Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                    TextButton(onClick = { showPersonaDialog = true }) {
-                        Text("⚙️ Persona", color = TextSecondary, fontSize = 11.sp)
-                    }
-                    TextButton(onClick = { viewModel.exportChatAsMarkdown(context) }) {
-                        Text("Export", color = TextSecondary, fontSize = 11.sp)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = GlassSurfaceDeep,
+                            border = BorderStroke(1.dp, Cyan.copy(alpha = 0.5f)),
+                            modifier = Modifier.clickable { showSessionsDrawer = true }
+                        ) {
+                            Text("💬 Chats", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp))
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = GlassSurfaceDeep,
+                            border = BorderStroke(1.dp, GlassBorder),
+                            modifier = Modifier.clickable { showPersonaDialog = true }
+                        ) {
+                            Text("⚙️", color = TextSecondary, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 5.dp, vertical = 4.dp))
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = GlassSurfaceDeep,
+                            border = BorderStroke(1.dp, GlassBorder),
+                            modifier = Modifier.clickable { viewModel.exportChatAsMarkdown(context) }
+                        ) {
+                            Text("⬇️", color = TextSecondary, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 5.dp, vertical = 4.dp))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)

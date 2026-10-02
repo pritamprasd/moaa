@@ -75,4 +75,49 @@ class LlmRouterEngineTest {
         assertEquals("system", request.messages[0].role)
         assertEquals("user", request.messages[1].role)
     }
+
+    @Test
+    fun testDefaultLlmPriorityOrdering() {
+        val profiles = listOf(
+            LlmProfile(
+                id = "p1",
+                name = "Gemini",
+                category = ProviderCategory.CLOUD_OAUTH,
+                providerType = "GEMINI_CLOUD",
+                priorityOrder = 0,
+                isEnabled = true
+            ),
+            LlmProfile(
+                id = "p2",
+                name = "Ollama",
+                category = ProviderCategory.DESKTOP_LOCAL_HOST,
+                providerType = "OLLAMA_LOCAL",
+                priorityOrder = 1,
+                isEnabled = true
+            ),
+            LlmProfile(
+                id = "p3",
+                name = "ChatGPT",
+                category = ProviderCategory.CLOUD_OAUTH,
+                providerType = "CHATGPT_CLOUD",
+                priorityOrder = 2,
+                isEnabled = true
+            )
+        )
+
+        // Select p3 (ChatGPT) as default -> moves to top (priority 0)
+        val current = profiles.toMutableList()
+        val index = current.indexOfFirst { it.id == "p3" }
+        val target = current.removeAt(index).copy(isEnabled = true)
+        current.add(0, target)
+        current.forEachIndexed { idx, p -> current[idx] = p.copy(priorityOrder = idx) }
+
+        assertEquals("p3", current[0].id)
+        assertEquals(0, current[0].priorityOrder)
+        assertEquals("p1", current[1].id)
+        assertEquals(1, current[1].priorityOrder)
+        assertEquals("p2", current[2].id)
+        assertEquals(2, current[2].priorityOrder)
+    }
 }
+

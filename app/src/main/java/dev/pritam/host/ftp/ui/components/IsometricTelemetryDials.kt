@@ -29,27 +29,19 @@ fun IsometricTelemetryDials(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             IsometricStatTile(
-                label = "Download Speed",
+                label = "Download",
                 value = if (isRunning) telemetry.formatSpeed(telemetry.currentDownloadSpeedBps) else "0 B/s",
                 accentColor = Cyan,
                 modifier = Modifier.weight(1f)
             )
             IsometricStatTile(
-                label = "Upload Speed",
+                label = "Upload",
                 value = if (isRunning) telemetry.formatSpeed(telemetry.currentUploadSpeedBps) else "0 B/s",
                 accentColor = Rose,
                 modifier = Modifier.weight(1f)
             )
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
             IsometricStatTile(
-                label = "Active Clients",
+                label = "Active Devices",
                 value = if (isRunning) "${telemetry.activeClientsCount}" else "0",
                 unit = if (telemetry.activeClientsCount == 1) "device" else "devices",
                 accentColor = Violet,

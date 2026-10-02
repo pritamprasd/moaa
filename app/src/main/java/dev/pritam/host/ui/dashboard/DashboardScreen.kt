@@ -116,16 +116,7 @@ fun DashboardScreen(
         containerColor = Color.Transparent,
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "MOTHER OF ALL APPS",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        letterSpacing = 1.5.sp
-                    )
-                },
-                actions = {
+                navigationIcon = {
                     // Search Expand Icon Button with active glow toggle
                     IconButton(
                         onClick = {
@@ -145,7 +136,17 @@ fun DashboardScreen(
                             IsometricSearchIcon(color = if (isSearchExpanded) Cyan else TextPrimary)
                         }
                     }
-
+                },
+                title = {
+                    Text(
+                        text = "MOTHER OF ALL APPS",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        letterSpacing = 1.5.sp
+                    )
+                },
+                actions = {
                     // Settings Icon Button
                     IconButton(
                         onClick = onOpenSettings,
@@ -386,7 +387,7 @@ private fun ExpandableToolGalleryCard(
                                     modifier = Modifier.padding(top = 2.dp)
                                 ) {
                                     Text(
-                                        text = "AI WEB APP",
+                                        text = "AI",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = Cyan,
                                         fontSize = 7.5.sp,

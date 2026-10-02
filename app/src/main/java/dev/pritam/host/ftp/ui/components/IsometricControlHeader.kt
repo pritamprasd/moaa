@@ -74,7 +74,7 @@ fun IsometricControlHeader(
                     ) {}
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = if (isRunning) "SERVER ONLINE" else if (isStarting) "STARTING..." else "SERVER OFFLINE",
+                        text = if (isRunning) "ONLINE" else if (isStarting) "STARTING..." else "OFFLINE",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = statusColor,

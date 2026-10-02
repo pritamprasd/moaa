@@ -15,7 +15,7 @@ import dev.pritam.host.tool.nfc.manager.NfcManager
 class MainActivity : ComponentActivity() {
 
     private var nfcAdapter: NfcAdapter? = null
-    private val container = HostApplicationContainer()
+    private val container by lazy { HostApplicationContainer(applicationContext) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

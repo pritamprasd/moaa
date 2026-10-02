@@ -24,3 +24,4 @@ rootProject.name = "mother-of-all-apps"
 
 include(":app")
 include(":plugin-api")
+include(":dynamic-tools")

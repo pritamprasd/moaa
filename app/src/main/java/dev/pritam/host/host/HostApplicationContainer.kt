@@ -1,5 +1,7 @@
 package dev.pritam.host.host
 
-class HostApplicationContainer {
-    val state = HostAppState()
+import android.content.Context
+
+class HostApplicationContainer(context: Context? = null) {
+    val state = HostAppState(context)
 }

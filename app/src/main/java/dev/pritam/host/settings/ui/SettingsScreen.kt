@@ -70,6 +70,7 @@ import dev.pritam.host.ui.theme.Violet
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
     onOpenLogViewer: () -> Unit,
+    onOpenSystemManual: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -105,7 +106,12 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 1. Tool Gallery Layout Card
+            // 1. System User Manual Card
+            item {
+                SystemManualSettingsCard(onOpenSystemManual = onOpenSystemManual)
+            }
+
+            // 2. Tool Gallery Layout Card
             item {
                 GalleryLayoutSettingsCard(
                     currentColumns = currentColumns,
@@ -116,22 +122,22 @@ fun SettingsScreen(
                 )
             }
 
-            // 2. Default LLM Routing Card
+            // 3. Default LLM Routing Card
             item {
                 DefaultLlmSettingsCard(context = context)
             }
 
-            // 3. MCP Servers & Tools On/Off Card
+            // 4. MCP Servers & Tools On/Off Card
             item {
                 McpServersSettingsCard(context = context)
             }
 
-            // 4. LLM Gateway Server Card
+            // 5. LLM Gateway Server Card
             item {
                 LlmGatewaySettingsCard(context = context)
             }
 
-            // 5. Diagnostics & Telemetry Card (With Auto-Delete Policy)
+            // 6. Diagnostics & Telemetry Card (With Auto-Delete Policy)
             item {
                 DiagnosticsSettingsCard(
                     currentRetention = currentRetention,
@@ -153,12 +159,12 @@ fun SettingsScreen(
                 )
             }
 
-            // 6. Homescreen Shortcuts Card
+            // 7. Homescreen Shortcuts Card
             item {
                 HomescreenShortcutsCard(context = context)
             }
 
-            // 7. About & Version Info Card
+            // 8. About & Version Info Card
             item {
                 AboutInfoCard(
                     onResetDefaults = {
@@ -175,6 +181,58 @@ fun SettingsScreen(
     }
 }
 
+@Composable
+private fun SystemManualSettingsCard(onOpenSystemManual: () -> Unit) {
+    IsometricCard(glowColor = Cyan) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "SYSTEM USER MANUAL",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Cyan,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Cyan.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = "ALL TOOLS GUIDE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Cyan,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Interactive documentation and step-by-step user manual for all tools, architecture, protocols, APIs, and dynamic web generation.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            LiquidGlassButton(
+                onClick = onOpenSystemManual,
+                modifier = Modifier.fillMaxWidth(),
+                glowColor = Cyan,
+                useRainbowBorder = true,
+                text = "📖 Open System Manual"
+            )
+        }
+    }
+}
 
 @Composable
 private fun GalleryLayoutSettingsCard(

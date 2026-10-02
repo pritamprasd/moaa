@@ -8,6 +8,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavHostController
+import dev.pritam.dynamictools.ui.runner.DynamicToolRunnerScreen
+import dev.pritam.dynamictools.ui.studio.DynamicToolsStudioScreen
 import dev.pritam.host.ftp.ui.FtpScreen
 import dev.pritam.host.host.HostAppState
 import dev.pritam.host.settings.ui.SettingsScreen
@@ -19,6 +21,8 @@ import dev.pritam.host.tool.nfc.ui.NfcScreen
 import dev.pritam.host.tool.sensors.ui.SensorsScreen
 import dev.pritam.host.ui.dashboard.DashboardScreen
 
+import dev.pritam.host.tool.manual.ui.SystemManualScreen
+
 object HostRoutes {
     const val DASHBOARD = "dashboard"
     const val FTP_SERVER = "ftp_server"
@@ -29,6 +33,9 @@ object HostRoutes {
     const val LLM_GATEWAY = "llm_gateway"
     const val LLM_CHAT = "llm_chat"
     const val SETTINGS = "settings"
+    const val DYNAMIC_TOOLS_STUDIO = "dynamic_tools_studio"
+    const val DYNAMIC_TOOL_RUNNER = "dynamic_tool_runner/{toolId}"
+    const val SYSTEM_MANUAL = "system_manual"
 }
 
 @Composable
@@ -41,14 +48,17 @@ fun HostNavHost(
 
     androidx.compose.runtime.LaunchedEffect(pendingTargetToolId) {
         pendingTargetToolId?.let { toolId ->
-            val route = when (toolId) {
-                "ftp-server" -> HostRoutes.FTP_SERVER
-                "ftp-client" -> HostRoutes.FTP_CLIENT
-                "nfc-tool" -> HostRoutes.NFC_TOOL
-                "log-viewer" -> HostRoutes.LOG_VIEWER
-                "sensors" -> HostRoutes.SENSORS
-                "llm-gateway" -> HostRoutes.LLM_GATEWAY
-                "llm-chat" -> HostRoutes.LLM_CHAT
+            val route = when {
+                toolId == "ftp-server" -> HostRoutes.FTP_SERVER
+                toolId == "ftp-client" -> HostRoutes.FTP_CLIENT
+                toolId == "nfc-tool" -> HostRoutes.NFC_TOOL
+                toolId == "log-viewer" -> HostRoutes.LOG_VIEWER
+                toolId == "sensors" -> HostRoutes.SENSORS
+                toolId == "llm-gateway" -> HostRoutes.LLM_GATEWAY
+                toolId == "llm-chat" -> HostRoutes.LLM_CHAT
+                toolId == "dynamic-tools-studio" -> HostRoutes.DYNAMIC_TOOLS_STUDIO
+                toolId == "system-manual" -> HostRoutes.SYSTEM_MANUAL
+                toolId.startsWith("dynamic_") -> "dynamic_tool_runner/${toolId.removePrefix("dynamic_")}"
                 else -> null
             }
             if (route != null) {
@@ -70,14 +80,20 @@ fun HostNavHost(
             DashboardScreen(
                 tools = tools,
                 onToolClick = { tool ->
-                    when (tool.id.value) {
-                        "ftp-server" -> navController.navigate(HostRoutes.FTP_SERVER)
-                        "ftp-client" -> navController.navigate(HostRoutes.FTP_CLIENT)
-                        "nfc-tool" -> navController.navigate(HostRoutes.NFC_TOOL)
-                        "log-viewer" -> navController.navigate(HostRoutes.LOG_VIEWER)
-                        "sensors" -> navController.navigate(HostRoutes.SENSORS)
-                        "llm-gateway" -> navController.navigate(HostRoutes.LLM_GATEWAY)
-                        "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
+                    when {
+                        tool.id.value == "ftp-server" -> navController.navigate(HostRoutes.FTP_SERVER)
+                        tool.id.value == "ftp-client" -> navController.navigate(HostRoutes.FTP_CLIENT)
+                        tool.id.value == "nfc-tool" -> navController.navigate(HostRoutes.NFC_TOOL)
+                        tool.id.value == "log-viewer" -> navController.navigate(HostRoutes.LOG_VIEWER)
+                        tool.id.value == "sensors" -> navController.navigate(HostRoutes.SENSORS)
+                        tool.id.value == "llm-gateway" -> navController.navigate(HostRoutes.LLM_GATEWAY)
+                        tool.id.value == "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
+                        tool.id.value == "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
+                        tool.id.value == "system-manual" -> navController.navigate(HostRoutes.SYSTEM_MANUAL)
+                        tool.id.value.startsWith("dynamic_") -> {
+                            val customId = tool.id.value.removePrefix("dynamic_")
+                            navController.navigate("dynamic_tool_runner/$customId")
+                        }
                     }
                 },
                 onOpenSettings = {
@@ -149,6 +165,56 @@ fun HostNavHost(
                 },
                 onOpenLogViewer = {
                     navController.navigate(HostRoutes.LOG_VIEWER)
+                },
+                onOpenSystemManual = {
+                    navController.navigate(HostRoutes.SYSTEM_MANUAL)
+                }
+            )
+        }
+
+        composable(HostRoutes.SYSTEM_MANUAL) {
+            SystemManualScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToTool = { routeId ->
+                    when (routeId) {
+                        "ftp-server" -> navController.navigate(HostRoutes.FTP_SERVER)
+                        "ftp-client" -> navController.navigate(HostRoutes.FTP_CLIENT)
+                        "nfc-tool" -> navController.navigate(HostRoutes.NFC_TOOL)
+                        "log-viewer" -> navController.navigate(HostRoutes.LOG_VIEWER)
+                        "sensors" -> navController.navigate(HostRoutes.SENSORS)
+                        "llm-gateway" -> navController.navigate(HostRoutes.LLM_GATEWAY)
+                        "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
+                        "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
+                        "settings" -> navController.navigate(HostRoutes.SETTINGS)
+                        else -> {
+                            if (routeId.startsWith("dynamic_")) {
+                                navController.navigate("dynamic_tool_runner/${routeId.removePrefix("dynamic_")}")
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(HostRoutes.DYNAMIC_TOOLS_STUDIO) {
+            DynamicToolsStudioScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onLaunchTool = { toolId ->
+                    navController.navigate("dynamic_tool_runner/$toolId")
+                }
+            )
+        }
+
+        composable(HostRoutes.DYNAMIC_TOOL_RUNNER) { backStackEntry ->
+            val toolId = backStackEntry.arguments?.getString("toolId") ?: ""
+            DynamicToolRunnerScreen(
+                toolId = toolId,
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

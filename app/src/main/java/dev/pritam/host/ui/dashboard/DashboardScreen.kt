@@ -276,18 +276,20 @@ private fun ExpandableToolGalleryCard(
         ToolRegistryConfig.findToolDefinition(tool.id.value)
     }
 
-    val accentColor = when (tool.id.value) {
-        "ftp-server" -> Cyan
-        "ftp-client" -> Color(0xFF34D399)
-        "nfc-tool" -> Rose
-        "log-viewer" -> Violet
-        "sensors" -> Color(0xFFF59E0B)
-        "llm-gateway" -> Color(0xFF10B981)
-        "llm-chat" -> Color(0xFF38BDF8)
+    val accentColor = when {
+        tool.id.value == "ftp-server" -> Cyan
+        tool.id.value == "ftp-client" -> Color(0xFF34D399)
+        tool.id.value == "nfc-tool" -> Rose
+        tool.id.value == "log-viewer" -> Violet
+        tool.id.value == "sensors" -> Color(0xFFF59E0B)
+        tool.id.value == "llm-gateway" -> Color(0xFF10B981)
+        tool.id.value == "llm-chat" -> Color(0xFF38BDF8)
+        tool.id.value == "dynamic-tools-studio" -> Color(0xFFF43F5E) // Rose-Red
+        tool.id.value.startsWith("dynamic_") -> Color(0xFF38BDF8) // Dynamic Web Tool
         else -> Cyan
     }
 
-    val iconType = definition?.iconType ?: "generic"
+    val iconType = definition?.iconType ?: if (tool.id.value.startsWith("dynamic_")) "dynamic-tool" else "generic"
     val shape = RoundedCornerShape(14.dp)
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -359,15 +361,33 @@ private fun ExpandableToolGalleryCard(
 
                         Spacer(Modifier.width(8.dp))
 
-                        Text(
-                            text = tool.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
-                            maxLines = if (columnCount >= 3) 1 else 2,
-                            overflow = TextOverflow.Ellipsis,
-                            fontSize = if (columnCount == 1) 14.sp else if (columnCount == 2) 12.sp else 10.sp
-                        )
+                        Column {
+                            Text(
+                                text = tool.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                maxLines = if (columnCount >= 3) 1 else 2,
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = if (columnCount == 1) 14.sp else if (columnCount == 2) 12.sp else 10.sp
+                            )
+                            if (tool.id.value.startsWith("dynamic_") && columnCount <= 2) {
+                                Surface(
+                                    shape = RoundedCornerShape(3.dp),
+                                    color = Color(0x3038BDF8),
+                                    modifier = Modifier.padding(top = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "AI WEB APP",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Cyan,
+                                        fontSize = 7.5.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     // Modern Smooth Chevron Expander
@@ -644,6 +664,66 @@ private fun ToolIsometricIcon(
                     drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx - w * 0.16f, cy - h * 0.08f))
                     drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx, cy - h * 0.08f))
                     drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx + w * 0.16f, cy - h * 0.08f))
+                }
+                "dynamic-tool" -> {
+                    // Isometric Web Code Window with Prompt Sparkle
+                    drawRoundRect(
+                        color = color.copy(alpha = 0.85f),
+                        topLeft = Offset(cx - w * 0.35f, cy - h * 0.3f),
+                        size = Size(w * 0.7f, h * 0.6f),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx(), 3.dp.toPx()),
+                        style = Stroke(width = 1.5.dp.toPx())
+                    )
+                    // Top header line
+                    drawLine(
+                        color = color.copy(alpha = 0.5f),
+                        start = Offset(cx - w * 0.35f, cy - h * 0.12f),
+                        end = Offset(cx + w * 0.35f, cy - h * 0.12f),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                    // Window dots
+                    drawCircle(color = color, radius = 1.2.dp.toPx(), center = Offset(cx - w * 0.24f, cy - h * 0.21f))
+                    drawCircle(color = color, radius = 1.2.dp.toPx(), center = Offset(cx - w * 0.14f, cy - h * 0.21f))
+                    // Code brackets </>
+                    val leftBracket = Path().apply {
+                        moveTo(cx - w * 0.08f, cy + h * 0.02f)
+                        lineTo(cx - w * 0.2f, cy + h * 0.14f)
+                        lineTo(cx - w * 0.08f, cy + h * 0.26f)
+                    }
+                    val rightBracket = Path().apply {
+                        moveTo(cx + w * 0.08f, cy + h * 0.02f)
+                        lineTo(cx + w * 0.2f, cy + h * 0.14f)
+                        lineTo(cx + w * 0.08f, cy + h * 0.26f)
+                    }
+                    drawPath(leftBracket, color = color, style = Stroke(width = 1.4.dp.toPx(), cap = StrokeCap.Round))
+                    drawPath(rightBracket, color = color, style = Stroke(width = 1.4.dp.toPx(), cap = StrokeCap.Round))
+                }
+                "manual" -> {
+                    // Isometric Open Manual / Book with Spine and Lines
+                    val leftPage = Path().apply {
+                        moveTo(cx, cy + h * 0.28f)
+                        lineTo(cx - w * 0.35f, cy + h * 0.16f)
+                        lineTo(cx - w * 0.35f, cy - h * 0.24f)
+                        lineTo(cx, cy - h * 0.12f)
+                        close()
+                    }
+                    val rightPage = Path().apply {
+                        moveTo(cx, cy + h * 0.28f)
+                        lineTo(cx + w * 0.35f, cy + h * 0.16f)
+                        lineTo(cx + w * 0.35f, cy - h * 0.24f)
+                        lineTo(cx, cy - h * 0.12f)
+                        close()
+                    }
+                    drawPath(leftPage, color = color.copy(alpha = 0.85f), style = Stroke(width = 1.4.dp.toPx(), cap = StrokeCap.Round))
+                    drawPath(rightPage, color = color.copy(alpha = 0.85f), style = Stroke(width = 1.4.dp.toPx(), cap = StrokeCap.Round))
+                    // Central Spine
+                    drawLine(color = color, start = Offset(cx, cy - h * 0.12f), end = Offset(cx, cy + h * 0.28f), strokeWidth = 1.5.dp.toPx())
+                    // Left Text lines
+                    drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx - w * 0.08f, cy - h * 0.04f), end = Offset(cx - w * 0.26f, cy + h * 0.03f), strokeWidth = 1.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx - w * 0.08f, cy + h * 0.08f), end = Offset(cx - w * 0.26f, cy + h * 0.15f), strokeWidth = 1.dp.toPx())
+                    // Right Text lines
+                    drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx + w * 0.08f, cy - h * 0.04f), end = Offset(cx + w * 0.26f, cy + h * 0.03f), strokeWidth = 1.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx + w * 0.08f, cy + h * 0.08f), end = Offset(cx + w * 0.26f, cy + h * 0.15f), strokeWidth = 1.dp.toPx())
                 }
                 else -> {
                     // Generic Cyber Chip

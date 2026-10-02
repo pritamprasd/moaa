@@ -122,6 +122,30 @@ object ToolRegistryConfig {
             iconType = "chat",
             accentColorHex = 0xFF38BDF8, // Sky Cyan
             requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE")
+        ),
+        ToolDefinition(
+            id = "dynamic-tools-studio",
+            name = "Dynamic Tools Studio",
+            shortTagline = "Synthesize and run custom web tools with AI prompts.",
+            description = "AI-powered dynamic custom tool generator and runner. Generate lightweight, fully interactive runtime tools (Scientific Calculator, Unit Converter, Regex Tester, Pomodoro Timer, JSON Validator) using simple natural language prompts connected to the local LLM Gateway. Supports instant hot-reloading, live code editing (HTML/CSS/JS), and offline sandboxed local execution.",
+            version = "1.0.0",
+            category = "AI & Dynamic Web Tools",
+            author = "AI Tools Core",
+            iconType = "dynamic-tool",
+            accentColorHex = 0xFFF43F5E, // Rose Red
+            requiredPermissions = listOf("INTERNET")
+        ),
+        ToolDefinition(
+            id = "system-manual",
+            name = "System Manual",
+            shortTagline = "Comprehensive guide & user manual for all tools and architecture.",
+            description = "Detailed in-app user guide and developer documentation for all MOAA tools: LAN FTP Server & Client, NFC Tools 3×3 Suite, Local LLM Gateway & MCP Router, CyberChat AI, Dynamic Tools Studio, Sensors Live, and System Diagnostics.",
+            version = "1.0.0",
+            category = "Documentation & Guides",
+            author = "Documentation Core",
+            iconType = "manual",
+            accentColorHex = 0xFF38BDF8, // Cyan
+            requiredPermissions = listOf("None")
         )
     )
 
@@ -130,6 +154,24 @@ object ToolRegistryConfig {
     }
 
     fun findToolDefinition(toolId: String): ToolDefinition? {
-        return INSTALLED_TOOLS.firstOrNull { it.id == toolId }
+        val staticDef = INSTALLED_TOOLS.firstOrNull { it.id == toolId }
+        if (staticDef != null) return staticDef
+
+        if (toolId.startsWith("dynamic_")) {
+            val rawName = toolId.removePrefix("dynamic_").replace("_", " ")
+                .split(" ").joinToString(" ") { it.replaceFirstChar { char -> char.uppercase() } }
+            return ToolDefinition(
+                id = toolId,
+                name = rawName,
+                shortTagline = "Dynamic AI Web Tool running in sandboxed container.",
+                description = "Self-contained HTML/CSS/JS dynamic tool running in sandboxed WebView with full native AndroidBridge integration.",
+                version = "1.0.0",
+                category = "Dynamic Web Tools",
+                author = "Dynamic AI Generator",
+                iconType = "dynamic-tool",
+                accentColorHex = 0xFF38BDF8
+            )
+        }
+        return null
     }
 }

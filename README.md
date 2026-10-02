@@ -18,21 +18,28 @@
 - [Application Architecture](#-application-architecture)
   - [System Flow & Component Diagram](#system-flow--component-diagram)
   - [LLM Gateway & MCP Tool Loopback Architecture](#llm-gateway--mcp-tool-loopback-architecture)
+  - [Dynamic Web Tools & Sandboxed WebView Lifecycle](#dynamic-web-tools--sandboxed-webview-lifecycle)
   - [NFC Tools 3×3 Matrix & IC Protocol Stack](#nfc-tools-33-matrix--ic-protocol-stack)
 - [Core Tool Suite](#-core-tool-suite)
   - [1. LAN FTP Server](#1-lan-ftp-server)
   - [2. Remote FTP Client](#2-remote-ftp-client)
   - [3. NFC Tools Studio (3×3 Suite)](#3-nfc-tools-studio-33-suite)
   - [4. Local LLM Gateway & MCP Proxy](#4-local-llm-gateway--mcp-proxy)
-  - [5. CyberChat AI Studio](#5-cyberchat-ai-studio)
-  - [6. Sensors Live & Hardware Telemetry](#6-sensors-live--hardware-telemetry)
-  - [7. Centralized System Log Hub](#7-centralized-system-log-hub)
+  - [5. Dynamic Tools Studio (AI Web App Generator)](#5-dynamic-tools-studio-ai-web-app-generator)
+  - [6. CyberChat AI Studio](#6-cyberchat-ai-studio)
+  - [7. Sensors Live & Hardware Telemetry](#7-sensors-live--hardware-telemetry)
+  - [8. Centralized System Log Hub](#8-centralized-system-log-hub)
+  - [9. In-App System User Manual](#9-in-app-system-user-manual)
 - [Developer Guide & Productivity](#-developer-guide--productivity)
-  - [Adding a New Tool Plugin](#adding-a-new-tool-plugin)
+  - [Adding a New Native Tool Plugin](#adding-a-new-native-tool-plugin)
+  - [Creating & Prompt-Updating Dynamic Web Tools](#creating--prompt-updating-dynamic-web-tools)
+  - [Android JavaScript Bridge (`window.AndroidBridge`)](#android-javascript-bridge-windowandroidbridge)
   - [Using the LLM Gateway Loopback API](#using-the-llm-gateway-loopback-api)
   - [Logging with AppLogHub](#logging-with-apploghub)
   - [CI/CD Automated Releases](#cicd-automated-releases)
 - [User Guide & Workflows](#-user-guide--workflows)
+  - [Quick Start: Generating & Prompt-Updating Dynamic Tools](#quick-start-generating--prompt-updating-dynamic-tools)
+  - [Quick Start: Using the In-App System Manual](#quick-start-using-the-in-app-system-manual)
   - [Quick Start: Wi-Fi File Sharing](#quick-start-wi-fi-file-sharing)
   - [Quick Start: Connecting Desktop Ollama to CyberChat](#quick-start-connecting-desktop-ollama-to-cyberchat)
   - [Quick Start: Using NFC Tools](#quick-start-using-nfc-tools)
@@ -47,7 +54,7 @@
 
 **MotherOfAllApps (MOAA)** is an all-in-one developer and power-user Swiss Army knife for Android. Built entirely on modern **Android 14+ (API 34–37)** foundations using **Jetpack Compose** and **Kotlin Coroutines/Flow**, MOAA provides robust offline-first utilities without third-party tracking, ads, or heavyweight cloud dependencies.
 
-Whether you need to transfer large files wirelessly at gigabit LAN speeds, inspect NFC silicon memory pages, route LLM queries across local desktop nodes and cloud APIs with automatic failover and MCP tool calling, monitor physical hardware sensors at microsecond intervals, or debug background system events, MOAA consolidates these workflows into a single coherent system.
+Whether you need to generate and run on-the-fly interactive HTML5/CSS3/JS tools with LLMs, transfer large files wirelessly at gigabit LAN speeds, inspect NFC silicon memory pages, route LLM queries across local desktop nodes and cloud APIs with automatic failover and MCP tool calling, monitor physical hardware sensors at microsecond intervals, or debug background system events, MOAA consolidates these workflows into a single coherent system.
 
 ---
 
@@ -74,8 +81,15 @@ graph TD
         FtpClient["Remote FTP Client"]
         NfcTools["NFC Tools (3x3 Matrix Suite)"]
         LlmGateway["LLM Gateway (:8080) & MCP Router"]
+        DynamicStudio["Dynamic Tools Studio (:dynamic-tools)"]
         CyberChat["CyberChat AI Studio"]
         Sensors["Sensors Live Telemetry"]
+    end
+
+    subgraph DynamicStorage["Sandboxed App Storage (/data/user/0/.../custom_tools/)"]
+        CustomApp1["Dynamic Tool: Cyber Calculator"]
+        CustomApp2["Dynamic Tool: Regex Lab"]
+        CustomAppN["Dynamic Tool: N..."]
     end
 
     subgraph Diagnostics["Diagnostics & Telemetry Engine"]
@@ -89,13 +103,19 @@ graph TD
     HostNavHost --> FtpClient
     HostNavHost --> NfcTools
     HostNavHost --> LlmGateway
+    HostNavHost --> DynamicStudio
     HostNavHost --> CyberChat
     HostNavHost --> Sensors
+
+    DynamicStudio -->|Persist Code Bundle| DynamicStorage
+    DynamicStorage -.->|toolsFlow Dynamic Registration| Dashboard
+    DynamicStorage -->|Load Inlined Bundle| HostNavHost
 
     FtpServer -.->|Telemetry| AppLogHub
     FtpClient -.->|Telemetry| AppLogHub
     NfcTools -.->|Tag Logs| AppLogHub
     LlmGateway -.->|Routing Logs| AppLogHub
+    DynamicStudio -.->|Generation Events| AppLogHub
     CyberChat -.->|Events| AppLogHub
     Sensors -.->|Telemetry| AppLogHub
     AppLogHub --> LogViewer
@@ -145,6 +165,45 @@ sequenceDiagram
 
 ---
 
+### Dynamic Web Tools & Sandboxed WebView Lifecycle
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User / Dynamic Tools Studio
+    participant StudioVM as DynamicToolsStudioViewModel
+    participant LLMClient as DynamicToolLlmClient
+    participant Gateway as Local LLM Gateway (:8080)
+    participant Storage as DynamicToolStorageManager
+    participant AppState as HostAppState (Catalog Flow)
+    participant Runner as DynamicToolRunnerScreen (WebView)
+    participant Bridge as window.AndroidBridge
+
+    User->>StudioVM: Natural Language Prompt (e.g. "Scientific Calculator")
+    StudioVM->>LLMClient: generateTool(prompt)
+    LLMClient->>Gateway: POST /v1/chat/completions (Strict JSON Contract)
+    Gateway-->>LLMClient: Return JSON with HTML, CSS, JS & Manifest
+    LLMClient-->>StudioVM: Parsed DynamicToolBundle
+    StudioVM->>Storage: saveTool(bundle)
+    Storage->>Storage: Save to /files/custom_tools/<tool_id>/ (manifest.json, index.html, styles.css, app.js)
+    Storage-->>AppState: Emit updated toolsFlow
+    AppState->>AppState: Register dynamic_<tool_id> into Dashboard Gallery
+
+    User->>Runner: Launch Tool from Gallery
+    Runner->>Storage: Read Bundle & buildInlinedHtml()
+    Runner->>Runner: webView.loadDataWithBaseURL()
+    Runner->>Bridge: Bind JavascriptInterface (window.AndroidBridge)
+    
+    Note over Runner,Bridge: Interactive Execution & Native APIs
+    User->>Runner: Interact with UI
+    Runner->>Bridge: window.AndroidBridge.showToast("Copied!")
+    Runner->>Bridge: window.AndroidBridge.vibrate(50)
+    Runner->>Bridge: window.AndroidBridge.getDeviceInfo()
+    Bridge-->>Runner: Native Execution & Logs to AppLogHub
+```
+
+---
+
 ### NFC Tools 3×3 Matrix & IC Protocol Stack
 
 ```mermaid
@@ -181,7 +240,7 @@ mother_of_all_apps/
 │   └── src/main/java/dev/pritam/host/
 │       ├── config/                     # Tool Registry metadata and definitions
 │       ├── ftp/                        # RFC-compliant FTP Server engine & service
-│       ├── host/                       # Host app state & tool loader
+│       ├── host/                       # Host app state & dynamic tool loader
 │       ├── logging/                    # AppLogHub diagnostic bus & retention pruner
 │       ├── settings/                   # Global preferences & gateway controls
 │       ├── shortcut/                   # Android Launcher Shortcut Manager
@@ -193,11 +252,22 @@ mother_of_all_apps/
 │       │   ├── nfc/                    # NFC 3x3 Suite, NDEF, Memory Map & Sector Analyzer
 │       │   └── sensors/                # Hardware sensor manager & sampling engine
 │       └── ui/                         # Host Theme, Navigation, & Dashboard
+├── dynamic-tools/                      # Dynamic Web Tool Generator & Sandboxed Runner Module
+│   └── src/main/java/dev/pritam/dynamictools/
+│       ├── bridge/                     # Native window.AndroidBridge JavascriptInterface
+│       ├── engine/                     # LLM Prompt Builder & JSON parser
+│       ├── model/                      # Manifest, Bundle, and Preset schemas
+│       ├── storage/                    # Sandboxed file manager & default seeds
+│       └── ui/
+│           ├── components/             # Code Editor & AI Refinement Dialogs
+│           ├── runner/                 # Sandboxed WebView Runner Screen & ViewModel
+│           └── studio/                 # Studio Generator Screen & ViewModel
 └── plugin-api/                         # Lightweight interfaces for tool contracts
 ```
 
 ### Concurrency & Reactive State
 - **State Management**: Every tool uses reactive `StateFlow` and `SharedFlow` primitives to ensure unidirectional data flow (UDF) between ViewModels and Compose screens.
+- **Dynamic Catalog Discovery**: `DynamicToolStorageManager` provides a reactive `toolsFlow` that automatically injects new, updated, or deleted web tools directly into the main app dashboard gallery at runtime.
 - **Background Services**: Long-running network services (such as the LAN FTP Server and LLM Gateway Server) run in decoupled Android Foreground Services with persistent wake-locks and notification state controls.
 - **Zero Third-Party Bloat**: Built cleanly with standard Android SDK, Jetpack libraries, and pure Kotlin serialization.
 
@@ -248,7 +318,15 @@ An embedded loopback proxy server running on `http://127.0.0.1:8080` that unifie
 - **Zero-Downtime Smart Failover**: If a desktop machine is offline or a cloud account hits rate limits (`HTTP 429`), requests automatically failover to the next available provider in your priority sequence without dropping the user's connection.
 - **Subnet Scanner**: One-tap LAN scanner that sweeps the local subnet (`/24`) to automatically discover active Ollama/LM Studio servers.
 
-### 5. CyberChat AI Studio
+### 5. Dynamic Tools Studio (AI Web App Generator)
+Create, refine, test, and run lightweight custom HTML/CSS/JS micro-tools generated on-the-fly via natural language prompts.
+- **On-Device Sandboxed Storage**: Tools are saved locally to `/data/user/0/<package>/files/custom_tools/<tool_id>/` with complete `manifest.json`, `index.html`, `styles.css`, and `app.js` assets.
+- **Dynamic Catalog Registration**: Generated web apps are automatically registered alongside native Kotlin tools in the host app drawer and dashboard gallery with `AI WEB APP` badges.
+- **Built-in Code Editor & AI Refiner**: Edit raw HTML, CSS, or JS code directly on-device or prompt the LLM to refine specific features (e.g. "Add scientific trigonometric functions" or "Make the buttons glow cyan on hover").
+- **Native Android JavaScript Bridge (`window.AndroidBridge`)**: Generated web tools can trigger native haptic vibrations, display Android toasts, copy text to system clipboard, and query device specs directly from JavaScript.
+- **Curated Starter Presets**: Instant one-tap generation templates for Scientific Calculator, Unit Converter, Regex Lab, Pomodoro Timer, JSON Formatter, and Crypto Hash Studio.
+
+### 6. CyberChat AI Studio
 Interactive conversational AI interface powered by the local LLM Gateway.
 - **MCP Tool Calling & Interactive Accordions**: When an LLM invokes an MCP tool, CyberChat renders collapsible interactive tool invocation cards displaying arguments, status, and JSON outputs directly in the chat bubble.
 - **Multi-Session Thread Manager**: Organize multiple independent chat threads with persistent local JSON storage.
@@ -261,16 +339,16 @@ Interactive conversational AI interface powered by the local LLM Gateway.
 - **Markdown & Monospace Code Blocks**: Syntax-highlighted code blocks with 1-click **Copy Code** action.
 - **Failover Badges & Latency Meters**: Inspect exact model used, response latency, and failover paths taken for each generation.
 
-### 6. Sensors Live & Hardware Telemetry
+### 7. Sensors Live & Hardware Telemetry
 Real-time physical sensor inspection and dynamic hardware monitoring.
 - **Sensor Discovery**: Automatically enumerates all hardware sensors on the device (Accelerometer, Gyroscope, Magnetometer, Barometer, Light, Proximity, Temperature, Step Counter, Orientation, etc.).
 - **Dynamic Live Sampling**: Switch between `1s`, `2s`, `5s`, `Fast (Live)`, or `Paused` sampling rates at runtime with event throttling.
 - **Vector Decomposition**: Live 3-axis readings ($X, Y, Z$) with standard SI physical units (`m/s²`, `rad/s`, `µT`, `lx`, `hPa`, `°C`).
 - **Telemetry Export**: Copy full sensor snapshots to clipboard formatted as Markdown or JSON for diagnostics.
 
-### 7. Centralized System Log Hub
+### 8. Centralized System Log Hub
 Universal diagnostic bus for the entire application.
-- **Cross-Tool Stream**: Aggregates operations from FTP Server, FTP Client, NFC Tools, LLM Gateway, and Sensors.
+- **Cross-Tool Stream**: Aggregates operations from FTP Server, FTP Client, NFC Tools, LLM Gateway, Dynamic Tools Studio, and Sensors.
 - **Multiselect Filtering**: Filter logs by severity (`VERBOSE`, `DEBUG`, `INFO`, `WARN`, `ERROR`) and originating tool ID.
 - **Highlighted Badging**: Highlights file paths, NFC payloads, raw hex data, and connection events.
 - **Memory Retention Policies**: Configurable auto-purge window (1 Hour, 1 Day, 1 Week, 1 Month, or Unlimited).
@@ -279,8 +357,8 @@ Universal diagnostic bus for the entire application.
 
 ## 🚀 Developer Guide & Productivity
 
-### Adding a New Tool Plugin
-All tools in MOAA are statically defined in `ToolRegistryConfig.kt` and routed through `HostNavHost.kt`. To add a new tool:
+### Adding a New Native Tool Plugin
+All native tools in MOAA are statically defined in `ToolRegistryConfig.kt` and routed through `HostNavHost.kt`. To add a new native tool:
 
 1. **Define the Tool Metadata** in `dev/pritam/host/config/ToolRegistryConfig.kt`:
 ```kotlin
@@ -311,6 +389,64 @@ composable(HostRoutes.MY_CUSTOM_TOOL) {
 ```
 
 3. **Register Dashboard Click Dispatch** in `DashboardScreen.kt` and `HostNavHost.kt`.
+
+---
+
+### Creating Dynamic Web Tools via LLM Gateway
+The `:dynamic-tools` module generates, stores, and runs web applications completely on-device without modifying APK bytecode.
+
+#### LLM JSON Contract
+When generating a new dynamic tool, `DynamicToolPromptBuilder` sends a strict schema prompt to `http://127.0.0.1:8080/v1/chat/completions`:
+```json
+{
+  "tool_id": "scientific_calculator",
+  "display_name": "Scientific Calculator",
+  "description": "A sleek dark-mode scientific calculator with trig functions.",
+  "icon_name": "calculator",
+  "html": "<!DOCTYPE html><html lang=\"en\"><head>...</head><body>...</body></html>",
+  "css": "body { background: #0b0f19; color: #f1f5f9; font-family: sans-serif; } ...",
+  "js": "function calculate() { ... }"
+}
+```
+
+#### Local Storage Layout
+Tools are stored sandboxed inside the app's internal files directory:
+```
+/data/user/0/dev.pritam.host/files/custom_tools/
+└── <tool_id>/
+    ├── manifest.json       # App ID, Name, Description, Icon, Version, Timestamp
+    ├── index.html          # Semantic HTML5 Structure
+    ├── styles.css          # CSS3 Styling (Dark Mode / Glassmorphism)
+    └── app.js              # JavaScript Interactive Logic
+```
+
+---
+
+### Android JavaScript Bridge (`window.AndroidBridge`)
+All dynamic tools run inside a sandboxed `WebView` that exposes `window.AndroidBridge` with native hardware and OS integrations:
+
+| Method | Signature | Description |
+| :--- | :--- | :--- |
+| `log` | `log(message: string)` | Broadcasts a log line directly to MOAA's centralized **System Log Hub**. |
+| `showToast` | `showToast(message: string)` | Displays a native Android Toast notification on the screen. |
+| `vibrate` | `vibrate(durationMs: number)` | Triggers the device's physical haptic vibration motor. |
+| `copyToClipboard` | `copyToClipboard(text: string)` | Copies text to the Android system clipboard with instant haptic feedback. |
+| `getDeviceInfo` | `getDeviceInfo(): string` | Returns a JSON string containing device model, manufacturer, Android SDK, and brand. |
+
+#### Example JavaScript Usage inside Dynamic Tool:
+```javascript
+// Copy result and show toast with haptic feedback
+function onCopyResult(val) {
+    if (window.AndroidBridge) {
+        window.AndroidBridge.copyToClipboard(val);
+        window.AndroidBridge.vibrate(50);
+        window.AndroidBridge.showToast("Copied result: " + val);
+        window.AndroidBridge.log("User copied calculation result: " + val);
+    } else {
+        navigator.clipboard.writeText(val);
+    }
+}
+```
 
 ---
 
@@ -366,6 +502,14 @@ MOAA includes a fully automated GitHub Actions pipeline ([.github/workflows/rele
 ---
 
 ## 📱 User Guide & Workflows
+
+### Quick Start: Generating a Dynamic Web Tool
+1. Open **Dynamic Tools Studio** from the Dashboard or by tapping **+ Create Tool**.
+2. Type a natural language prompt (e.g., *"Build an interactive Pomodoro Timer with start, pause, reset, and round counters"*), or pick any of the instant starter chips (Calculator, Unit Converter, Regex Lab, Crypto Studio).
+3. Tap **Generate Tool**. The tool will stream and synthesize HTML/CSS/JS via the LLM Gateway.
+4. Tap **Run Tool** to launch it inside the sandboxed runner.
+5. Tap **Code** to inspect or modify HTML/CSS/JS files, or tap **Refine** to prompt the AI for iterative improvements.
+6. The generated app is instantly accessible directly from the main **Dashboard** gallery alongside native tools!
 
 ### Quick Start: Wi-Fi File Sharing
 1. Connect your phone to the same Wi-Fi network as your PC or Mac.

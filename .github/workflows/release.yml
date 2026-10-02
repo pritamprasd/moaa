@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+# Ensure only one build runs per branch; cancels redundant in-progress runs on newer push
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -50,9 +56,24 @@ jobs:
           TAG_NAME="v${VERSION_NAME}-r${RUN_NUM}"
           RELEASE_TITLE="Release v${VERSION_NAME} (Build #${RUN_NUM})"
 
+          # Aggregate commit history for this push
+          if [ -n "${{ github.event.before }}" ] && [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            COMMIT_CHANGELOG=$(git log --pretty=format:"- %h: %s" "${{ github.event.before }}..${{ github.sha }}")
+          else
+            COMMIT_CHANGELOG=$(git log -n 5 --pretty=format:"- %h: %s")
+          fi
+
+          if [ -z "$COMMIT_CHANGELOG" ]; then
+            COMMIT_CHANGELOG="- ${SHORT_SHA}: Latest changes"
+          fi
+
+          # Output multiline changelog to GITHUB_OUTPUT
           echo "tag_name=${TAG_NAME}" >> $GITHUB_OUTPUT
           echo "release_title=${RELEASE_TITLE}" >> $GITHUB_OUTPUT
           echo "version_name=${VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
           # Copy and standardize APK names
           if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
@@ -78,7 +99,10 @@ jobs:
           body: |
             ## 🚀 MotherOfAllApps Release `${{ steps.prep_assets.outputs.tag_name }}`
 
-            Automated build & release generated from commit [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) pushed to `main`.
+            Automated build & release generated from push [`${{ github.sha }}`](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}) to `main`.
+
+            ### 📝 Combined Commits in this Push
+            ${{ steps.prep_assets.outputs.changelog }}
 
             ### 📦 Included APK Binaries
             - **Debug APK (Installable Immediately)**: `MotherOfAllApps-${{ steps.prep_assets.outputs.tag_name }}-debug.apk`

@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
 
     debugImplementation(libs.androidx.compose.ui.tooling)
-
     implementation(project(":plugin-api"))
+
+    testImplementation("junit:junit:4.13.2")
 }

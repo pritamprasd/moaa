@@ -98,6 +98,18 @@ object ToolRegistryConfig {
             iconType = "sensors",
             accentColorHex = 0xFFF59E0B, // Amber
             requiredPermissions = listOf("None")
+        ),
+        ToolDefinition(
+            id = "llm-gateway",
+            name = "LLM Gateway",
+            shortTagline = "Multi-account Cloud & Desktop LAN LLM proxy with smart failover.",
+            description = "High-performance authenticated loopback HTTP proxy (http://127.0.0.1:8080) for Gemini Pro/Flash, OpenAI ChatGPT, and local LAN desktop engines (Ollama, LM Studio, vLLM). Features automatic failover on rate limits (429) or host drop, LAN mDNS/subnet discovery, and priority sequence management.",
+            version = "1.0.0",
+            category = "AI & Local LLM Gateway",
+            author = "AI Core",
+            iconType = "brain",
+            accentColorHex = 0xFF10B981, // Emerald
+            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
         )
     )
 

@@ -44,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.motherofallapps.host.ftp.ui.components.IsometricCard
+import dev.motherofallapps.host.ftp.ui.components.LiquidGlassButton
+import dev.motherofallapps.host.ftp.ui.components.RainbowGlassBorderBrush
 import dev.motherofallapps.host.logging.AppLogHub
 import dev.motherofallapps.host.settings.AppSettingsManager
 import dev.motherofallapps.host.ui.theme.Cyan
@@ -132,12 +134,17 @@ fun SettingsScreen(
                 )
             }
 
-            // 3. Homescreen Shortcuts Card
+            // 3. LLM Gateway Server Card
+            item {
+                LlmGatewaySettingsCard(context = context)
+            }
+
+            // 4. Homescreen Shortcuts Card
             item {
                 HomescreenShortcutsCard(context = context)
             }
 
-            // 4. About & Version Info Card
+            // 5. About & Version Info Card
             item {
                 AboutInfoCard(
                     onResetDefaults = {
@@ -344,23 +351,19 @@ private fun DiagnosticsSettingsCard(
             Spacer(Modifier.height(14.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(
+                LiquidGlassButton(
                     onClick = onOpenLogViewer,
                     modifier = Modifier.weight(1f),
-                    border = BorderStroke(1.dp, Violet),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Violet)
-                ) {
-                    Text("Open System Logs", fontSize = 11.sp)
-                }
+                    glowColor = Violet,
+                    text = "Open System Logs"
+                )
 
-                OutlinedButton(
+                LiquidGlassButton(
                     onClick = onClearLogs,
                     modifier = Modifier.weight(1f),
-                    border = BorderStroke(1.dp, Rose.copy(alpha = 0.6f)),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Rose)
-                ) {
-                    Text("Clear Buffer", fontSize = 11.sp)
-                }
+                    glowColor = Rose,
+                    text = "Clear Buffer"
+                )
             }
         }
     }
@@ -448,21 +451,85 @@ private fun HomescreenShortcutsCard(context: Context) {
 
                             Spacer(Modifier.width(8.dp))
 
-                            OutlinedButton(
+                            LiquidGlassButton(
                                 onClick = {
                                     dev.motherofallapps.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, tool)
                                 },
-                                border = BorderStroke(1.dp, accentColor.copy(alpha = 0.8f)),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor),
-                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                modifier = Modifier.height(28.dp)
+                                glowColor = accentColor,
+                                useRainbowBorder = true,
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
                             ) {
-                                Text("📌 Pin", fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                Text("📌 Pin", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = accentColor)
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LlmGatewaySettingsCard(context: Context) {
+    val httpServer = dev.motherofallapps.host.tool.llmgateway.manager.LlmGatewayManager.getHttpServer(context)
+    val telemetry by httpServer.telemetry.collectAsStateWithLifecycle()
+
+    IsometricCard(glowColor = if (telemetry.isRunning) Color(0xFF34D399) else Rose) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "LOCAL LLM GATEWAY SERVER",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (telemetry.isRunning) Color(0xFF34D399) else Rose,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = if (telemetry.isRunning) Color(0xFF34D399).copy(alpha = 0.15f) else Rose.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = if (telemetry.isRunning) "● RUNNING :8080" else "○ STOPPED",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (telemetry.isRunning) Color(0xFF34D399) else Rose,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Embedded local HTTP loopback server (http://127.0.0.1:8080) for container tools and local apps with OpenAI-compatible API spec, multi-account pooling & failover.",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            LiquidGlassButton(
+                onClick = {
+                    if (telemetry.isRunning) {
+                        httpServer.stop()
+                        Toast.makeText(context, "LLM Gateway Server stopped", Toast.LENGTH_SHORT).show()
+                    } else {
+                        httpServer.start()
+                        Toast.makeText(context, "LLM Gateway Server started on :8080", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                glowColor = if (telemetry.isRunning) Rose else Color(0xFF34D399),
+                useRainbowBorder = !telemetry.isRunning,
+                text = if (telemetry.isRunning) "Stop Gateway Server" else "Start Gateway Server"
+            )
         }
     }
 }
@@ -494,14 +561,13 @@ private fun AboutInfoCard(
 
             Spacer(Modifier.height(14.dp))
 
-            OutlinedButton(
+            LiquidGlassButton(
                 onClick = onResetDefaults,
                 modifier = Modifier.fillMaxWidth(),
-                border = BorderStroke(1.dp, Color(0xFF334155)),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
-            ) {
-                Text("Reset App Preferences to Defaults", fontSize = 11.sp)
-            }
+                glowColor = Color(0xFF94A3B8),
+                text = "Reset App Preferences to Defaults"
+            )
         }
     }
 }
+

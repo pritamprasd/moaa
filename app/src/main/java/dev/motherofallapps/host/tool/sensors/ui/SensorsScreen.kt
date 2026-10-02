@@ -54,6 +54,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.motherofallapps.host.ftp.ui.components.IsometricCard
 import dev.motherofallapps.host.ftp.ui.components.IsometricStatTile
+import dev.motherofallapps.host.ftp.ui.components.LiquidGlassButton
+import dev.motherofallapps.host.ftp.ui.components.RainbowGlassBorderBrush
+import dev.motherofallapps.host.ftp.ui.components.liquidGlassTextFieldColors
 import dev.motherofallapps.host.tool.sensors.model.SensorCategory
 import dev.motherofallapps.host.tool.sensors.model.SensorInfoItem
 import dev.motherofallapps.host.tool.sensors.model.SensorValueReading
@@ -154,12 +157,7 @@ fun SensorsScreen(
                         }
                     }
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFF59E0B),
-                    unfocusedBorderColor = GlassBorder,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
-                ),
+                colors = liquidGlassTextFieldColors(focusedBorderColor = Color(0xFFF59E0B)),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -257,15 +255,13 @@ private fun SensorsStatsBanner(
                 }
             }
 
-            OutlinedButton(
+            LiquidGlassButton(
                 onClick = onPauseToggle,
-                border = BorderStroke(1.dp, if (isPaused) Cyan else Rose),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = if (isPaused) Cyan else Rose),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                modifier = Modifier.height(28.dp)
-            ) {
-                Text(if (isPaused) "▶ Resume" else "⏸ Pause", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-            }
+                glowColor = if (isPaused) Cyan else Rose,
+                useRainbowBorder = isPaused,
+                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                text = if (isPaused) "▶ Resume" else "⏸ Pause"
+            )
         }
     }
 }
@@ -399,17 +395,16 @@ private fun SensorLiveCard(
     val shape = RoundedCornerShape(12.dp)
 
     Box(modifier = Modifier.fillMaxWidth().animateContentSize(tween(200))) {
-        // Refraction depth backplate
+        // Refraction depth backplate (Border removed for clean liquid shadow)
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .offset(x = 1.dp, y = 3.dp)
                 .clip(shape)
-                .background(Color(0x50030712))
-                .border(BorderStroke(1.dp, accentColor.copy(alpha = 0.15f)), shape)
+                .background(Color(0x45030712))
         )
 
-        // Main frosted glass card surface
+        // Main frosted glass card surface with Rainbow border when active
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -425,13 +420,7 @@ private fun SensorLiveCard(
                 .border(
                     BorderStroke(
                         1.dp,
-                        Brush.linearGradient(
-                            listOf(
-                                GlassBorderHighlight,
-                                if (isActive) accentColor.copy(alpha = 0.7f) else GlassBorder,
-                                GlassBorder
-                            )
-                        )
+                        if (isActive) RainbowGlassBorderBrush else Brush.linearGradient(listOf(GlassBorder, GlassBorder.copy(alpha = 0.4f)))
                     ),
                     shape
                 )

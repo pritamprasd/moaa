@@ -205,16 +205,17 @@ fun DashboardScreen(
                         },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Cyan,
-                            unfocusedBorderColor = Color(0xFF334155),
+                            unfocusedBorderColor = dev.motherofallapps.host.ui.theme.GlassBorder,
                             focusedTextColor = TextPrimary,
                             unfocusedTextColor = TextPrimary,
-                            focusedContainerColor = SurfaceDeep,
-                            unfocusedContainerColor = SurfaceDeep
+                            focusedContainerColor = dev.motherofallapps.host.ui.theme.GlassSurfaceDeep,
+                            unfocusedContainerColor = dev.motherofallapps.host.ui.theme.GlassSurfaceDeep
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp)
+                            .border(BorderStroke(1.dp, dev.motherofallapps.host.ftp.ui.components.RainbowGlassBorderBrush), RoundedCornerShape(12.dp))
                     )
                 }
             }
@@ -286,27 +287,25 @@ private fun ExpandableToolGalleryCard(
         "ftp-client" -> Color(0xFF34D399)
         "nfc-tool" -> Rose
         "log-viewer" -> Violet
+        "sensors" -> Color(0xFFF59E0B)
+        "llm-gateway" -> Color(0xFF10B981)
         else -> Cyan
     }
 
     val iconType = definition?.iconType ?: "generic"
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(14.dp)
 
     Box(modifier = Modifier.fillMaxWidth()) {
-        // 1. Liquid Glass Depth Refraction Shadow
+        // 1. Clean Liquid Glass Depth Shadow (No duplicate border strokes!)
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .offset(x = 2.dp, y = 4.dp)
+                .offset(x = 1.dp, y = 3.dp)
                 .clip(shape)
-                .background(Color(0x60030712))
-                .border(
-                    BorderStroke(1.dp, accentColor.copy(alpha = 0.2f)),
-                    shape
-                )
+                .background(Color(0x50030712))
         )
 
-        // 2. Main Frosted Acrylic Glass Layer
+        // 2. Main Frosted Acrylic Glass Layer with Single Radiant Rainbow Border
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -314,23 +313,13 @@ private fun ExpandableToolGalleryCard(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            if (isExpanded) accentColor.copy(alpha = 0.15f) else Color(0x401E293B),
-                            Color(0x220F172A)
+                            if (isExpanded) accentColor.copy(alpha = 0.18f) else Color(0x3E1E293B),
+                            Color(0x1D0F172A)
                         )
                     )
                 )
                 .border(
-                    BorderStroke(
-                        1.dp,
-                        Brush.linearGradient(
-                            listOf(
-                                dev.motherofallapps.host.ui.theme.GlassBorderHighlight,
-                                if (isExpanded) accentColor else accentColor.copy(alpha = 0.65f),
-                                dev.motherofallapps.host.ui.theme.GlassBorder,
-                                accentColor.copy(alpha = 0.25f)
-                            )
-                        )
-                    ),
+                    BorderStroke(1.dp, dev.motherofallapps.host.ftp.ui.components.RainbowGlassBorderBrush),
                     shape
                 )
         ) {
@@ -343,8 +332,8 @@ private fun ExpandableToolGalleryCard(
                         Brush.horizontalGradient(
                             listOf(
                                 Color.Transparent,
-                                Color.White.copy(alpha = 0.4f),
-                                accentColor.copy(alpha = 0.5f),
+                                Color.White.copy(alpha = 0.45f),
+                                Color(0xFF38BDF8).copy(alpha = 0.55f),
                                 Color.Transparent
                             )
                         )
@@ -418,15 +407,15 @@ private fun ExpandableToolGalleryCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
-                    ) {
-                        Box(
+                    ) {                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = dev.motherofallapps.host.ui.theme.GlassSurfaceDeep,
+                            border = BorderStroke(1.dp, dev.motherofallapps.host.ui.theme.GlassBorder),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(SurfaceDeep)
-                                .padding(8.dp)
+                                .padding(top = 4.dp)
                         ) {
-                            Column {
+                            Column(modifier = Modifier.padding(10.dp)) {
                                 Text(
                                     text = definition?.description ?: tool.description,
                                     style = MaterialTheme.typography.bodySmall,
@@ -471,19 +460,18 @@ private fun ExpandableToolGalleryCard(
 
                                 Spacer(Modifier.height(8.dp))
 
-                                OutlinedButton(
+                                dev.motherofallapps.host.ftp.ui.components.LiquidGlassButton(
                                     onClick = {
                                         definition?.let {
                                             dev.motherofallapps.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, it)
                                         }
                                     },
-                                    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.8f)),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor),
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
-                                    modifier = Modifier.fillMaxWidth().height(28.dp)
-                                ) {
-                                    Text("📌 Add to Home Screen", fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                                }
+                                    text = "📌 Pin to Home Screen",
+                                    glowColor = accentColor,
+                                    useRainbowBorder = true,
+                                    modifier = Modifier.fillMaxWidth().height(30.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                                )
                             }
                         }
                     }
@@ -646,6 +634,23 @@ private fun ToolIsometricIcon(
                     )
                     drawCircle(color = color, radius = 2.5.dp.toPx(), center = Offset(cx, cy))
                     drawLine(color = color.copy(alpha = 0.5f), start = Offset(cx, cy - h * 0.38f), end = Offset(cx, cy + h * 0.38f), strokeWidth = 1.dp.toPx())
+                }
+                "brain" -> {
+                    // Neural AI Node & Synapse Matrix
+                    val topNode = Offset(cx, cy - h * 0.32f)
+                    val leftNode = Offset(cx - w * 0.3f, cy + h * 0.15f)
+                    val rightNode = Offset(cx + w * 0.3f, cy + h * 0.15f)
+                    val centerNode = Offset(cx, cy)
+
+                    drawLine(color = color.copy(alpha = 0.5f), start = topNode, end = centerNode, strokeWidth = 1.5.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.5f), start = leftNode, end = centerNode, strokeWidth = 1.5.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.5f), start = rightNode, end = centerNode, strokeWidth = 1.5.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.4f), start = leftNode, end = rightNode, strokeWidth = 1.2.dp.toPx())
+
+                    drawCircle(color = color, radius = 2.8.dp.toPx(), center = topNode)
+                    drawCircle(color = color, radius = 2.8.dp.toPx(), center = leftNode)
+                    drawCircle(color = color, radius = 2.8.dp.toPx(), center = rightNode)
+                    drawCircle(color = color, radius = 3.8.dp.toPx(), center = centerNode)
                 }
                 else -> {
                     // Generic Cyber Chip

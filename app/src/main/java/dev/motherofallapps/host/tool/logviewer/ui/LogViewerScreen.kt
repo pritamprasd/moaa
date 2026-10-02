@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.motherofallapps.host.ftp.ui.components.IsometricCard
 import dev.motherofallapps.host.ftp.ui.components.IsometricStatTile
+import dev.motherofallapps.host.ftp.ui.components.liquidGlassTextFieldColors
 import dev.motherofallapps.host.logging.AppLogHub
 import dev.motherofallapps.host.logging.LogLevel
 import dev.motherofallapps.host.logging.ToolLog
@@ -160,12 +161,7 @@ fun LogViewerScreen(
                         }
                     }
                 },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Cyan,
-                    unfocusedBorderColor = Color(0xFF334155),
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary
-                ),
+                colors = liquidGlassTextFieldColors(focusedBorderColor = Cyan),
                 modifier = Modifier.fillMaxWidth()
             )
 

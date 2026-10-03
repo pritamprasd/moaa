@@ -291,6 +291,8 @@ private fun ExpandableToolGalleryCard(
         tool.id.value == "sensors" -> Color(0xFFF59E0B)
         tool.id.value == "llm-gateway" -> Color(0xFF10B981)
         tool.id.value == "llm-chat" -> Color(0xFF38BDF8)
+        tool.id.value == "system-info" -> Color(0xFF38BDF8) // Cyan
+        tool.id.value == "net-topology" -> Color(0xFF06B6D4) // Bright Cyan
         tool.id.value == "dynamic-tools-studio" -> Color(0xFFF43F5E) // Rose-Red
         tool.id.value.startsWith("dynamic_") -> Color(0xFF38BDF8) // Dynamic Web Tool
         else -> Cyan
@@ -779,6 +781,29 @@ private fun ToolIsometricIcon(
                     drawLine(color = color, start = Offset(cx, cy - h * 0.16f), end = Offset(cx, cy + h * 0.16f), strokeWidth = 1.5.dp.toPx())
                     drawLine(color = color, start = Offset(cx - w * 0.16f, cy), end = Offset(cx + w * 0.16f, cy), strokeWidth = 1.5.dp.toPx())
                     drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx, cy))
+                }
+                "net-topology" -> {
+                    // Network Topology Mesh: Central Core Router with 3 Satellite Nodes & Links
+                    val coreCenter = Offset(cx, cy - h * 0.08f)
+                    val leftNode = Offset(cx - w * 0.28f, cy + h * 0.22f)
+                    val rightNode = Offset(cx + w * 0.28f, cy + h * 0.22f)
+                    val topNode = Offset(cx, cy - h * 0.32f)
+
+                    // Connecting link lines
+                    drawLine(color = color.copy(alpha = 0.6f), start = coreCenter, end = leftNode, strokeWidth = 1.2.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.6f), start = coreCenter, end = rightNode, strokeWidth = 1.2.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.6f), start = coreCenter, end = topNode, strokeWidth = 1.2.dp.toPx())
+                    drawLine(color = color.copy(alpha = 0.3f), start = leftNode, end = rightNode, strokeWidth = 1.dp.toPx())
+
+                    // Satellite Node Discs
+                    drawCircle(color = color.copy(alpha = 0.85f), radius = 2.8.dp.toPx(), center = leftNode)
+                    drawCircle(color = color.copy(alpha = 0.85f), radius = 2.8.dp.toPx(), center = rightNode)
+                    drawCircle(color = color.copy(alpha = 0.85f), radius = 2.8.dp.toPx(), center = topNode)
+
+                    // Core Node (Gateway)
+                    drawCircle(color = SurfaceDeep, radius = 4.5.dp.toPx(), center = coreCenter)
+                    drawCircle(color = color, radius = 4.5.dp.toPx(), center = coreCenter, style = Stroke(1.5.dp.toPx()))
+                    drawCircle(color = color, radius = 1.8.dp.toPx(), center = coreCenter)
                 }
                 else -> {
                     // Generic Cyber Chip

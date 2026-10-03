@@ -447,6 +447,43 @@ object SystemManualData {
                 "Tip: Use the search bar at the top to instantly find specific values like 'mac', 'ip', 'fingerprint', or 'ram'.",
                 "Tip: Switch to '1s (Real-time)' mode to monitor live memory allocations during intensive operations."
             )
+        ),
+        ManualSection(
+            id = "net-topology",
+            title = "Network Topology & Scanner",
+            category = "Networking & Security",
+            tagline = "Interactive visual network map, ARP discovery, multi-hop topology & port scanner.",
+            iconEmoji = "🌐",
+            accentColor = Color(0xFF06B6D4),
+            toolRouteId = "net-topology",
+            paragraphs = listOf(
+                "Network Topology & Scanner performs high-speed multi-protocol network discovery across your active LAN subnet. It concurrently combines ICMP ping, TCP socket probes, and kernel ARP tables (/proc/net/arp) to identify all reachable devices including routers, secondary mesh APs, PCs, smartphones, servers/NAS, smart home IoT microcontrollers (ESP32, Tuya), and network printers.",
+                "Discovered nodes are rendered in an interactive 2D Canvas supporting Hierarchical Tree, Radial Orbital, and Concentric Mesh layouts with animated signal particles and latency halos. Tapping any node opens a deep inspection sheet with MAC OUI manufacturer identification, open TCP port scanning, live hop traceroute probing, and full network report export."
+            ),
+            keyFeatures = listOf(
+                "Interactive Visual Topology Graph" to "Zoomable and pannable 2D Canvas with 3 layout modes (Tree Hierarchy, Orbital Radar, Concentric Mesh) and live signal flow animations.",
+                "Multi-Protocol Subnet Scanner" to "High-speed parallel ICMP ping, TCP socket probing, and ARP cache parsing to detect devices even if ICMP ping is firewalled.",
+                "MAC Vendor OUI Database" to "Embedded OUI resolver identifying device manufacturers (Apple, Samsung, Google, Espressif, Raspberry Pi, TP-Link, Cisco, Netgear, Xiaomi, etc.).",
+                "Open Port & Service Scanner" to "Probes common network ports (HTTP, HTTPS, SSH, FTP, RTSP, MQTT, MySQL, Ollama LLM, Printers) with banner detection.",
+                "Live Traceroute & Hop Probing" to "Inspects intermediate routing hops and serial routers/hubs between your device and the target node.",
+                "Dual Graph & List View" to "Seamlessly switch between an interactive visual graph map and a detailed searchable list with 1-tap copy actions."
+            ),
+            quickStartSteps = listOf(
+                "1. Open Network Topology & Scanner from the Dashboard while connected to Wi-Fi or Ethernet.",
+                "2. Tap the Refresh icon in the top bar to run a full subnet discovery scan.",
+                "3. In Graph View, pinch to zoom, drag to pan, and tap any node to inspect its technical properties.",
+                "4. Use the layout switcher (🌳 / 🎯 / 🕸️) to toggle between Tree, Radial, and Mesh graph structures.",
+                "5. In the Deep Inspect sheet, tap '⚡ Deep Scan' to discover open ports or '🛰️ Trace Route' to map hops.",
+                "6. Tap the Export icon in the top bar to copy the full multi-node network report to your clipboard."
+            ),
+            codeSnippets = listOf(
+                "Parsing ARP Cache from Linux Shell" to "cat /proc/net/arp",
+                "Subnet Scan using Ping & Nmap" to "nmap -sn 192.168.1.0/24 || ping -c 1 192.168.1.1"
+            ),
+            tips = listOf(
+                "Tip: If a device has HTTP (port 80/8080) or HTTPS (port 443) open, tap '🌐 Open Web' in the inspector to directly launch its web admin portal.",
+                "Tip: In List View, devices start collapsed by default for a clean view — tap any row to expand its MAC, open ports, and quick actions."
+            )
         )
     )
 }

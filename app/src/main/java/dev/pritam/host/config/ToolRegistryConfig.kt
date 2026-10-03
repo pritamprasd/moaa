@@ -182,6 +182,18 @@ object ToolRegistryConfig {
             iconType = "system-info",
             accentColorHex = 0xFF38BDF8, // Cyan
             requiredPermissions = listOf("ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
+        ),
+        ToolDefinition(
+            id = "net-topology",
+            name = "Network Topology & Scanner",
+            shortTagline = "Interactive visual network map, ARP discovery, multi-hop topology & port scanner.",
+            description = "High-speed multi-protocol local network scanner and visual topology mapper. Concurrently scans active subnets using ICMP ping, TCP socket probes, and kernel ARP tables to identify all reachable network devices (routers, mesh APs, PCs, mobile devices, servers/NAS, smart IoT devices, printers). Renders an interactive 2D graph with Hierarchical Tree, Radial Orbital, and Concentric Mesh layouts with animated signal flow. Includes deep device inspection, MAC OUI vendor resolution, open TCP port scanner with service identification, live hop/traceroute inspection, and full network report export.",
+            version = "1.0.0",
+            category = "Networking & Security",
+            author = "Network Core",
+            iconType = "net-topology",
+            accentColorHex = 0xFF06B6D4, // Cyan
+            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
         )
     )
 

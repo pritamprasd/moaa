@@ -985,6 +985,7 @@ private fun HomescreenShortcutsCard(context: Context) {
                                 "manual" -> "📖"
                                 "ghost" -> "👻"
                                 "terminal" -> "💻"
+                                "system-info" -> "ℹ️"
                                 else -> "🔧"
                             }
 

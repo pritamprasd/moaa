@@ -412,6 +412,41 @@ object SystemManualData {
                 "Tip: You can use 'clear' or the trash icon in the top bar to reset the output screen anytime.",
                 "Tip: Tap '⏹ Stop' in the top bar to cancel any long-running command (like ping or top)."
             )
+        ),
+        ManualSection(
+            id = "system-info",
+            title = "System Info & Hardware Telemetry",
+            category = "Hardware & Telemetry",
+            tagline = "Deep hardware, network, OS, memory, storage & kernel telemetry.",
+            iconEmoji = "ℹ️",
+            accentColor = Cyan,
+            toolRouteId = "system-info",
+            paragraphs = listOf(
+                "System Info & Hardware provides comprehensive device and silicon inspection across 10 organized groups: OS & Android Build, Device & Hardware, CPU & Processor, RAM & Swap Memory, Storage Partitions, Network & Connectivity, Battery & Power, Display & Screen, Kernel & Linux Environment, and Security & DRM.",
+                "All parameters can be individually copied to the clipboard with one tap, copied as an entire group, or exported as a full system diagnostics report. Features configurable live auto-refresh sampling intervals (1s, 3s, 5s, 10s, 1min, or Paused)."
+            ),
+            keyFeatures = listOf(
+                "10 Grouped Metric Categories" to "Clean collapsible isometric cards with hardware progress bars (RAM %, Storage %, Battery %).",
+                "1-Tap Individual & Group Copying" to "Copy any specific value (e.g. Wi-Fi IPv4, MAC address, Fingerprint) or copy an entire formatted group with 1 click.",
+                "Full Report Export" to "Export the complete 10-category system report to your clipboard or diagnostic files via the top bar.",
+                "Configurable Auto-Refresh Interval" to "Choose from 1s (Real-time), 3s, 5s (Balanced), 10s, 1min, or Manual/Paused ticker sampling.",
+                "Instant Search & Filter" to "Filter all metrics across all categories in real time."
+            ),
+            quickStartSteps = listOf(
+                "1. Open System Info from the Dashboard.",
+                "2. Tap any metric row to copy its exact value to your clipboard.",
+                "3. Tap '📋 Copy' on any group card header to copy the entire group's formatted key-value pairs.",
+                "4. Tap the '⏱️ Auto-Refresh' dropdown in the top controls to adjust the live telemetry update speed.",
+                "5. Tap '📋' in the top bar to copy the full multi-group system diagnostics report."
+            ),
+            codeSnippets = listOf(
+                "Querying Memory Info from Android Shell" to "cat /proc/meminfo | grep -E 'MemTotal|MemFree|MemAvailable|SwapTotal'",
+                "Extracting Wi-Fi Interface & Hardware MAC" to "ip addr show wlan0 || cat /sys/class/net/wlan0/address"
+            ),
+            tips = listOf(
+                "Tip: Use the search bar at the top to instantly find specific values like 'mac', 'ip', 'fingerprint', or 'ram'.",
+                "Tip: Switch to '1s (Real-time)' mode to monitor live memory allocations during intensive operations."
+            )
         )
     )
 }

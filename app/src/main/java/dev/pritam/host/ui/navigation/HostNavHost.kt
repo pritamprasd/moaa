@@ -23,6 +23,7 @@ import dev.pritam.host.ui.dashboard.DashboardScreen
 
 import dev.pritam.host.tool.manual.ui.SystemManualScreen
 import dev.pritam.ghostagent.ui.GhostAgentStudioScreen
+import dev.pritam.host.tool.sysinfo.ui.SysInfoScreen
 import dev.pritam.host.tool.terminal.ui.TerminalScreen
 
 object HostRoutes {
@@ -40,6 +41,7 @@ object HostRoutes {
     const val SYSTEM_MANUAL = "system_manual"
     const val GHOST_AGENT = "ghost_agent"
     const val TERMINAL = "terminal"
+    const val SYS_INFO = "sys_info"
 }
 
 @Composable
@@ -64,6 +66,7 @@ fun HostNavHost(
                 toolId == "system-manual" -> HostRoutes.SYSTEM_MANUAL
                 toolId == "ghost-agent" -> HostRoutes.GHOST_AGENT
                 toolId == "terminal" -> HostRoutes.TERMINAL
+                toolId == "system-info" -> HostRoutes.SYS_INFO
                 toolId.startsWith("dynamic_") -> "dynamic_tool_runner/${toolId.removePrefix("dynamic_")}"
                 else -> null
             }
@@ -98,6 +101,7 @@ fun HostNavHost(
                         tool.id.value == "system-manual" -> navController.navigate(HostRoutes.SYSTEM_MANUAL)
                         tool.id.value == "ghost-agent" -> navController.navigate(HostRoutes.GHOST_AGENT)
                         tool.id.value == "terminal" -> navController.navigate(HostRoutes.TERMINAL)
+                        tool.id.value == "system-info" -> navController.navigate(HostRoutes.SYS_INFO)
                         tool.id.value.startsWith("dynamic_") -> {
                             val customId = tool.id.value.removePrefix("dynamic_")
                             navController.navigate("dynamic_tool_runner/$customId")
@@ -197,6 +201,7 @@ fun HostNavHost(
                         "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
                         "ghost-agent" -> navController.navigate(HostRoutes.GHOST_AGENT)
                         "terminal" -> navController.navigate(HostRoutes.TERMINAL)
+                        "system-info" -> navController.navigate(HostRoutes.SYS_INFO)
                         "settings" -> navController.navigate(HostRoutes.SETTINGS)
                         else -> {
                             if (routeId.startsWith("dynamic_")) {
@@ -218,6 +223,14 @@ fun HostNavHost(
 
         composable(HostRoutes.TERMINAL) {
             TerminalScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(HostRoutes.SYS_INFO) {
+            SysInfoScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

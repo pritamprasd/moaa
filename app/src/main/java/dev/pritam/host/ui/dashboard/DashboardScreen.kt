@@ -765,6 +765,21 @@ private fun ToolIsometricIcon(
                         cap = StrokeCap.Round
                     )
                 }
+                "system-info" -> {
+                    // Diagnostic Hardware Chip & Gauge Dial
+                    drawRect(
+                        color = color.copy(alpha = 0.85f),
+                        topLeft = Offset(cx - w * 0.32f, cy - h * 0.32f),
+                        size = Size(w * 0.64f, h * 0.64f),
+                        style = Stroke(1.5.dp.toPx())
+                    )
+                    // Inner circular gauge
+                    drawCircle(color = color.copy(alpha = 0.5f), radius = w * 0.2f, style = Stroke(1.2.dp.toPx()))
+                    // Diagnostic needle / crosshair
+                    drawLine(color = color, start = Offset(cx, cy - h * 0.16f), end = Offset(cx, cy + h * 0.16f), strokeWidth = 1.5.dp.toPx())
+                    drawLine(color = color, start = Offset(cx - w * 0.16f, cy), end = Offset(cx + w * 0.16f, cy), strokeWidth = 1.5.dp.toPx())
+                    drawCircle(color = color, radius = 2.dp.toPx(), center = Offset(cx, cy))
+                }
                 else -> {
                     // Generic Cyber Chip
                     drawRect(color = color, topLeft = Offset(cx - w * 0.3f, cy - h * 0.3f), size = Size(w * 0.6f, h * 0.6f), style = Stroke(1.5.dp.toPx()))

@@ -170,6 +170,18 @@ object ToolRegistryConfig {
             iconType = "terminal",
             accentColorHex = 0xFF10B981, // Emerald
             requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE")
+        ),
+        ToolDefinition(
+            id = "system-info",
+            name = "System Info & Hardware",
+            shortTagline = "Deep hardware, network, OS, memory, storage & kernel telemetry.",
+            description = "Comprehensive device and hardware inspection toolkit. Fetches and aggregates complete Android OS build details, processor & architecture specs, memory & swap allocation, internal/external storage partitions, Wi-Fi & cellular network interfaces (IPv4/IPv6, gateway, DNS, MAC), battery telemetry, display metrics, graphics/OpenGL, DRM security (Widevine), audio features, and kernel properties in collapsible groups. Supports one-tap individual item copying, entire group copying, full system report export, pull-to-refresh, and dynamic auto-refresh sampling intervals (1s, 3s, 5s, 10s, 1min, or Paused).",
+            version = "1.0.0",
+            category = "Hardware & Telemetry",
+            author = "Hardware Labs",
+            iconType = "system-info",
+            accentColorHex = 0xFF38BDF8, // Cyan
+            requiredPermissions = listOf("ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
         )
     )
 

@@ -70,7 +70,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.pritam.host.ftp.ui.components.GlassBackButton
@@ -989,25 +992,61 @@ private fun SaveCommandDialog(
     var category by remember { mutableStateOf("Custom") }
     var description by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
+    val shape = RoundedCornerShape(16.dp)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
-            shape = RoundedCornerShape(12.dp),
-            color = AppSettingsManager.getDialogSurfaceColor(98),
-            border = BorderStroke(1.dp, RainbowGlassBorderBrush),
-            modifier = Modifier.fillMaxWidth()
+            shape = shape,
+            color = Color(0xFF12141C),
+            border = BorderStroke(1.dp, Color(0xFF222531)),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .clip(shape)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
+                    .padding(20.dp)
             ) {
-                Text(
-                    text = "SAVE TERMINAL COMMAND",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Cyan,
-                    letterSpacing = 1.sp
-                )
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = CircleShape,
+                            color = Cyan
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "SAVE TERMINAL COMMAND",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Save this command to run directly anytime without retyping.",
                     style = MaterialTheme.typography.bodySmall,
@@ -1015,39 +1054,45 @@ private fun SaveCommandDialog(
                     fontSize = 11.sp
                 )
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
 
                 // Name input
                 Text("Command Name *", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    placeholder = { Text("e.g. Ollama Tags Query", fontSize = 11.sp, color = TextTertiary) },
+                    placeholder = { Text("e.g. Ollama Tags Query", fontSize = 11.sp, color = Color(0xFF6B7280)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = GlassBorder,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14),
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
-                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Command text input
                 Text("Shell Command *", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 OutlinedTextField(
                     value = command,
                     onValueChange = { command = it },
-                    placeholder = { Text("e.g. curl http://127.0.0.1:11434/api/tags", fontSize = 11.sp, color = TextTertiary) },
+                    placeholder = { Text("e.g. curl http://127.0.0.1:11434/api/tags", fontSize = 11.sp, color = Color(0xFF6B7280)) },
                     modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = GlassBorder,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14),
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
@@ -1057,11 +1102,11 @@ private fun SaveCommandDialog(
                     )
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Category chips
                 Text("Category", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1070,51 +1115,57 @@ private fun SaveCommandDialog(
                 ) {
                     listOf("AI & LLM", "Networking", "System", "Storage", "Hardware", "Custom").forEach { cat ->
                         val isSel = category == cat
+                        val chipShape = RoundedCornerShape(6.dp)
                         Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
-                            border = BorderStroke(1.dp, if (isSel) Cyan else GlassBorder),
+                            shape = chipShape,
+                            color = if (isSel) Cyan.copy(alpha = 0.15f) else Color(0xFF0C0E14),
+                            border = BorderStroke(1.dp, if (isSel) Cyan else Color(0xFF222531)),
                             modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
+                                .clip(chipShape)
                                 .clickable { category = cat }
                         ) {
                             Text(
                                 text = cat,
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (isSel) Cyan else TextSecondary,
-                                fontSize = 9.sp,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                fontSize = 10.sp,
+                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(10.dp))
 
                 // Description input
                 Text("Description (Optional)", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(4.dp))
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    placeholder = { Text("What does this command do?", fontSize = 11.sp, color = TextTertiary) },
+                    placeholder = { Text("What does this command do?", fontSize = 11.sp, color = Color(0xFF6B7280)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = GlassBorder,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14),
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
-                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp)
+                    textStyle = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
                 )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
 
                 // Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
                         onClick = onDismiss,
@@ -1131,7 +1182,6 @@ private fun SaveCommandDialog(
                         },
                         modifier = Modifier.weight(1f),
                         glowColor = Cyan,
-                        useRainbowBorder = true,
                         text = "Save Snippet"
                     )
                 }

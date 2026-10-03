@@ -16,8 +16,11 @@ import dev.pritam.host.tool.ftpclient.model.FtpClientState
 import dev.pritam.host.tool.ftpclient.model.FtpConnectionProfile
 import dev.pritam.host.tool.ftpclient.model.FtpRemoteFile
 import dev.pritam.host.tool.ftpclient.model.FtpTransferProgress
+import dev.pritam.host.tool.ftpclient.notification.FtpDownloadNotificationHelper
 import dev.pritam.host.tool.ftpclient.storage.FtpProfileRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,16 +29,50 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.atomic.AtomicInteger
 
 class FtpClientViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = FtpProfileRepository(application)
     private val client = FtpClient()
+    private val downloadScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val activeDownloads = AtomicInteger(0)
+
+    @Volatile
+    private var pendingDisconnectAfterDownloads = false
 
     private val _state = MutableStateFlow(
         FtpClientState(savedProfiles = repository.loadProfiles())
     )
     val state: StateFlow<FtpClientState> = _state.asStateFlow()
+
+    fun hasActiveDownloads(): Boolean = activeDownloads.get() > 0
+
+    fun handleNavigateBack(onConfirmNavigateBack: () -> Unit) {
+        if (hasActiveDownloads()) {
+            pendingDisconnectAfterDownloads = true
+            AppLogHub.log(
+                toolId = "ftp-client",
+                toolName = "FTP Client",
+                level = LogLevel.INFO,
+                tag = "ClientConnection",
+                message = "FTP CLIENT: Download in progress. Keeping connection open; client will auto-disconnect upon completion."
+            )
+            onConfirmNavigateBack()
+        } else {
+            if (_state.value.isConnected) {
+                AppLogHub.log(
+                    toolId = "ftp-client",
+                    toolName = "FTP Client",
+                    level = LogLevel.INFO,
+                    tag = "ClientConnection",
+                    message = "FTP CLIENT: Disconnecting from server on back navigation (no active transfers)."
+                )
+                disconnect()
+            }
+            onConfirmNavigateBack()
+        }
+    }
 
     fun connect(profile: FtpConnectionProfile) {
         viewModelScope.launch {
@@ -154,54 +191,102 @@ class FtpClientViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun downloadFile(remoteFile: FtpRemoteFile) {
         if (remoteFile.isDirectory) return
-        viewModelScope.launch {
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                ?: getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-                ?: getApplication<Application>().filesDir
+        activeDownloads.incrementAndGet()
+        downloadScope.launch {
+            val destination: File
+            try {
+                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                    ?: getApplication<Application>().getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+                    ?: getApplication<Application>().filesDir
 
-            val destination = File(downloadsDir, remoteFile.name)
+                destination = File(downloadsDir, remoteFile.name)
 
-            val initialProgress = FtpTransferProgress(
-                fileName = remoteFile.name,
-                remotePath = remoteFile.path,
-                isUpload = false,
-                bytesTransferred = 0L,
-                totalBytes = remoteFile.sizeBytes
-            )
-            _state.update { it.copy(activeTransfer = initialProgress) }
+                val initialProgress = FtpTransferProgress(
+                    fileName = remoteFile.name,
+                    remotePath = remoteFile.path,
+                    isUpload = false,
+                    bytesTransferred = 0L,
+                    totalBytes = remoteFile.sizeBytes
+                )
+                _state.update { it.copy(activeTransfer = initialProgress) }
 
-            val result = client.downloadFile(
-                remotePath = remoteFile.path,
-                localDestinationFile = destination,
-                onProgress = { downloaded, total ->
-                    _state.update {
-                        it.copy(
-                            activeTransfer = it.activeTransfer?.copy(
-                                bytesTransferred = downloaded,
-                                totalBytes = if (total > 0L) total else remoteFile.sizeBytes
+                val result = client.downloadFile(
+                    remotePath = remoteFile.path,
+                    localDestinationFile = destination,
+                    onProgress = { downloaded, total ->
+                        _state.update {
+                            it.copy(
+                                activeTransfer = it.activeTransfer?.copy(
+                                    bytesTransferred = downloaded,
+                                    totalBytes = if (total > 0L) total else remoteFile.sizeBytes
+                                )
                             )
-                        )
+                        }
                     }
+                )
+
+                val finalProgress = if (result.isSuccess) {
+                    initialProgress.copy(
+                        bytesTransferred = remoteFile.sizeBytes,
+                        isComplete = true
+                    )
+                } else {
+                    initialProgress.copy(
+                        isComplete = true,
+                        errorMsg = result.exceptionOrNull()?.message ?: "Download failed"
+                    )
                 }
-            )
 
-            val finalProgress = if (result.isSuccess) {
-                initialProgress.copy(
-                    bytesTransferred = remoteFile.sizeBytes,
-                    isComplete = true
-                )
-            } else {
-                initialProgress.copy(
-                    isComplete = true,
-                    errorMsg = result.exceptionOrNull()?.message ?: "Download failed"
-                )
-            }
+                _state.update {
+                    it.copy(
+                        activeTransfer = null,
+                        transferHistory = listOf(finalProgress) + it.transferHistory.take(20)
+                    )
+                }
 
-            _state.update {
-                it.copy(
-                    activeTransfer = null,
-                    transferHistory = listOf(finalProgress) + it.transferHistory.take(20)
+                if (result.isSuccess) {
+                    FtpDownloadNotificationHelper.showDownloadCompleteNotification(
+                        getApplication(),
+                        destination
+                    )
+                    AppLogHub.log(
+                        toolId = "ftp-client",
+                        toolName = "FTP Client",
+                        level = LogLevel.INFO,
+                        tag = "ClientTransfer",
+                        message = "FILE OPERATION [DOWNLOAD] Successfully downloaded '${remoteFile.name}' (${destination.length()} bytes). Notification posted to view file."
+                    )
+                } else {
+                    AppLogHub.log(
+                        toolId = "ftp-client",
+                        toolName = "FTP Client",
+                        level = LogLevel.ERROR,
+                        tag = "ClientTransfer",
+                        message = "FILE OPERATION [DOWNLOAD] Failed downloading '${remoteFile.name}': ${result.exceptionOrNull()?.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                AppLogHub.log(
+                    toolId = "ftp-client",
+                    toolName = "FTP Client",
+                    level = LogLevel.ERROR,
+                    tag = "ClientTransfer",
+                    message = "FILE OPERATION [DOWNLOAD] Error during download '${remoteFile.name}': ${e.message}",
+                    throwable = e
                 )
+            } finally {
+                val remaining = activeDownloads.decrementAndGet()
+                if (pendingDisconnectAfterDownloads && remaining <= 0) {
+                    AppLogHub.log(
+                        toolId = "ftp-client",
+                        toolName = "FTP Client",
+                        level = LogLevel.INFO,
+                        tag = "ClientConnection",
+                        message = "Auto-disconnecting from FTP server as all background downloads have finished."
+                    )
+                    disconnect()
+                    pendingDisconnectAfterDownloads = false
+                }
             }
         }
     }
@@ -367,8 +452,11 @@ class FtpClientViewModel(application: Application) : AndroidViewModel(applicatio
 
     override fun onCleared() {
         super.onCleared()
-        viewModelScope.launch {
-            client.disconnect()
+        if (!hasActiveDownloads()) {
+            downloadScope.launch {
+                client.disconnect()
+            }
         }
     }
 }
+

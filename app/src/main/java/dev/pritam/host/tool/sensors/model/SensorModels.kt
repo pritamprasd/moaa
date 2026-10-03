@@ -15,9 +15,9 @@ enum class SensorCategory(val displayName: String, val iconLabel: String) {
 
 enum class UpdateInterval(val displayName: String, val delayMs: Long) {
     LIVE_FAST("Live (Fast)", 0L),
-    EVERY_1_SEC("1s Interval", 1000L),
-    EVERY_2_SEC("2s Interval", 2000L),
-    EVERY_5_SEC("5s Interval", 5000L),
+    EVERY_1_SEC("1 sec", 1000L),
+    EVERY_2_SEC("2 sec", 2000L),
+    EVERY_5_SEC("5 sec", 5000L),
     PAUSED("Paused", -1L)
 }
 

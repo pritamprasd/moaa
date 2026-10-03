@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.DialogProperties
+import dev.pritam.host.ftp.ui.components.LiquidGlassButton
 import dev.pritam.host.ui.theme.Cyan
 import dev.pritam.host.ui.theme.GlassBorder
 import dev.pritam.host.ui.theme.GlassSurface
@@ -61,28 +70,61 @@ fun AddMcpServerDialog(
 
     val shape = RoundedCornerShape(16.dp)
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             shape = shape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush),
-            modifier = Modifier.fillMaxWidth()
+            color = Color(0xFF12141C),
+            border = BorderStroke(1.dp, Color(0xFF222531)),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .clip(shape)
         ) {
             Column(
                 modifier = Modifier
                     .padding(20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = "🔌 Connect Model Context Protocol (MCP) Server",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Cyan,
-                    fontSize = 15.sp
-                )
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = CircleShape,
+                            color = Cyan
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "CONNECT MCP SERVER",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Connect external local or LAN MCP servers exposing JSON-RPC 2.0 tools (e.g. SQLite, Filesystem, GitHub, Weather).",
+                    text = "Connect external local or LAN MCP servers exposing JSON-RPC 2.0 tools.",
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary,
                     fontSize = 11.sp
@@ -91,7 +133,7 @@ fun AddMcpServerDialog(
                 Spacer(Modifier.height(16.dp))
 
                 // Transport Type Picker
-                Text("TRANSPORT TYPE", color = Cyan, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                Text("TRANSPORT TYPE", color = TextPrimary, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(6.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(McpTransportType.HTTP_JSONRPC, McpTransportType.SSE).forEach { type ->
@@ -100,8 +142,8 @@ fun AddMcpServerDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurface)
-                                .border(BorderStroke(1.dp, if (isSel) Cyan else GlassBorder), RoundedCornerShape(8.dp))
+                                .background(if (isSel) Cyan.copy(alpha = 0.15f) else Color(0xFF0C0E14))
+                                .border(BorderStroke(1.dp, if (isSel) Cyan else Color(0xFF222531)), RoundedCornerShape(8.dp))
                                 .clickable {
                                     transportType = type
                                     if (type == McpTransportType.SSE && endpointUrl.endsWith("/mcp")) {
@@ -128,11 +170,14 @@ fun AddMcpServerDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Server Friendly Name", fontSize = 11.sp) },
-                    placeholder = { Text("e.g. Home Desktop SQLite MCP", fontSize = 11.sp) },
+                    placeholder = { Text("e.g. Home Desktop SQLite MCP", fontSize = 11.sp, color = Color(0xFF6B7280)) },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = GlassBorder,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14),
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
@@ -146,11 +191,14 @@ fun AddMcpServerDialog(
                     value = endpointUrl,
                     onValueChange = { endpointUrl = it },
                     label = { Text("MCP Endpoint URL", fontSize = 11.sp) },
-                    placeholder = { Text("http://192.168.1.50:8000/mcp or http://localhost:3000/sse", fontSize = 11.sp) },
+                    placeholder = { Text("http://192.168.1.50:8000/mcp", fontSize = 11.sp, color = Color(0xFF6B7280)) },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = GlassBorder,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14),
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
@@ -164,11 +212,14 @@ fun AddMcpServerDialog(
                     value = authToken,
                     onValueChange = { authToken = it },
                     label = { Text("Authorization / Bearer Token (Optional)", fontSize = 11.sp) },
-                    placeholder = { Text("e.g. secret-token-xyz", fontSize = 11.sp) },
+                    placeholder = { Text("e.g. secret-token-xyz", fontSize = 11.sp, color = Color(0xFF6B7280)) },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = GlassBorder,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14),
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
@@ -180,20 +231,17 @@ fun AddMcpServerDialog(
                 // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    TextButton(
                         onClick = onDismiss,
-                        border = BorderStroke(1.dp, GlassBorder),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel", fontSize = 12.sp)
+                        Text("Cancel", color = TextSecondary)
                     }
 
-                    Spacer(Modifier.width(10.dp))
-
-                    OutlinedButton(
+                    LiquidGlassButton(
                         onClick = {
                             val cleanName = if (name.isNotBlank()) name.trim() else "MCP Server (${endpointUrl.take(20)})"
                             val cleanEndpoint = endpointUrl.trim()
@@ -217,14 +265,11 @@ fun AddMcpServerDialog(
                             onDismiss()
                         },
                         enabled = endpointUrl.isNotBlank() && endpointUrl != "http://192.168.1.",
-                        border = BorderStroke(1.dp, Cyan),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Cyan.copy(alpha = 0.15f),
-                            contentColor = Cyan
-                        )
-                    ) {
-                        Text("Connect & Sync Tools", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
+                        modifier = Modifier.weight(1f),
+                        glowColor = Cyan,
+                        useRainbowBorder = false,
+                        text = "Connect & Sync"
+                    )
                 }
             }
         }

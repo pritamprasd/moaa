@@ -33,12 +33,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import dev.pritam.host.ftp.ui.components.LiquidGlassButton
+
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -95,10 +104,16 @@ private val Emerald = Color(0xFF34D399)
 fun FtpClientScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: FtpClientViewModel = viewModel(),
+    viewModel: FtpClientViewModel = viewModel(
+        viewModelStoreOwner = LocalContext.current as androidx.lifecycle.ViewModelStoreOwner
+    ),
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    androidx.activity.compose.BackHandler {
+        viewModel.handleNavigateBack(onNavigateBack)
+    }
 
     var showProfileModal by remember { mutableStateOf(false) }
     var editingProfile by remember { mutableStateOf<FtpConnectionProfile?>(null) }
@@ -128,7 +143,7 @@ fun FtpClientScreen(
                     )
                 },
                 navigationIcon = {
-                    GlassBackButton(onClick = onNavigateBack, tint = Emerald)
+                    GlassBackButton(onClick = { viewModel.handleNavigateBack(onNavigateBack) }, tint = Emerald)
                 },
                 actions = {
                     TextButton(onClick = { showProfileModal = true }) {
@@ -902,6 +917,80 @@ private fun SavedProfileItemCard(
 }
 
 @Composable
+private fun FtpDialogContainer(
+    title: String,
+    accentColor: Color,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = modifier
+                .fillMaxWidth(0.92f)
+                .clip(RoundedCornerShape(16.dp))
+                .border(BorderStroke(1.dp, Color(0xFF222531)), RoundedCornerShape(16.dp)),
+            color = Color(0xFF12141C)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(accentColor)
+                        )
+                        Text(
+                            text = title.uppercase(),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(15.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                content()
+            }
+        }
+    }
+}
+
+@Composable
 private fun ProfileManagerDialog(
     initialProfile: FtpConnectionProfile?,
     savedProfiles: List<FtpConnectionProfile>,
@@ -919,58 +1008,134 @@ private fun ProfileManagerDialog(
     var isAnonymous by remember { mutableStateOf(initialProfile?.isAnonymous ?: false) }
     var isPassive by remember { mutableStateOf(initialProfile?.isPassiveMode ?: true) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = SurfaceElevated,
-        title = {
-            Text(if (initialProfile != null) "Edit Server Profile" else "New Connection Profile", color = Emerald, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Profile Name", fontSize = 10.sp) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = customFieldColors(Emerald))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(value = host, onValueChange = { host = it }, label = { Text("Host", fontSize = 10.sp) }, singleLine = true, modifier = Modifier.weight(2f), colors = customFieldColors(Emerald))
-                    OutlinedTextField(value = portText, onValueChange = { portText = it }, label = { Text("Port", fontSize = 10.sp) }, singleLine = true, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = customFieldColors(Emerald))
-                }
-                Row(horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Text("Anonymous Login", fontSize = 11.sp, color = TextPrimary)
-                    Switch(checked = isAnonymous, onCheckedChange = { isAnonymous = it }, colors = SwitchDefaults.colors(checkedThumbColor = Emerald, checkedTrackColor = Emerald.copy(alpha = 0.3f)))
-                }
-                if (!isAnonymous) {
-                    OutlinedTextField(value = username, onValueChange = { username = it }, label = { Text("Username", fontSize = 10.sp) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = customFieldColors(Emerald))
-                    OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password", fontSize = 10.sp) }, visualTransformation = PasswordVisualTransformation(), singleLine = true, modifier = Modifier.fillMaxWidth(), colors = customFieldColors(Emerald))
-                }
-                OutlinedTextField(value = defaultPath, onValueChange = { defaultPath = it }, label = { Text("Default Remote Path", fontSize = 10.sp) }, singleLine = true, modifier = Modifier.fillMaxWidth(), colors = customFieldColors(Emerald))
+    FtpDialogContainer(
+        title = if (initialProfile != null) "Edit Connection Profile" else "New Connection Profile",
+        accentColor = Emerald,
+        onDismiss = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Profile Name", fontSize = 10.sp) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = customFieldColors(Emerald)
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = host,
+                    onValueChange = { host = it },
+                    label = { Text("Host / IP", fontSize = 10.sp) },
+                    singleLine = true,
+                    modifier = Modifier.weight(2f),
+                    colors = customFieldColors(Emerald)
+                )
+                OutlinedTextField(
+                    value = portText,
+                    onValueChange = { portText = it },
+                    label = { Text("Port", fontSize = 10.sp) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = customFieldColors(Emerald)
+                )
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val p = FtpConnectionProfile(
-                        id = initialProfile?.id ?: java.util.UUID.randomUUID().toString(),
-                        name = if (name.isNotBlank()) name.trim() else host.trim(),
-                        host = host.trim(),
-                        port = portText.toIntOrNull() ?: 21,
-                        username = if (isAnonymous) "anonymous" else username.trim(),
-                        password = if (isAnonymous) "" else password,
-                        defaultRemotePath = if (defaultPath.isNotBlank()) defaultPath.trim() else "/",
-                        isPassiveMode = isPassive,
-                        isAnonymous = isAnonymous
-                    )
-                    onSave(p)
-                    onConnect(p)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald, contentColor = Color(0xFF0F172A))
+
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFF161922),
+                border = BorderStroke(1.dp, Color(0xFF1E212B)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save & Connect", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text("Anonymous Login", fontSize = 11.sp, color = TextPrimary)
+                    Switch(
+                        checked = isAnonymous,
+                        onCheckedChange = { isAnonymous = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Emerald,
+                            checkedTrackColor = Emerald.copy(alpha = 0.3f)
+                        )
+                    )
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextSecondary, fontSize = 11.sp)
+
+            if (!isAnonymous) {
+                OutlinedTextField(
+                    value = username,
+                    onValueChange = { username = it },
+                    label = { Text("Username", fontSize = 10.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = customFieldColors(Emerald)
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password", fontSize = 10.sp) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = customFieldColors(Emerald)
+                )
+            }
+
+            OutlinedTextField(
+                value = defaultPath,
+                onValueChange = { defaultPath = it },
+                label = { Text("Default Remote Path", fontSize = 10.sp) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = customFieldColors(Emerald)
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("CANCEL", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.width(8.dp))
+                LiquidGlassButton(
+                    text = "SAVE & CONNECT",
+                    onClick = {
+                        val p = FtpConnectionProfile(
+                            id = initialProfile?.id ?: java.util.UUID.randomUUID().toString(),
+                            name = if (name.isNotBlank()) name.trim() else host.trim(),
+                            host = host.trim(),
+                            port = portText.toIntOrNull() ?: 21,
+                            username = if (isAnonymous) "anonymous" else username.trim(),
+                            password = if (isAnonymous) "" else password,
+                            defaultRemotePath = if (defaultPath.isNotBlank()) defaultPath.trim() else "/",
+                            isPassiveMode = isPassive,
+                            isAnonymous = isAnonymous
+                        )
+                        onSave(p)
+                        onConnect(p)
+                    },
+                    glowColor = Emerald,
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                )
             }
         }
-    )
+    }
 }
 
 @Composable
@@ -983,43 +1148,184 @@ private fun FileActionsDialog(
     onDetails: () -> Unit,
     onCopyPath: () -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = SurfaceElevated,
-        title = {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(if (file.isDirectory) "📁" else "📄", fontSize = 16.sp)
-                Text(file.name, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (!file.isDirectory) {
-                    OutlinedButton(onClick = onDownload, modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, Emerald), colors = ButtonDefaults.outlinedButtonColors(contentColor = Emerald)) {
-                        Text("⬇️ Download to Phone (Downloads)", fontSize = 11.sp)
+    val accentColor = if (file.isDirectory) Cyan else Emerald
+
+    FtpDialogContainer(
+        title = if (file.isDirectory) "Directory Actions" else "File Actions",
+        accentColor = accentColor,
+        onDismiss = onDismiss
+    ) {
+        // Recessed object summary card
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = Color(0xFF0C0E14),
+            border = BorderStroke(1.dp, Color(0xFF1E212B)),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = accentColor.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.35f)),
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(if (file.isDirectory) "📁" else getFileEmoji(file.fileExtension), fontSize = 18.sp)
                     }
                 }
-                OutlinedButton(onClick = onRename, modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, Cyan), colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan)) {
-                    Text("✏️ Rename", fontSize = 11.sp)
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = file.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = TextPrimary,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = "${file.formattedSize}  •  ${file.path}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        fontSize = 10.sp,
+                        fontFamily = FontFamily.Monospace,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
-                OutlinedButton(onClick = onCopyPath, modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, Violet), colors = ButtonDefaults.outlinedButtonColors(contentColor = Violet)) {
-                    Text("📋 Copy Remote Path", fontSize = 11.sp)
-                }
-                OutlinedButton(onClick = onDetails, modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, Color(0xFF64748B)), colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)) {
-                    Text("ℹ️ View Details", fontSize = 11.sp)
-                }
-                OutlinedButton(onClick = onDelete, modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, Rose), colors = ButtonDefaults.outlinedButtonColors(contentColor = Rose)) {
-                    Text("🗑️ Delete", fontSize = 11.sp)
-                }
-            }
-        },
-        confirmButton = {},
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close", color = TextSecondary, fontSize = 11.sp)
             }
         }
-    )
+
+        Spacer(Modifier.height(14.dp))
+
+        // Action Options
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (!file.isDirectory) {
+                FileActionRow(
+                    emoji = "⬇️",
+                    title = "Download to Phone",
+                    subtitle = "Save to Public Downloads folder",
+                    accentColor = Emerald,
+                    onClick = {
+                        onDismiss()
+                        onDownload()
+                    }
+                )
+            }
+
+            FileActionRow(
+                emoji = "✏️",
+                title = "Rename",
+                subtitle = "Change remote name on server",
+                accentColor = Cyan,
+                onClick = {
+                    onDismiss()
+                    onRename()
+                }
+            )
+
+            FileActionRow(
+                emoji = "📋",
+                title = "Copy Remote Path",
+                subtitle = "Copy path to clipboard",
+                accentColor = Violet,
+                onClick = {
+                    onDismiss()
+                    onCopyPath()
+                }
+            )
+
+            FileActionRow(
+                emoji = "ℹ️",
+                title = "View Details",
+                subtitle = "Permissions, date & raw FTP record",
+                accentColor = Color(0xFFF59E0B),
+                onClick = {
+                    onDismiss()
+                    onDetails()
+                }
+            )
+
+            FileActionRow(
+                emoji = "🗑️",
+                title = "Delete",
+                subtitle = "Permanently remove from server",
+                accentColor = Rose,
+                onClick = {
+                    onDismiss()
+                    onDelete()
+                }
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text("CLOSE", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FileActionRow(
+    emoji: String,
+    title: String,
+    subtitle: String,
+    accentColor: Color,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .border(BorderStroke(1.dp, Color(0xFF1E212B)), RoundedCornerShape(8.dp)),
+        color = Color(0xFF161922)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(emoji, fontSize = 16.sp)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary,
+                    fontSize = 12.sp
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextSecondary,
+                    fontSize = 10.sp
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(accentColor)
+            )
+        }
+    }
 }
 
 @Composable
@@ -1028,34 +1334,39 @@ private fun CreateFolderDialog(
     onCreate: (String) -> Unit,
 ) {
     var folderName by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = SurfaceElevated,
-        title = { Text("Create Remote Directory", color = Emerald, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-        text = {
-            OutlinedTextField(
-                value = folderName,
-                onValueChange = { folderName = it },
-                label = { Text("Directory Name", fontSize = 10.sp) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = customFieldColors(Emerald)
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = { onCreate(folderName) },
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald, contentColor = Color(0xFF0F172A))
-            ) {
-                Text("Create", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-            }
-        },
-        dismissButton = {
+    FtpDialogContainer(
+        title = "Create Remote Directory",
+        accentColor = Emerald,
+        onDismiss = onDismiss
+    ) {
+        OutlinedTextField(
+            value = folderName,
+            onValueChange = { folderName = it },
+            label = { Text("Directory Name", fontSize = 10.sp) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = customFieldColors(Emerald)
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextSecondary, fontSize = 11.sp)
+                Text("CANCEL", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
+            Spacer(Modifier.width(8.dp))
+            LiquidGlassButton(
+                text = "CREATE",
+                onClick = { onCreate(folderName) },
+                glowColor = Emerald,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
-    )
+    }
 }
 
 @Composable
@@ -1065,34 +1376,39 @@ private fun RenameFileDialog(
     onRename: (String) -> Unit,
 ) {
     var newName by remember { mutableStateOf(file.name) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = SurfaceElevated,
-        title = { Text("Rename ${if (file.isDirectory) "Directory" else "File"}", color = Cyan, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-        text = {
-            OutlinedTextField(
-                value = newName,
-                onValueChange = { newName = it },
-                label = { Text("New Name", fontSize = 10.sp) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                colors = customFieldColors(Cyan)
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = { onRename(newName) },
-                colors = ButtonDefaults.buttonColors(containerColor = Cyan, contentColor = Color(0xFF0F172A))
-            ) {
-                Text("Rename", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-            }
-        },
-        dismissButton = {
+    FtpDialogContainer(
+        title = if (file.isDirectory) "Rename Directory" else "Rename File",
+        accentColor = Cyan,
+        onDismiss = onDismiss
+    ) {
+        OutlinedTextField(
+            value = newName,
+            onValueChange = { newName = it },
+            label = { Text("New Name", fontSize = 10.sp) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            colors = customFieldColors(Cyan)
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = TextSecondary, fontSize = 11.sp)
+                Text("CANCEL", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
+            Spacer(Modifier.width(8.dp))
+            LiquidGlassButton(
+                text = "RENAME",
+                onClick = { onRename(newName) },
+                glowColor = Cyan,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            )
         }
-    )
+    }
 }
 
 @Composable
@@ -1101,36 +1417,42 @@ private fun FileDetailsDialog(
     onDismiss: () -> Unit,
     onCopy: (String, String) -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = SurfaceElevated,
-        title = { Text("Remote Object Details", color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                DetailRow("Name", file.name)
-                DetailRow("Type", if (file.isDirectory) "Directory" else "File")
-                DetailRow("Size", file.formattedSize)
-                DetailRow("Path", file.path)
-                if (file.permissions.isNotBlank()) DetailRow("Permissions", file.permissions)
-                if (file.lastModifiedFormatted.isNotBlank()) DetailRow("Modified", file.lastModifiedFormatted)
-                if (file.rawLine.isNotBlank()) DetailRow("Raw FTP Record", file.rawLine)
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onCopy("File Info", "${file.name} (${file.path}) - ${file.formattedSize}") },
-                colors = ButtonDefaults.buttonColors(containerColor = Emerald, contentColor = Color(0xFF0F172A))
-            ) {
-                Text("Copy Info", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close", color = TextSecondary, fontSize = 11.sp)
-            }
+    FtpDialogContainer(
+        title = "Remote Object Details",
+        accentColor = Color(0xFFF59E0B),
+        onDismiss = onDismiss
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DetailRow("Name", file.name)
+            DetailRow("Type", if (file.isDirectory) "Directory" else "File")
+            DetailRow("Size", file.formattedSize)
+            DetailRow("Path", file.path)
+            if (file.permissions.isNotBlank()) DetailRow("Permissions", file.permissions)
+            if (file.lastModifiedFormatted.isNotBlank()) DetailRow("Modified", file.lastModifiedFormatted)
+            if (file.rawLine.isNotBlank()) DetailRow("Raw FTP Record", file.rawLine)
         }
-    )
+
+        Spacer(Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onDismiss) {
+                Text("CLOSE", color = TextSecondary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(8.dp))
+            LiquidGlassButton(
+                text = "COPY INFO",
+                onClick = { onCopy("File Info", "${file.name} (${file.path}) - ${file.formattedSize}") },
+                glowColor = Emerald,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+    }
 }
+
 
 @Composable
 private fun DetailRow(label: String, value: String) {

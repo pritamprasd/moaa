@@ -1,13 +1,16 @@
 package dev.pritam.host.config
 
+import android.content.Context
 import dev.pritam.pluginapi.ToolId
 import dev.pritam.pluginapi.ToolInfo
 import dev.pritam.pluginapi.ToolState
 
 /**
- * Static metadata configuration for all tools hosted in MotherOfAllApps.
- * Developers and maintainers can easily customize tool names, taglines,
- * descriptions, versions, categories, and permissions in this single registry.
+ * Metadata configuration for all tools hosted in MotherOfAllApps.
+ *
+ * Single Source of Truth: `config.yaml` (located at repo root and synced to assets).
+ * Tool names, taglines, descriptions, icons, emojis, versions, categories,
+ * and permissions are defined in `config.yaml` and parsed at runtime.
  */
 data class ToolDefinition(
     val id: String,
@@ -18,6 +21,7 @@ data class ToolDefinition(
     val category: String,
     val author: String = "MotherOfAllApps Core",
     val iconType: String,
+    val emoji: String = "🔧",
     val accentColorHex: Long,
     val requiredPermissions: List<String> = emptyList(),
     val isEnabled: Boolean = true,
@@ -35,167 +39,66 @@ data class ToolDefinition(
 
 object ToolRegistryConfig {
 
+    @Volatile
+    private var cachedTools: List<ToolDefinition>? = null
+
     /**
-     * The master list of tools. Update any tool name, description, or version here.
+     * Primary tools list loaded from single-source-of-truth `config.yaml`.
      */
-    val INSTALLED_TOOLS: List<ToolDefinition> = listOf(
-        ToolDefinition(
-            id = "ftp-server",
-            name = "FTP Server",
-            shortTagline = "Host local phone storage over Wi-Fi with custom credentials.",
-            description = "High-performance embedded FTP server engine. Allows devices on your Local Area Network (Windows Explorer, macOS Finder, mobile FTP apps) to browse, download, and upload files from phone storage with background execution support.",
-            version = "1.0.0",
-            category = "Networking & File Transfer",
-            author = "Core Systems",
-            iconType = "ftp",
-            accentColorHex = 0xFF38BDF8, // Cyan
-            requiredPermissions = listOf("INTERNET", "ACCESS_WIFI_STATE", "MANAGE_EXTERNAL_STORAGE", "FOREGROUND_SERVICE")
-        ),
-        ToolDefinition(
-            id = "nfc-tool",
-            name = "NFC Tools",
-            shortTagline = "Read, write & inspect NFC tags with NDEF encoding.",
-            description = "Complete contactless RFID/NFC toolkit. Read and diagnose silicon ICs (NTAG213/215/216, Mifare Classic, DESFire), write custom NDEF payloads (Text, URL, Wi-Fi credentials, vCard contacts, App Launchers), and explore popular NFC app capabilities.",
-            version = "1.0.0",
-            category = "Hardware & Contactless",
-            author = "Hardware Labs",
-            iconType = "nfc",
-            accentColorHex = 0xFFF472B6, // Rose
-            requiredPermissions = listOf("NFC")
-        ),
-        ToolDefinition(
-            id = "ftp-client",
-            name = "FTP Client",
-            shortTagline = "Mount remote FTP servers, manage files & remember credentials.",
-            description = "Full-featured remote FTP client. Connect and mount remote FTP servers over LAN/WAN, remember server profiles and credentials, browse remote directories, upload/download files with progress telemetry, create/delete directories, rename and transfer files with full System Logs integration.",
-            version = "1.0.0",
-            category = "Networking & File Transfer",
-            author = "Network Core",
-            iconType = "ftp-client",
-            accentColorHex = 0xFF34D399, // Emerald
-            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE")
-        ),
-        ToolDefinition(
-            id = "log-viewer",
-            name = "Logs",
-            shortTagline = "Centralized real-time diagnostic and operation stream.",
-            description = "Universal diagnostic hub and telemetry console. Collects, filters, searches, and exports real-time execution logs, file transfers, operations, and NFC events across the super-app.",
-            version = "1.0.0",
-            category = "Diagnostics & System Logs",
-            author = "System Core",
-            iconType = "logs",
-            accentColorHex = 0xFFA78BFA, // Violet
-            requiredPermissions = listOf("None")
-        ),
-        ToolDefinition(
-            id = "sensors",
-            name = "Sensors",
-            shortTagline = "Real-time hardware sensor monitor with dynamic 1s/2s/5s sampling.",
-            description = "Discover and inspect all physical hardware sensors available on this device (Accelerometer, Gyroscope, Magnetometer, Barometer, Light, Proximity, Temperature, Step Counter, etc.). Features configurable live update intervals (1s, 2s, 5s, fast sampling, or paused), real-time telemetry meters, multi-axis decomposition, hardware specs, and telemetry export.",
-            version = "1.0.0",
-            category = "Hardware & Telemetry",
-            author = "Hardware Core",
-            iconType = "sensors",
-            accentColorHex = 0xFFF59E0B, // Amber
-            requiredPermissions = listOf("None")
-        ),
-        ToolDefinition(
-            id = "llm-gateway",
-            name = "LLM Gateway",
-            shortTagline = "Multi-account Cloud & Desktop LAN LLM proxy with smart failover.",
-            description = "High-performance authenticated loopback HTTP proxy (http://127.0.0.1:8080) for Gemini Pro/Flash, OpenAI ChatGPT, and local LAN desktop engines (Ollama, LM Studio, vLLM). Features automatic failover on rate limits (429) or host drop, LAN mDNS/subnet discovery, and priority sequence management.",
-            version = "1.0.0",
-            category = "AI & Local LLM Gateway",
-            author = "AI Core",
-            iconType = "brain",
-            accentColorHex = 0xFF10B981, // Emerald
-            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
-        ),
-        ToolDefinition(
-            id = "llm-chat",
-            name = "Chat",
-            shortTagline = "Local LLM chat studio powered by LLM Gateway failover proxy.",
-            description = "Full-featured interactive conversational AI client powered by the LLM Gateway loopback proxy. Features real-time token streaming, multi-turn thread history management, customizable AI personas (Code Architect, Cyberpunk Hacker, Hardware Specialist, Creative Muse), markdown & code formatting with one-click copy, temperature sliders, and instant failover between Cloud Gemini/OpenAI and Desktop Ollama.",
-            version = "1.0.0",
-            category = "AI & Local LLM Gateway",
-            author = "AI Core",
-            iconType = "chat",
-            accentColorHex = 0xFF38BDF8, // Sky Cyan
-            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE")
-        ),
-        ToolDefinition(
-            id = "dynamic-tools-studio",
-            name = "Custom Tools",
-            shortTagline = "Synthesize and run custom web tools with AI prompts.",
-            description = "AI-powered dynamic custom tool generator and runner. Generate lightweight, fully interactive runtime tools (Scientific Calculator, Unit Converter, Regex Tester, Pomodoro Timer, JSON Validator) using simple natural language prompts connected to the local LLM Gateway. Supports instant hot-reloading, live code editing (HTML/CSS/JS), and offline sandboxed local execution.",
-            version = "1.0.0",
-            category = "AI & Dynamic Web Tools",
-            author = "AI Tools Core",
-            iconType = "dynamic-tool",
-            accentColorHex = 0xFFF43F5E, // Rose Red
-            requiredPermissions = listOf("INTERNET")
-        ),
-        ToolDefinition(
-            id = "system-manual",
-            name = "System Manual",
-            shortTagline = "Comprehensive guide & user manual for all tools and architecture.",
-            description = "Detailed in-app user guide and developer documentation for all MOAA tools: LAN FTP Server & Client, NFC Tools 3×3 Suite, Local LLM Gateway & MCP Router, CyberChat AI, Dynamic Tools Studio, Sensors Live, and System Diagnostics.",
-            version = "1.0.0",
-            category = "Documentation & Guides",
-            author = "Documentation Core",
-            iconType = "manual",
-            accentColorHex = 0xFF38BDF8, // Cyan
-            requiredPermissions = listOf("None")
-        ),
-        ToolDefinition(
-            id = "ghost-agent",
-            name = "Ghost Agent",
-            shortTagline = "Background AI agent that automates multi-step tasks across any app.",
-            description = "An intelligent background automation agent powered by Android AccessibilityService & MediaProjection. Define hybrid natural-language + recorded-macro tasks (e.g. 'order from Amazon', 'fill a form', 'play a game'). Runs invisibly with a floating bubble overlay and Quick Settings tile. On failure, pauses and shows a screenshot notification with Skip/Retry/Abort controls.",
-            version = "1.0.0",
-            category = "AI & Automation",
-            author = "Ghost Labs",
-            iconType = "ghost",
-            accentColorHex = 0xFFA78BFA, // Violet
-            requiredPermissions = listOf("SYSTEM_ALERT_WINDOW", "BIND_ACCESSIBILITY_SERVICE", "FOREGROUND_SERVICE_MEDIA_PROJECTION")
-        ),
-        ToolDefinition(
-            id = "terminal",
-            name = "Cyber Terminal",
-            shortTagline = "Linux shell emulator with command execution, pipes & saved snippets.",
-            description = "Full-featured Linux / Ubuntu style terminal emulator for Android. Execute standard system binaries (curl, ping, ip, ls, cat, grep, ps, uname, df, env), inspect device files and network sockets, navigate directories with stateful 'cd', pipe and redirect output, and maintain a library of reusable saved commands & curl templates for instant one-click execution.",
-            version = "1.0.0",
-            category = "System & Developer Tools",
-            author = "Core Systems",
-            iconType = "terminal",
-            accentColorHex = 0xFF10B981, // Emerald
-            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE")
-        ),
-        ToolDefinition(
-            id = "system-info",
-            name = "System Info & Hardware",
-            shortTagline = "Deep hardware, network, OS, memory, storage & kernel telemetry.",
-            description = "Comprehensive device and hardware inspection toolkit. Fetches and aggregates complete Android OS build details, processor & architecture specs, memory & swap allocation, internal/external storage partitions, Wi-Fi & cellular network interfaces (IPv4/IPv6, gateway, DNS, MAC), battery telemetry, display metrics, graphics/OpenGL, DRM security (Widevine), audio features, and kernel properties in collapsible groups. Supports one-tap individual item copying, entire group copying, full system report export, pull-to-refresh, and dynamic auto-refresh sampling intervals (1s, 3s, 5s, 10s, 1min, or Paused).",
-            version = "1.0.0",
-            category = "Hardware & Telemetry",
-            author = "Hardware Labs",
-            iconType = "system-info",
-            accentColorHex = 0xFF38BDF8, // Cyan
-            requiredPermissions = listOf("ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
-        ),
-        ToolDefinition(
-            id = "net-topology",
-            name = "Network Topology & Scanner",
-            shortTagline = "Interactive visual network map, ARP discovery, multi-hop topology & port scanner.",
-            description = "High-speed multi-protocol local network scanner and visual topology mapper. Concurrently scans active subnets using ICMP ping, TCP socket probes, and kernel ARP tables to identify all reachable network devices (routers, mesh APs, PCs, mobile devices, servers/NAS, smart IoT devices, printers). Renders an interactive 2D graph with Hierarchical Tree, Radial Orbital, and Concentric Mesh layouts with animated signal flow. Includes deep device inspection, MAC OUI vendor resolution, open TCP port scanner with service identification, live hop/traceroute inspection, and full network report export.",
-            version = "1.0.0",
-            category = "Networking & Security",
-            author = "Network Core",
-            iconType = "net-topology",
-            accentColorHex = 0xFF06B6D4, // Cyan
-            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE", "ACCESS_WIFI_STATE")
+    val INSTALLED_TOOLS: List<ToolDefinition>
+        get() {
+            return cachedTools ?: synchronized(this) {
+                cachedTools ?: loadToolsFromConfig().also { cachedTools = it }
+            }
+        }
+
+    /**
+     * Explicit initializer for Android runtime to load `config.yaml` from assets.
+     */
+    fun init(context: Context) {
+        try {
+            context.assets.open("config.yaml").use { stream ->
+                val parsed = YamlToolConfigParser.parse(stream)
+                if (parsed.isNotEmpty()) {
+                    synchronized(this) {
+                        cachedTools = parsed
+                    }
+                }
+            }
+        } catch (_: Exception) {
+            // Asset reading fallback handled by loadToolsFromConfig
+        }
+    }
+
+    private fun loadToolsFromConfig(): List<ToolDefinition> {
+        // 1. Try ClassLoader resource (present in APK resources and JVM test classpath)
+        try {
+            ToolRegistryConfig::class.java.classLoader?.getResourceAsStream("config.yaml")?.use { stream ->
+                val parsed = YamlToolConfigParser.parse(stream)
+                if (parsed.isNotEmpty()) return parsed
+            }
+        } catch (_: Exception) {}
+
+        // 2. Try file system relative paths (for Gradle/JVM test runner environments)
+        val candidatePaths = listOf(
+            "config.yaml",
+            "../config.yaml",
+            "app/src/main/assets/config.yaml",
+            "app/src/main/resources/config.yaml"
         )
-    )
+        for (path in candidatePaths) {
+            try {
+                val file = java.io.File(path)
+                if (file.exists() && file.isFile) {
+                    val parsed = YamlToolConfigParser.parse(file.readText())
+                    if (parsed.isNotEmpty()) return parsed
+                }
+            } catch (_: Exception) {}
+        }
+
+        // 3. Fallback bundled tools in the unlikely event file access is restricted
+        return FALLBACK_TOOLS
+    }
 
     fun getRegisteredToolInfos(): List<ToolInfo> {
         return INSTALLED_TOOLS.filter { it.isEnabled }.map { it.toToolInfo() }
@@ -217,9 +120,26 @@ object ToolRegistryConfig {
                 category = "Dynamic Web Tools",
                 author = "Dynamic AI Generator",
                 iconType = "dynamic-tool",
+                emoji = "⚡",
                 accentColorHex = 0xFF38BDF8
             )
         }
         return null
     }
+
+    private val FALLBACK_TOOLS = listOf(
+        ToolDefinition("ftp-server", "FTP Server", "Host local phone storage over Wi-Fi with custom credentials.", "High-performance embedded FTP server engine.", "1.0.0", "Networking & File Transfer", "Core Systems", "ftp", "📡", 0xFF38BDF8),
+        ToolDefinition("nfc-tool", "NFC Tools", "Read, write & inspect NFC tags with NDEF encoding.", "Complete contactless RFID/NFC toolkit.", "1.0.0", "Hardware & Contactless", "Hardware Labs", "nfc", "📶", 0xFFF472B6),
+        ToolDefinition("ftp-client", "FTP Client", "Mount remote FTP servers, manage files & remember credentials.", "Full-featured remote FTP client.", "1.0.0", "Networking & File Transfer", "Network Core", "ftp-client", "☁️", 0xFF34D399),
+        ToolDefinition("log-viewer", "Logs", "Centralized real-time diagnostic and operation stream.", "Universal diagnostic hub and telemetry console.", "1.0.0", "Diagnostics & System Logs", "System Core", "logs", "📋", 0xFFA78BFA),
+        ToolDefinition("sensors", "Sensors", "Real-time hardware sensor monitor with dynamic 1s/2s/5s sampling.", "Discover and inspect all physical hardware sensors.", "1.0.0", "Hardware & Telemetry", "Hardware Core", "sensors", "🧭", 0xFFF59E0B),
+        ToolDefinition("llm-gateway", "LLM Gateway", "Multi-account Cloud & Desktop LAN LLM proxy with smart failover.", "Loopback HTTP proxy for LLMs.", "1.0.0", "AI & Local LLM Gateway", "AI Core", "brain", "🧠", 0xFF10B981),
+        ToolDefinition("llm-chat", "Chat", "Local LLM chat studio powered by LLM Gateway failover proxy.", "Interactive conversational AI client.", "1.0.0", "AI & Local LLM Gateway", "AI Core", "chat", "💬", 0xFF38BDF8),
+        ToolDefinition("dynamic-tools-studio", "Custom Tools", "Synthesize and run custom web tools with AI prompts.", "AI-powered dynamic custom tool generator.", "1.0.0", "AI & Dynamic Web Tools", "AI Tools Core", "dynamic-tool", "⚡", 0xFFF43F5E),
+        ToolDefinition("system-manual", "System Manual", "Comprehensive guide & user manual for all tools and architecture.", "In-app documentation and user guide.", "1.0.0", "Documentation & Guides", "Documentation Core", "manual", "📖", 0xFF38BDF8),
+        ToolDefinition("ghost-agent", "Ghost Agent", "Background AI agent that automates multi-step tasks across any app.", "Intelligent background automation agent.", "1.0.0", "AI & Automation", "Ghost Labs", "ghost", "👻", 0xFFA78BFA),
+        ToolDefinition("terminal", "Cyber Terminal", "Linux shell emulator with command execution, pipes & saved snippets.", "Full-featured Linux terminal emulator.", "1.0.0", "System & Developer Tools", "Core Systems", "terminal", "💻", 0xFF10B981),
+        ToolDefinition("system-info", "System Info & Hardware", "Deep hardware, network, OS, memory, storage & kernel telemetry.", "Comprehensive device and hardware inspection toolkit.", "1.0.0", "Hardware & Telemetry", "Hardware Labs", "system-info", "ℹ️", 0xFF38BDF8),
+        ToolDefinition("net-topology", "Network Topology & Scanner", "Interactive visual network map, ARP discovery, multi-hop topology & port scanner.", "Local network scanner and visual topology mapper.", "1.0.0", "Networking & Security", "Network Core", "net-topology", "🌐", 0xFF06B6D4)
+    )
 }

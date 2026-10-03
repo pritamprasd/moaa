@@ -411,20 +411,7 @@ private fun ExpandableToolGalleryCard(
         ToolRegistryConfig.findToolDefinition(tool.id.value)
     }
 
-    val accentColor = when {
-        tool.id.value == "ftp-server" -> Cyan
-        tool.id.value == "ftp-client" -> Color(0xFF34D399)
-        tool.id.value == "nfc-tool" -> Rose
-        tool.id.value == "log-viewer" -> Violet
-        tool.id.value == "sensors" -> Color(0xFFF59E0B)
-        tool.id.value == "llm-gateway" -> Color(0xFF10B981)
-        tool.id.value == "llm-chat" -> Color(0xFF38BDF8)
-        tool.id.value == "system-info" -> Color(0xFF38BDF8) // Cyan
-        tool.id.value == "net-topology" -> Color(0xFF06B6D4) // Bright Cyan
-        tool.id.value == "dynamic-tools-studio" -> Color(0xFFF43F5E) // Rose-Red
-        tool.id.value.startsWith("dynamic_") -> Color(0xFF38BDF8) // Dynamic Web Tool
-        else -> Cyan
-    }
+    val accentColor = definition?.accentColorHex?.let { Color(it) } ?: Cyan
 
     val iconType = definition?.iconType ?: if (tool.id.value.startsWith("dynamic_")) "dynamic-tool" else "generic"
     val shape = RoundedCornerShape(12.dp)

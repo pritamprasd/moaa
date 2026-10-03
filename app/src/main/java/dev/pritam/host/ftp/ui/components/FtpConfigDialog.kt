@@ -9,9 +9,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import dev.pritam.host.ftp.model.FtpConfig
 import dev.pritam.host.ui.theme.Cyan
@@ -54,28 +58,62 @@ fun FtpConfigDialog(
     var isPasswordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(16.dp)
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.92f)
                 .clip(shape)
-                .border(BorderStroke(1.dp, Cyan.copy(alpha = 0.5f)), shape),
-            color = MaterialTheme.colorScheme.surface,
+                .border(BorderStroke(1.dp, Color(0xFF222531)), shape),
+            color = Color(0xFF12141C),
             shape = shape,
         ) {
-            Column(modifier = Modifier.padding(22.dp)) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = androidx.compose.foundation.shape.CircleShape,
+                            color = Cyan
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "FTP SERVER SETTINGS",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
+                    }
+                    androidx.compose.material3.IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "FTP Server Settings",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "Configure credentials and LAN port",
+                    text = "Configure credentials and LAN port for file sharing",
                     style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
+                    color = TextSecondary,
+                    fontSize = 11.sp
                 )
 
                 Spacer(Modifier.height(18.dp))
@@ -87,16 +125,19 @@ fun FtpConfigDialog(
                         username = it
                         errorMessage = null
                     },
-                    label = { Text("Username") },
+                    label = { Text("Username", fontSize = 11.sp) },
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = Color(0xFF334155),
+                        unfocusedBorderColor = Color(0xFF222531),
                         focusedLabelColor = Cyan,
                         unfocusedLabelColor = TextSecondary,
                         focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        unfocusedTextColor = TextPrimary,
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14)
                     ),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -109,7 +150,7 @@ fun FtpConfigDialog(
                         password = it
                         errorMessage = null
                     },
-                    label = { Text("Password") },
+                    label = { Text("Password", fontSize = 11.sp) },
                     singleLine = true,
                     visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -124,12 +165,15 @@ fun FtpConfigDialog(
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = Color(0xFF334155),
+                        unfocusedBorderColor = Color(0xFF222531),
                         focusedLabelColor = Cyan,
                         unfocusedLabelColor = TextSecondary,
                         focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        unfocusedTextColor = TextPrimary,
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14)
                     ),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -142,17 +186,20 @@ fun FtpConfigDialog(
                         portStr = it
                         errorMessage = null
                     },
-                    label = { Text("Port (1024 - 65535)") },
+                    label = { Text("Port (1024 - 65535)", fontSize = 11.sp) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Violet,
-                        unfocusedBorderColor = Color(0xFF334155),
-                        focusedLabelColor = Violet,
+                        focusedBorderColor = Cyan,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedLabelColor = Cyan,
                         unfocusedLabelColor = TextSecondary,
                         focusedTextColor = TextPrimary,
-                        unfocusedTextColor = TextPrimary
+                        unfocusedTextColor = TextPrimary,
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14)
                     ),
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -161,25 +208,26 @@ fun FtpConfigDialog(
                     Text(
                         text = errorMessage ?: "",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFF87171)
+                        color = Color(0xFFF87171),
+                        fontSize = 11.sp
                     )
                 }
 
-                Spacer(Modifier.height(22.dp))
+                Spacer(Modifier.height(20.dp))
 
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedButton(
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp, androidx.compose.ui.Alignment.End),
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    androidx.compose.material3.TextButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-                        border = BorderStroke(1.dp, Color(0xFF334155))
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Cancel")
+                        Text("Cancel", color = TextSecondary)
                     }
 
-                    Spacer(Modifier.width(12.dp))
-
-                    Button(
+                    LiquidGlassButton(
                         onClick = {
                             val p = portStr.toIntOrNull()
                             when {
@@ -204,13 +252,9 @@ fun FtpConfigDialog(
                             }
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Cyan,
-                            contentColor = Color(0xFF0F172A)
-                        )
-                    ) {
-                        Text("Save", fontWeight = FontWeight.Bold)
-                    }
+                        glowColor = Cyan,
+                        text = "Save Settings"
+                    )
                 }
             }
         }

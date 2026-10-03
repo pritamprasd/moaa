@@ -26,6 +26,9 @@ class MainActivity : ComponentActivity() {
         // Initialize App Settings persistence and values
         dev.pritam.host.settings.AppSettingsManager.init(applicationContext)
 
+        // Initialize Tool Registry from single-source config.yaml
+        dev.pritam.host.config.ToolRegistryConfig.init(applicationContext)
+
         // Initialize Ghost Agent repository and notification channel
         GhostAgentManager.init(applicationContext)
 

@@ -69,7 +69,7 @@ fun ConnectionDetailsCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "LAN ACCESS CREDENTIALS",
+                    text = "CREDENTIALS",
                     style = MaterialTheme.typography.labelSmall,
                     color = Cyan,
                     letterSpacing = 1.sp,
@@ -82,16 +82,16 @@ fun ConnectionDetailsCard(
                     border = BorderStroke(1.dp, if (!isRunning) Cyan.copy(alpha = 0.5f) else Color(0xFF334155)),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if (!isRunning) Cyan else TextSecondary),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                    modifier = Modifier.height(28.dp)
+                    modifier = Modifier.height(16.dp)
                 ) {
                     Text("Config", fontSize = 11.sp)
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(4.dp))
 
             // FTP Server URL Box with 1-Tap Copy
-            val urlShape = RoundedCornerShape(10.dp)
+            val urlShape = RoundedCornerShape(2.dp)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -143,7 +143,7 @@ fun ConnectionDetailsCard(
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
 
             // Credentials row (Username & Password)
             Row(

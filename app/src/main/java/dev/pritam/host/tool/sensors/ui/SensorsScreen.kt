@@ -138,7 +138,7 @@ fun SensorsScreen(
                 }
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
 
             // 2. Search Bar
             OutlinedTextField(
@@ -346,8 +346,8 @@ private fun SamplingIntervalDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(GlassSurfaceElevated)
-                .border(BorderStroke(1.dp, GlassBorderHighlight), RoundedCornerShape(8.dp))
+                .background(Color(0xFF14161F))
+                .border(BorderStroke(1.dp, Color(0xFF222531)), RoundedCornerShape(8.dp))
         ) {
             intervals.forEach { interval ->
                 val isSelected = currentInterval == interval
@@ -450,8 +450,8 @@ private fun CategoryFilterDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier
-                .background(GlassSurfaceElevated)
-                .border(BorderStroke(1.dp, GlassBorderHighlight), RoundedCornerShape(8.dp))
+                .background(Color(0xFF14161F))
+                .border(BorderStroke(1.dp, Color(0xFF222531)), RoundedCornerShape(8.dp))
         ) {
             categories.forEach { cat ->
                 val isSelected = selectedCategory == cat

@@ -56,29 +56,8 @@ fun HostNavHost(
 
     androidx.compose.runtime.LaunchedEffect(pendingTargetToolId) {
         pendingTargetToolId?.let { toolId ->
-            val route = when {
-                toolId == "ftp-server" -> HostRoutes.FTP_SERVER
-                toolId == "ftp-client" -> HostRoutes.FTP_CLIENT
-                toolId == "nfc-tool" -> HostRoutes.NFC_TOOL
-                toolId == "log-viewer" -> HostRoutes.LOG_VIEWER
-                toolId == "sensors" -> HostRoutes.SENSORS
-                toolId == "llm-gateway" -> HostRoutes.LLM_GATEWAY
-                toolId == "llm-chat" -> HostRoutes.LLM_CHAT
-                toolId == "dynamic-tools-studio" -> HostRoutes.DYNAMIC_TOOLS_STUDIO
-                toolId == "system-manual" -> HostRoutes.SYSTEM_MANUAL
-                toolId == "ghost-agent" -> HostRoutes.GHOST_AGENT
-                toolId == "terminal" -> HostRoutes.TERMINAL
-                toolId == "system-info" -> HostRoutes.SYS_INFO
-                toolId == "net-topology" -> HostRoutes.NET_TOPOLOGY
-                toolId.startsWith("dynamic_") -> "dynamic_tool_runner/${toolId.removePrefix("dynamic_")}"
-                else -> null
-            }
-            if (route != null) {
-                hostAppState.clearPendingTargetToolId()
-                navController.navigate(route) {
-                    launchSingleTop = true
-                }
-            }
+            hostAppState.clearPendingTargetToolId()
+            navigateToToolRoute(navController, toolId, launchSingleTop = true)
         }
     }
 
@@ -92,25 +71,7 @@ fun HostNavHost(
             DashboardScreen(
                 tools = tools,
                 onToolClick = { tool ->
-                    when {
-                        tool.id.value == "ftp-server" -> navController.navigate(HostRoutes.FTP_SERVER)
-                        tool.id.value == "ftp-client" -> navController.navigate(HostRoutes.FTP_CLIENT)
-                        tool.id.value == "nfc-tool" -> navController.navigate(HostRoutes.NFC_TOOL)
-                        tool.id.value == "log-viewer" -> navController.navigate(HostRoutes.LOG_VIEWER)
-                        tool.id.value == "sensors" -> navController.navigate(HostRoutes.SENSORS)
-                        tool.id.value == "llm-gateway" -> navController.navigate(HostRoutes.LLM_GATEWAY)
-                        tool.id.value == "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
-                        tool.id.value == "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
-                        tool.id.value == "system-manual" -> navController.navigate(HostRoutes.SYSTEM_MANUAL)
-                        tool.id.value == "ghost-agent" -> navController.navigate(HostRoutes.GHOST_AGENT)
-                        tool.id.value == "terminal" -> navController.navigate(HostRoutes.TERMINAL)
-                        tool.id.value == "system-info" -> navController.navigate(HostRoutes.SYS_INFO)
-                        tool.id.value == "net-topology" -> navController.navigate(HostRoutes.NET_TOPOLOGY)
-                        tool.id.value.startsWith("dynamic_") -> {
-                            val customId = tool.id.value.removePrefix("dynamic_")
-                            navController.navigate("dynamic_tool_runner/$customId")
-                        }
-                    }
+                    navigateToToolRoute(navController, tool.id.value)
                 },
                 onOpenSettings = {
                     navController.navigate(HostRoutes.SETTINGS)
@@ -200,26 +161,7 @@ fun HostNavHost(
                     navController.popBackStack()
                 },
                 onNavigateToTool = { routeId ->
-                    when (routeId) {
-                        "ftp-server" -> navController.navigate(HostRoutes.FTP_SERVER)
-                        "ftp-client" -> navController.navigate(HostRoutes.FTP_CLIENT)
-                        "nfc-tool" -> navController.navigate(HostRoutes.NFC_TOOL)
-                        "log-viewer" -> navController.navigate(HostRoutes.LOG_VIEWER)
-                        "sensors" -> navController.navigate(HostRoutes.SENSORS)
-                        "llm-gateway" -> navController.navigate(HostRoutes.LLM_GATEWAY)
-                        "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
-                        "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
-                        "ghost-agent" -> navController.navigate(HostRoutes.GHOST_AGENT)
-                        "terminal" -> navController.navigate(HostRoutes.TERMINAL)
-                        "system-info" -> navController.navigate(HostRoutes.SYS_INFO)
-                        "net-topology" -> navController.navigate(HostRoutes.NET_TOPOLOGY)
-                        "settings" -> navController.navigate(HostRoutes.SETTINGS)
-                        else -> {
-                            if (routeId.startsWith("dynamic_")) {
-                                navController.navigate("dynamic_tool_runner/${routeId.removePrefix("dynamic_")}")
-                            }
-                        }
-                    }
+                    navigateToToolRoute(navController, routeId)
                 }
             )
         }
@@ -275,6 +217,37 @@ fun HostNavHost(
                     navController.popBackStack()
                 }
             )
+        }
+    }
+}
+
+/**
+ * Single source of truth for routing tool IDs to their corresponding destinations.
+ */
+fun navigateToToolRoute(navController: NavHostController, toolId: String, launchSingleTop: Boolean = false) {
+    val route = when {
+        toolId == "ftp-server" -> HostRoutes.FTP_SERVER
+        toolId == "ftp-client" -> HostRoutes.FTP_CLIENT
+        toolId == "nfc-tool" -> HostRoutes.NFC_TOOL
+        toolId == "log-viewer" -> HostRoutes.LOG_VIEWER
+        toolId == "sensors" -> HostRoutes.SENSORS
+        toolId == "llm-gateway" -> HostRoutes.LLM_GATEWAY
+        toolId == "llm-chat" -> HostRoutes.LLM_CHAT
+        toolId == "dynamic-tools-studio" -> HostRoutes.DYNAMIC_TOOLS_STUDIO
+        toolId == "system-manual" -> HostRoutes.SYSTEM_MANUAL
+        toolId == "ghost-agent" -> HostRoutes.GHOST_AGENT
+        toolId == "terminal" -> HostRoutes.TERMINAL
+        toolId == "system-info" -> HostRoutes.SYS_INFO
+        toolId == "net-topology" -> HostRoutes.NET_TOPOLOGY
+        toolId == "settings" -> HostRoutes.SETTINGS
+        toolId.startsWith("dynamic_") -> "dynamic_tool_runner/${toolId.removePrefix("dynamic_")}"
+        else -> null
+    }
+    if (route != null) {
+        navController.navigate(route) {
+            if (launchSingleTop) {
+                this.launchSingleTop = true
+            }
         }
     }
 }

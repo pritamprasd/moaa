@@ -1621,37 +1621,29 @@ private fun HomescreenShortcutsCard(context: Context) {
                 badgeText = "PIN TO LAUNCHER"
             )
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(14.dp))
 
             val chunkedTools = tools.chunked(3)
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 chunkedTools.forEach { rowTools ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         rowTools.forEach { tool ->
                             val accentColor = Color(tool.accentColorHex)
                             val shape = RoundedCornerShape(10.dp)
-                            val emoji = when (tool.iconType) {
-                                "ftp" -> "📡"
-                                "nfc" -> "📶"
-                                "ftp-client" -> "☁️"
-                                "logs" -> "📋"
-                                "sensors" -> "🧭"
-                                "brain" -> "🧠"
-                                "chat" -> "💬"
-                                "dynamic-tool" -> "⚡"
-                                "manual" -> "📖"
-                                "ghost" -> "👻"
-                                "terminal" -> "💻"
-                                "system-info" -> "ℹ️"
-                                else -> "🔧"
-                            }
+                            val emoji = tool.emoji
 
                             Surface(
                                 modifier = Modifier
                                     .weight(1f)
+                                    .height(116.dp)
                                     .clip(shape)
                                     .clickable {
                                         dev.pritam.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, tool)
@@ -1665,8 +1657,8 @@ private fun HomescreenShortcutsCard(context: Context) {
                             ) {
                                 Column(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 6.dp, vertical = 10.dp),
+                                        .fillMaxSize()
+                                        .padding(horizontal = 6.dp, vertical = 12.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center
                                 ) {
@@ -1687,26 +1679,37 @@ private fun HomescreenShortcutsCard(context: Context) {
                                         }
                                     }
 
-                                    Spacer(Modifier.height(6.dp))
+                                    Spacer(Modifier.height(8.dp))
 
-                                    Text(
-                                        text = tool.name,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = TextPrimary,
-                                        fontSize = 10.sp,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                        lineHeight = 12.sp
-                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(28.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = tool.name,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary,
+                                            fontSize = 10.sp,
+                                            textAlign = TextAlign.Center,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            lineHeight = 12.sp
+                                        )
+                                    }
                                 }
                             }
                         }
 
-                        // Pad out remaining columns if last row has less than 3 tools
+                        // Pad out remaining columns if last row has less than 3 tools so all containers remain equal size
                         repeat(3 - rowTools.size) {
-                            Spacer(Modifier.weight(1f))
+                            Spacer(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(116.dp)
+                            )
                         }
                     }
                 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,8 +31,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.window.DialogProperties
 import dev.pritam.host.ftp.ui.components.LiquidGlassButton
-import dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush
 import dev.pritam.host.ftp.ui.components.liquidGlassTextFieldColors
 import dev.pritam.host.tool.llmchat.model.ChatSession
 import dev.pritam.host.tool.llmchat.model.PersonaPreset
@@ -60,40 +68,71 @@ fun ChatSessionDrawer(
     var sessionToRename by remember { mutableStateOf<ChatSession?>(null) }
     var renameText by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(16.dp)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.92f)
                 .clip(shape)
-                .border(BorderStroke(1.dp, RainbowGlassBorderBrush), shape),
-            color = MaterialTheme.colorScheme.surface,
+                .border(BorderStroke(1.dp, Color(0xFF222531)), shape),
+            color = Color(0xFF12141C),
             shape = shape
         ) {
-            Column(modifier = Modifier.padding(18.dp)) {
+            Column(modifier = Modifier.padding(20.dp)) {
+                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "CONVERSATION THREADS",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Cyan,
-                        letterSpacing = 1.sp
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = CircleShape,
+                            color = Cyan
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "CONVERSATION THREADS",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
+                    }
 
-                    LiquidGlassButton(
-                        onClick = {
-                            onNewSession()
-                            onDismiss()
-                        },
-                        glowColor = Cyan,
-                        useRainbowBorder = true,
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        text = "+ New Chat"
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        LiquidGlassButton(
+                            onClick = {
+                                onNewSession()
+                                onDismiss()
+                            },
+                            glowColor = Cyan,
+                            useRainbowBorder = false,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            text = "+ New Chat"
+                        )
+
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
 
                 Spacer(Modifier.height(14.dp))
@@ -111,13 +150,15 @@ fun ChatSessionDrawer(
                             val isSelected = session.id == activeSessionId
                             val preset = PersonaPreset.findById(session.personaId)
                             val dateStr = SimpleDateFormat("MMM dd, HH:mm", Locale.getDefault()).format(Date(session.updatedAt))
+                            val itemShape = RoundedCornerShape(10.dp)
 
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = if (isSelected) Cyan.copy(alpha = 0.15f) else GlassSurfaceDeep,
-                                border = BorderStroke(1.dp, if (isSelected) Cyan else GlassBorder),
+                                shape = itemShape,
+                                color = if (isSelected) Cyan.copy(alpha = 0.12f) else Color(0xFF0C0E14),
+                                border = BorderStroke(1.dp, if (isSelected) Cyan else Color(0xFF1E212B)),
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clip(itemShape)
                                     .clickable {
                                         onSelectSession(session.id)
                                         onDismiss()
@@ -182,49 +223,96 @@ fun ChatSessionDrawer(
                     }
                 }
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(16.dp))
 
-                LiquidGlassButton(
+                TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                    glowColor = TextSecondary,
-                    text = "Close"
-                )
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Close", color = TextSecondary)
+                }
             }
         }
     }
 
     if (sessionToRename != null) {
-        Dialog(onDismissRequest = { sessionToRename = null }) {
-            val shape = RoundedCornerShape(12.dp)
+        val renameShape = RoundedCornerShape(16.dp)
+        Dialog(
+            onDismissRequest = { sessionToRename = null },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
+        ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(shape)
-                    .border(BorderStroke(1.dp, Cyan), shape),
-                color = MaterialTheme.colorScheme.surface,
-                shape = shape
+                    .fillMaxWidth(0.88f)
+                    .clip(renameShape)
+                    .border(BorderStroke(1.dp, Color(0xFF222531)), renameShape),
+                color = Color(0xFF12141C),
+                shape = renameShape
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Rename Conversation", fontWeight = FontWeight.Bold, color = Cyan, fontSize = 13.sp)
-                    Spacer(Modifier.height(8.dp))
+                Column(modifier = Modifier.padding(20.dp)) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(
+                                modifier = Modifier.size(8.dp),
+                                shape = CircleShape,
+                                color = Cyan
+                            ) {}
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "RENAME CONVERSATION",
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                fontSize = 12.sp,
+                                letterSpacing = 1.sp
+                            )
+                        }
+                        IconButton(
+                            onClick = { sessionToRename = null },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = TextSecondary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+
                     OutlinedTextField(
                         value = renameText,
                         onValueChange = { renameText = it },
                         singleLine = true,
-                        colors = liquidGlassTextFieldColors(focusedBorderColor = Cyan),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = liquidGlassTextFieldColors(
+                            focusedBorderColor = Cyan,
+                            unfocusedBorderColor = Color(0xFF222531),
+                            containerColor = Color(0xFF0C0E14)
+                        ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Spacer(Modifier.height(12.dp))
+
+                    Spacer(Modifier.height(18.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        LiquidGlassButton(
+                        TextButton(
                             onClick = { sessionToRename = null },
-                            glowColor = TextSecondary,
-                            text = "Cancel"
-                        )
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Cancel", color = TextSecondary)
+                        }
+
                         LiquidGlassButton(
                             onClick = {
                                 sessionToRename?.let { s ->
@@ -234,7 +322,9 @@ fun ChatSessionDrawer(
                                 }
                                 sessionToRename = null
                             },
+                            modifier = Modifier.weight(1f),
                             glowColor = Cyan,
+                            useRainbowBorder = false,
                             text = "Save"
                         )
                     }

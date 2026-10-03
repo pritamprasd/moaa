@@ -78,7 +78,7 @@ fun StorageInfoCard(
                 }
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
 
             // Current directory path badge
             val pathShape = RoundedCornerShape(8.dp)
@@ -104,7 +104,7 @@ fun StorageInfoCard(
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(4.dp))
 
             // Storage capacity bar
             Row(

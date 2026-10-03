@@ -52,3 +52,17 @@ dependencies {
 
     implementation(project(":ghost-agent"))
 }
+
+tasks.register<Copy>("syncConfigYaml") {
+    from("${rootProject.projectDir}/config.yaml")
+    into("${projectDir}/src/main/assets")
+}
+
+tasks.register<Copy>("syncConfigYamlResources") {
+    from("${rootProject.projectDir}/config.yaml")
+    into("${projectDir}/src/main/resources")
+}
+
+tasks.named("preBuild") {
+    dependsOn("syncConfigYaml", "syncConfigYamlResources")
+}

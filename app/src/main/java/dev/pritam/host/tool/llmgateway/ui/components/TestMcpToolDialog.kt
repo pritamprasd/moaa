@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +38,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.window.DialogProperties
+import dev.pritam.host.ftp.ui.components.LiquidGlassButton
 import dev.pritam.host.ui.theme.Cyan
 import dev.pritam.host.ui.theme.Emerald
 import dev.pritam.host.ui.theme.GlassBorder
@@ -72,33 +81,60 @@ fun TestMcpToolDialog(
 
     val shape = RoundedCornerShape(16.dp)
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             shape = shape,
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush),
-            modifier = Modifier.fillMaxWidth()
+            color = Color(0xFF12141C),
+            border = BorderStroke(1.dp, Color(0xFF222531)),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .clip(shape)
         ) {
             Column(
                 modifier = Modifier
                     .padding(20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "⚙️ Test MCP Tool: ",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        fontSize = 14.sp
-                    )
-                    Text(
-                        text = tool.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Cyan,
-                        fontSize = 14.sp
-                    )
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = CircleShape,
+                            color = Cyan
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "TEST MCP TOOL: ${tool.name}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp,
+                            maxLines = 1
+                        )
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(4.dp))
@@ -109,11 +145,11 @@ fun TestMcpToolDialog(
                     fontSize = 11.sp
                 )
 
-                Spacer(Modifier.height(14.dp))
+                Spacer(Modifier.height(16.dp))
 
                 Text(
                     text = "ARGUMENTS (JSON)",
-                    color = Cyan,
+                    color = TextPrimary,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -126,9 +162,12 @@ fun TestMcpToolDialog(
                         fontFamily = FontFamily.Monospace,
                         fontSize = 11.sp
                     ),
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Cyan,
-                        unfocusedBorderColor = GlassBorder,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        focusedContainerColor = Color(0xFF0C0E14),
+                        unfocusedContainerColor = Color(0xFF0C0E14),
                         focusedTextColor = TextPrimary,
                         unfocusedTextColor = TextPrimary
                     ),
@@ -149,13 +188,14 @@ fun TestMcpToolDialog(
                     )
                     Spacer(Modifier.height(4.dp))
 
+                    val resultShape = RoundedCornerShape(10.dp)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(GlassSurfaceDeep)
-                            .border(BorderStroke(1.dp, if (lastResult.isError) Rose.copy(alpha = 0.4f) else Emerald.copy(alpha = 0.4f)), RoundedCornerShape(8.dp))
-                            .padding(10.dp)
+                            .clip(resultShape)
+                            .background(Color(0xFF0C0E14))
+                            .border(BorderStroke(1.dp, if (lastResult.isError) Rose.copy(alpha = 0.5f) else Emerald.copy(alpha = 0.5f)), resultShape)
+                            .padding(12.dp)
                     ) {
                         Text(
                             text = lastResult.content,
@@ -166,42 +206,30 @@ fun TestMcpToolDialog(
                         )
                     }
 
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(16.dp))
                 }
 
                 // Action Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    TextButton(
                         onClick = onDismiss,
-                        border = BorderStroke(1.dp, GlassBorder),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary)
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Close", fontSize = 12.sp)
+                        Text("Close", color = TextSecondary)
                     }
 
-                    Spacer(Modifier.width(10.dp))
-
-                    OutlinedButton(
+                    LiquidGlassButton(
                         onClick = { onExecute(argumentsJson) },
                         enabled = !isExecuting,
-                        border = BorderStroke(1.dp, Cyan),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Cyan.copy(alpha = 0.15f),
-                            contentColor = Cyan
-                        )
-                    ) {
-                        if (isExecuting) {
-                            CircularProgressIndicator(color = Cyan, modifier = Modifier.padding(2.dp), strokeWidth = 2.dp)
-                            Spacer(Modifier.width(6.dp))
-                            Text("Running...", fontSize = 12.sp)
-                        } else {
-                            Text("▶ Run Tool Call", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                    }
+                        modifier = Modifier.weight(1f),
+                        glowColor = Cyan,
+                        useRainbowBorder = false,
+                        text = if (isExecuting) "Running..." else "Run Tool Call"
+                    )
                 }
             }
         }

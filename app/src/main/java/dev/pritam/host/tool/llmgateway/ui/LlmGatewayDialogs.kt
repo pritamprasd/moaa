@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +32,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import dev.pritam.host.ftp.ui.components.LiquidGlassButton
 import dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush
 import dev.pritam.host.ftp.ui.components.liquidGlassTextFieldColors
@@ -60,24 +69,56 @@ fun AddCloudProfileDialog(
     var targetModel by remember { mutableStateOf("gemini-1.5-flash") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(16.dp)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.92f)
                 .clip(shape)
-                .border(BorderStroke(1.dp, RainbowGlassBorderBrush), shape),
-            color = MaterialTheme.colorScheme.surface,
+                .border(BorderStroke(1.dp, Color(0xFF222531)), shape),
+            color = Color(0xFF12141C),
             shape = shape
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = "ADD CLOUD LLM ACCOUNT",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Cyan,
-                    letterSpacing = 1.sp
-                )
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = CircleShape,
+                            color = Cyan
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "ADD CLOUD LLM ACCOUNT",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Connect Google Gemini or OpenAI ChatGPT cloud services.",
@@ -112,7 +153,7 @@ fun AddCloudProfileDialog(
                             },
                             modifier = Modifier.weight(1f),
                             glowColor = if (isSel) Cyan else TextSecondary,
-                            useRainbowBorder = isSel,
+                            useRainbowBorder = false,
                             text = label
                         )
                     }
@@ -125,7 +166,12 @@ fun AddCloudProfileDialog(
                     onValueChange = { name = it },
                     label = { Text("Profile Name", fontSize = 11.sp) },
                     singleLine = true,
-                    colors = liquidGlassTextFieldColors(focusedBorderColor = Cyan),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = liquidGlassTextFieldColors(
+                        focusedBorderColor = Cyan,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        containerColor = Color(0xFF0C0E14)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -135,9 +181,14 @@ fun AddCloudProfileDialog(
                     value = apiKey,
                     onValueChange = { apiKey = it },
                     label = { Text(if (selectedProvider == "GEMINI_CLOUD") "Gemini API Key (AI Studio)" else "OpenAI API Key (sk-...)", fontSize = 11.sp) },
-                    placeholder = { Text("Leave blank if using OAuth / SSO", fontSize = 10.sp) },
+                    placeholder = { Text("Leave blank if using OAuth / SSO", fontSize = 10.sp, color = Color(0xFF6B7280)) },
                     singleLine = true,
-                    colors = liquidGlassTextFieldColors(focusedBorderColor = Cyan),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = liquidGlassTextFieldColors(
+                        focusedBorderColor = Cyan,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        containerColor = Color(0xFF0C0E14)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -148,7 +199,12 @@ fun AddCloudProfileDialog(
                     onValueChange = { email = it },
                     label = { Text("Account Email (Optional)", fontSize = 11.sp) },
                     singleLine = true,
-                    colors = liquidGlassTextFieldColors(focusedBorderColor = Cyan),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = liquidGlassTextFieldColors(
+                        focusedBorderColor = Cyan,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        containerColor = Color(0xFF0C0E14)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -159,7 +215,12 @@ fun AddCloudProfileDialog(
                     onValueChange = { targetModel = it },
                     label = { Text("Target Model Identifier", fontSize = 11.sp) },
                     singleLine = true,
-                    colors = liquidGlassTextFieldColors(focusedBorderColor = Cyan),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = liquidGlassTextFieldColors(
+                        focusedBorderColor = Cyan,
+                        unfocusedBorderColor = Color(0xFF222531),
+                        containerColor = Color(0xFF0C0E14)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -168,18 +229,19 @@ fun AddCloudProfileDialog(
                     Text(errorMessage!!, color = Rose, fontSize = 11.sp)
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    LiquidGlassButton(
+                    TextButton(
                         onClick = onDismiss,
-                        glowColor = TextSecondary,
-                        text = "Cancel"
-                    )
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel", color = TextSecondary)
+                    }
 
                     LiquidGlassButton(
                         onClick = {
@@ -200,8 +262,9 @@ fun AddCloudProfileDialog(
                             )
                             onSave(profile)
                         },
+                        modifier = Modifier.weight(1f),
                         glowColor = Cyan,
-                        useRainbowBorder = true,
+                        useRainbowBorder = false,
                         text = "Save Profile"
                     )
                 }
@@ -221,24 +284,56 @@ fun AddDesktopHostDialog(
     var serviceType by remember { mutableStateOf("OLLAMA_LOCAL") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        val shape = RoundedCornerShape(16.dp)
+    val shape = RoundedCornerShape(16.dp)
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.92f)
                 .clip(shape)
-                .border(BorderStroke(1.dp, GlassBorderHighlight), shape),
-            color = MaterialTheme.colorScheme.surface,
+                .border(BorderStroke(1.dp, Color(0xFF222531)), shape),
+            color = Color(0xFF12141C),
             shape = shape
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text(
-                    text = "ADD DESKTOP LOCAL HOST",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF34D399), // Emerald
-                    letterSpacing = 1.sp
-                )
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = CircleShape,
+                            color = Color(0xFF34D399) // Emerald
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = "ADD DESKTOP LOCAL HOST",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
+                    }
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "Direct HTTP integration with LAN LLM servers (Ollama, LM Studio, vLLM). No credentials or API keys needed.",
@@ -269,7 +364,7 @@ fun AddDesktopHostDialog(
                             },
                             modifier = Modifier.weight(1f),
                             glowColor = if (isSel) Color(0xFF34D399) else TextSecondary,
-                            useRainbowBorder = isSel,
+                            useRainbowBorder = false,
                             text = meta.first
                         )
                     }
@@ -282,7 +377,12 @@ fun AddDesktopHostDialog(
                     onValueChange = { name = it },
                     label = { Text("Profile Name", fontSize = 11.sp) },
                     singleLine = true,
-                    colors = liquidGlassTextFieldColors(focusedBorderColor = Color(0xFF34D399)),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = liquidGlassTextFieldColors(
+                        focusedBorderColor = Color(0xFF34D399),
+                        unfocusedBorderColor = Color(0xFF222531),
+                        containerColor = Color(0xFF0C0E14)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -293,7 +393,12 @@ fun AddDesktopHostDialog(
                     onValueChange = { hostAddress = it },
                     label = { Text("Host URL & Port (e.g. http://192.168.1.50:11434)", fontSize = 11.sp) },
                     singleLine = true,
-                    colors = liquidGlassTextFieldColors(focusedBorderColor = Color(0xFF34D399)),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = liquidGlassTextFieldColors(
+                        focusedBorderColor = Color(0xFF34D399),
+                        unfocusedBorderColor = Color(0xFF222531),
+                        containerColor = Color(0xFF0C0E14)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -304,7 +409,12 @@ fun AddDesktopHostDialog(
                     onValueChange = { targetModel = it },
                     label = { Text("Default Model Tag (e.g. llama3.2:latest)", fontSize = 11.sp) },
                     singleLine = true,
-                    colors = liquidGlassTextFieldColors(focusedBorderColor = Color(0xFF34D399)),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = liquidGlassTextFieldColors(
+                        focusedBorderColor = Color(0xFF34D399),
+                        unfocusedBorderColor = Color(0xFF222531),
+                        containerColor = Color(0xFF0C0E14)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -313,18 +423,19 @@ fun AddDesktopHostDialog(
                     Text(errorMessage!!, color = Rose, fontSize = 11.sp)
                 }
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(20.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    LiquidGlassButton(
+                    TextButton(
                         onClick = onDismiss,
-                        glowColor = TextSecondary,
-                        text = "Cancel"
-                    )
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("Cancel", color = TextSecondary)
+                    }
 
                     LiquidGlassButton(
                         onClick = {
@@ -348,8 +459,9 @@ fun AddDesktopHostDialog(
                             )
                             onSave(profile)
                         },
+                        modifier = Modifier.weight(1f),
                         glowColor = Color(0xFF34D399),
-                        useRainbowBorder = true,
+                        useRainbowBorder = false,
                         text = "Save Desktop Host"
                     )
                 }

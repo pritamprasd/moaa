@@ -374,8 +374,8 @@ private fun LogLevelsMultiselectDropdown(
             expanded = isMenuExpanded,
             onDismissRequest = { isMenuExpanded = false },
             modifier = Modifier
-                .background(GlassSurfaceElevated)
-                .border(BorderStroke(1.dp, GlassBorderHighlight), RoundedCornerShape(8.dp))
+                .background(Color(0xFF14161F))
+                .border(BorderStroke(1.dp, Color(0xFF222531)), RoundedCornerShape(8.dp))
         ) {
             // Quick Actions Header
             Row(
@@ -502,8 +502,8 @@ private fun ToolsMultiselectDropdown(
             expanded = isMenuExpanded,
             onDismissRequest = { isMenuExpanded = false },
             modifier = Modifier
-                .background(GlassSurfaceElevated)
-                .border(BorderStroke(1.dp, GlassBorderHighlight), RoundedCornerShape(8.dp))
+                .background(Color(0xFF14161F))
+                .border(BorderStroke(1.dp, Color(0xFF222531)), RoundedCornerShape(8.dp))
         ) {
             // Quick Action Header
             Row(

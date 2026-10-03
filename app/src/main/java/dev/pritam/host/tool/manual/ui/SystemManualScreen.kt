@@ -85,18 +85,33 @@ import dev.pritam.host.ui.theme.Violet
 
 data class ManualSection(
     val id: String,
-    val title: String,
-    val category: String,
-    val tagline: String,
-    val iconEmoji: String,
-    val accentColor: Color,
+    val title: String = "",
+    val category: String = "",
+    val tagline: String = "",
+    val iconEmoji: String = "",
+    val accentColor: Color = Cyan,
     val toolRouteId: String? = null,
     val paragraphs: List<String>,
     val keyFeatures: List<Pair<String, String>> = emptyList(),
     val quickStartSteps: List<String> = emptyList(),
     val codeSnippets: List<Pair<String, String>> = emptyList(), // Label to Code
     val tips: List<String> = emptyList()
-)
+) {
+    val effectiveTitle: String
+        get() = toolRouteId?.let { dev.pritam.host.config.ToolRegistryConfig.findToolDefinition(it)?.name } ?: title
+
+    val effectiveCategory: String
+        get() = toolRouteId?.let { dev.pritam.host.config.ToolRegistryConfig.findToolDefinition(it)?.category } ?: category
+
+    val effectiveTagline: String
+        get() = toolRouteId?.let { dev.pritam.host.config.ToolRegistryConfig.findToolDefinition(it)?.shortTagline } ?: tagline
+
+    val effectiveEmoji: String
+        get() = toolRouteId?.let { dev.pritam.host.config.ToolRegistryConfig.findToolDefinition(it)?.emoji } ?: iconEmoji
+
+    val effectiveAccentColor: Color
+        get() = toolRouteId?.let { dev.pritam.host.config.ToolRegistryConfig.findToolDefinition(it)?.accentColorHex?.let { hex -> Color(hex) } } ?: accentColor
+}
 
 object SystemManualData {
 
@@ -500,13 +515,13 @@ fun SystemManualScreen(
     var selectedCategory by remember { mutableStateOf("All") }
     var expandedSectionIds by remember { mutableStateOf<Set<String>>(emptySet()) }
 
-    val categories = listOf("All") + SystemManualData.SECTIONS.map { it.category }.distinct()
+    val categories = listOf("All") + SystemManualData.SECTIONS.map { it.effectiveCategory }.distinct()
 
     val filteredSections = SystemManualData.SECTIONS.filter { section ->
-        val matchesCategory = selectedCategory == "All" || section.category == selectedCategory
+        val matchesCategory = selectedCategory == "All" || section.effectiveCategory == selectedCategory
         val matchesSearch = if (searchQuery.isBlank()) true else {
-            section.title.contains(searchQuery, ignoreCase = true) ||
-                    section.tagline.contains(searchQuery, ignoreCase = true) ||
+            section.effectiveTitle.contains(searchQuery, ignoreCase = true) ||
+                    section.effectiveTagline.contains(searchQuery, ignoreCase = true) ||
                     section.paragraphs.any { it.contains(searchQuery, ignoreCase = true) } ||
                     section.keyFeatures.any { it.first.contains(searchQuery, ignoreCase = true) || it.second.contains(searchQuery, ignoreCase = true) }
         }
@@ -733,10 +748,16 @@ private fun ManualSectionCard(
     onLaunchTool: () -> Unit,
     onCopySnippet: (String, String) -> Unit
 ) {
+    val accentColor = section.effectiveAccentColor
+    val emoji = section.effectiveEmoji
+    val category = section.effectiveCategory
+    val title = section.effectiveTitle
+    val tagline = section.effectiveTagline
+
     Surface(
         shape = RoundedCornerShape(14.dp),
         color = GlassSurfaceDeep,
-        border = BorderStroke(1.dp, if (isExpanded) section.accentColor.copy(alpha = 0.5f) else GlassBorder),
+        border = BorderStroke(1.dp, if (isExpanded) accentColor.copy(alpha = 0.5f) else GlassBorder),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
@@ -756,11 +777,11 @@ private fun ManualSectionCard(
                     Surface(
                         modifier = Modifier.size(36.dp),
                         shape = RoundedCornerShape(8.dp),
-                        color = section.accentColor.copy(alpha = 0.15f),
-                        border = BorderStroke(1.dp, section.accentColor.copy(alpha = 0.4f))
+                        color = accentColor.copy(alpha = 0.15f),
+                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.4f))
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text(section.iconEmoji, fontSize = 18.sp)
+                            Text(emoji, fontSize = 18.sp)
                         }
                     }
 
@@ -770,18 +791,18 @@ private fun ManualSectionCard(
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Surface(
                                 shape = RoundedCornerShape(3.dp),
-                                color = section.accentColor.copy(alpha = 0.2f)
+                                color = accentColor.copy(alpha = 0.2f)
                             ) {
                                 Text(
-                                    text = section.category.uppercase(),
-                                    color = section.accentColor,
+                                    text = category.uppercase(),
+                                    color = accentColor,
                                     fontSize = 8.sp,
                                     fontWeight = FontWeight.Bold,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
                                 )
                             }
                             Text(
-                                text = section.title,
+                                text = title,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary,
@@ -790,7 +811,7 @@ private fun ManualSectionCard(
                         }
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = section.tagline,
+                            text = tagline,
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary,
                             fontSize = 10.sp,
@@ -803,7 +824,7 @@ private fun ManualSectionCard(
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                         contentDescription = if (isExpanded) "Collapse" else "Expand",
-                        tint = section.accentColor,
+                        tint = accentColor,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -985,7 +1006,7 @@ private fun ManualSectionCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(36.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = section.accentColor),
+                            colors = ButtonDefaults.buttonColors(containerColor = accentColor),
                             shape = RoundedCornerShape(8.dp),
                             contentPadding = PaddingValues(0.dp)
                         ) {
@@ -998,7 +1019,7 @@ private fun ManualSectionCard(
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 Text(
-                                    text = "OPEN ${section.title.uppercase()} IN APP",
+                                    text = "OPEN ${title.uppercase()} IN APP",
                                     color = Color.Black,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 11.sp

@@ -276,8 +276,8 @@ private fun SystemInfoControlsCard(
                     expanded = showDropdown,
                     onDismissRequest = onToggleDropdown,
                     modifier = Modifier
-                        .background(AppSettingsManager.getDialogSurfaceColor(98))
-                        .border(BorderStroke(1.dp, Cyan.copy(alpha = 0.4f)), RoundedCornerShape(8.dp))
+                        .background(Color(0xFF14161F))
+                        .border(BorderStroke(1.dp, Color(0xFF222531)), RoundedCornerShape(8.dp))
                 ) {
                     RefreshInterval.entries.forEach { interval ->
                         val isSelected = refreshInterval == interval

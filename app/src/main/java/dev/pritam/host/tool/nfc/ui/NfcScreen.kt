@@ -27,10 +27,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -60,11 +64,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.pritam.host.ftp.ui.components.GlassBackButton
 import dev.pritam.host.ftp.ui.components.IsometricCard
 import dev.pritam.host.ftp.ui.components.IsometricStatTile
+import dev.pritam.host.ftp.ui.components.LiquidGlassButton
 import dev.pritam.host.tool.nfc.manager.NfcManager
 import dev.pritam.host.tool.nfc.model.GamingPresetCatalog
 import dev.pritam.host.tool.nfc.model.GamingTagPreset
@@ -1519,37 +1525,105 @@ private fun WriteTagWaitingDialog(
     batchCount: Int,
     onCancel: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(16.dp)
 
-    Dialog(onDismissRequest = onCancel) {
+    Dialog(
+        onDismissRequest = onCancel,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Surface(
-            modifier = Modifier.fillMaxWidth().clip(shape).border(BorderStroke(1.dp, Rose), shape),
-            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .clip(shape)
+                .border(BorderStroke(1.dp, Color(0xFF222531)), shape),
+            color = Color(0xFF12141C),
             shape = shape
         ) {
-            Column(modifier = Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = if (isBatchMode) "BATCH WRITER ACTIVE ($batchCount WRITTEN)" else "READY TO WRITE NFC TAG",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Rose,
-                    letterSpacing = 1.sp
-                )
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = "Payload: ${payload.writeType.displayName}\nHold NFC tag against the back of your phone to execute",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary,
-                    fontSize = 11.sp
-                )
-                Spacer(Modifier.height(18.dp))
-                OutlinedButton(
-                    onClick = onCancel,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = TextSecondary),
-                    border = BorderStroke(1.dp, Color(0xFF334155))
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Done / Cancel")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(8.dp),
+                            shape = CircleShape,
+                            color = Rose
+                        ) {}
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = if (isBatchMode) "BATCH WRITER ACTIVE ($batchCount)" else "READY TO WRITE NFC TAG",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            letterSpacing = 1.sp,
+                            fontSize = 12.sp
+                        )
+                    }
+                    IconButton(
+                        onClick = onCancel,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
                 }
+
+                Spacer(Modifier.height(14.dp))
+
+                // Recessed Payload Summary Card
+                val cardShape = RoundedCornerShape(10.dp)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(cardShape)
+                        .border(BorderStroke(1.dp, Color(0xFF1E212B)), cardShape),
+                    color = Color(0xFF0C0E14),
+                    shape = cardShape
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(
+                            text = "TARGET PAYLOAD",
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Rose,
+                            letterSpacing = 0.8.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = payload.writeType.displayName,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            fontSize = 13.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "Hold NFC tag against the back of your phone to execute",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(18.dp))
+
+                LiquidGlassButton(
+                    onClick = onCancel,
+                    modifier = Modifier.fillMaxWidth(),
+                    glowColor = Rose,
+                    text = "Done / Cancel"
+                )
             }
         }
     }

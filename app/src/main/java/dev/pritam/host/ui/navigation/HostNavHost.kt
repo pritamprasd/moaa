@@ -23,6 +23,7 @@ import dev.pritam.host.ui.dashboard.DashboardScreen
 
 import dev.pritam.host.tool.manual.ui.SystemManualScreen
 import dev.pritam.ghostagent.ui.GhostAgentStudioScreen
+import dev.pritam.host.tool.terminal.ui.TerminalScreen
 
 object HostRoutes {
     const val DASHBOARD = "dashboard"
@@ -38,6 +39,7 @@ object HostRoutes {
     const val DYNAMIC_TOOL_RUNNER = "dynamic_tool_runner/{toolId}"
     const val SYSTEM_MANUAL = "system_manual"
     const val GHOST_AGENT = "ghost_agent"
+    const val TERMINAL = "terminal"
 }
 
 @Composable
@@ -61,6 +63,7 @@ fun HostNavHost(
                 toolId == "dynamic-tools-studio" -> HostRoutes.DYNAMIC_TOOLS_STUDIO
                 toolId == "system-manual" -> HostRoutes.SYSTEM_MANUAL
                 toolId == "ghost-agent" -> HostRoutes.GHOST_AGENT
+                toolId == "terminal" -> HostRoutes.TERMINAL
                 toolId.startsWith("dynamic_") -> "dynamic_tool_runner/${toolId.removePrefix("dynamic_")}"
                 else -> null
             }
@@ -94,6 +97,7 @@ fun HostNavHost(
                         tool.id.value == "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
                         tool.id.value == "system-manual" -> navController.navigate(HostRoutes.SYSTEM_MANUAL)
                         tool.id.value == "ghost-agent" -> navController.navigate(HostRoutes.GHOST_AGENT)
+                        tool.id.value == "terminal" -> navController.navigate(HostRoutes.TERMINAL)
                         tool.id.value.startsWith("dynamic_") -> {
                             val customId = tool.id.value.removePrefix("dynamic_")
                             navController.navigate("dynamic_tool_runner/$customId")
@@ -191,6 +195,8 @@ fun HostNavHost(
                         "llm-gateway" -> navController.navigate(HostRoutes.LLM_GATEWAY)
                         "llm-chat" -> navController.navigate(HostRoutes.LLM_CHAT)
                         "dynamic-tools-studio" -> navController.navigate(HostRoutes.DYNAMIC_TOOLS_STUDIO)
+                        "ghost-agent" -> navController.navigate(HostRoutes.GHOST_AGENT)
+                        "terminal" -> navController.navigate(HostRoutes.TERMINAL)
                         "settings" -> navController.navigate(HostRoutes.SETTINGS)
                         else -> {
                             if (routeId.startsWith("dynamic_")) {
@@ -204,6 +210,14 @@ fun HostNavHost(
 
         composable(HostRoutes.GHOST_AGENT) {
             GhostAgentStudioScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(HostRoutes.TERMINAL) {
+            TerminalScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

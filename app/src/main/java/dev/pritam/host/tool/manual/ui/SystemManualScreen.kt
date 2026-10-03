@@ -376,6 +376,42 @@ object SystemManualData {
                 "MCP Server Toggles" to "Turn individual MCP tool servers on or off dynamically.",
                 "Homescreen Shortcuts" to "Pin direct-launch shortcuts for any tool directly to your Android home screen launcher."
             )
+        ),
+        ManualSection(
+            id = "terminal",
+            title = "Cyber Terminal & Shell Emulator",
+            category = "System & Developer Tools",
+            tagline = "Linux / Ubuntu shell with command execution, pipes, and saved snippets.",
+            iconEmoji = "💻",
+            accentColor = Emerald,
+            toolRouteId = "terminal",
+            paragraphs = listOf(
+                "Cyber Terminal provides an embedded Linux / Ubuntu shell on Android with interactive command execution, real-time streaming output, working directory tracking, and a persistent library of named commands and curl templates.",
+                "Easily test local Ollama / LLM endpoints (e.g. 'curl http://127.0.0.1:11434/api/tags'), execute networking tools (ping, ip addr, netstat), inspect system specs (uname, df, ps), and save frequent commands to run in 1 click."
+            ),
+            keyFeatures = listOf(
+                "Standard Linux Commands" to "Execute curl, ping, ip, ls, cat, grep, ps, uname, df, and custom shell pipelines.",
+                "Stateful Directory Navigation" to "Built-in 'cd' tracking seamlessly updates your working directory across commands.",
+                "Saved Commands & Templates" to "Save long commands with custom names and categories (AI & LLM, Networking, Storage, System) to run directly without retyping.",
+                "Virtual Helper Keys" to "One-tap accessory keys (Tab, |, -, /, ~, $, >, curl, clear) and history up/down navigation for fast mobile typing.",
+                "Real-Time Telemetry & Copy" to "Displays execution duration and exit codes with one-tap clipboard export."
+            ),
+            quickStartSteps = listOf(
+                "1. Open Cyber Terminal from the Dashboard.",
+                "2. Tap any preset chip at the top (e.g. '⚡ Ollama Tags' or '⚡ Ping DNS') to run immediately.",
+                "3. Type any command into the prompt (e.g. 'curl -s http://127.0.0.1:8080/v1/models') and tap '▶ Run'.",
+                "4. To save a command for later, tap '💾', give it a name and category, and tap 'Save Snippet'.",
+                "5. Tap '⚡ Saved' in the top bar anytime to search and 1-click execute all your saved snippets."
+            ),
+            codeSnippets = listOf(
+                "Local Ollama Models API Query" to "curl -s http://127.0.0.1:11434/api/tags | grep -o '\"name\":\"[^\"]*\"'",
+                "Network & IP Address Inspection" to "ip addr show | grep -E 'inet |wlan0'",
+                "Kernel Release & CPU Arch" to "uname -a && cat /proc/cpuinfo | grep 'model name' | head -n 4"
+            ),
+            tips = listOf(
+                "Tip: You can use 'clear' or the trash icon in the top bar to reset the output screen anytime.",
+                "Tip: Tap '⏹ Stop' in the top bar to cancel any long-running command (like ping or top)."
+            )
         )
     )
 }

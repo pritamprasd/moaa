@@ -158,6 +158,18 @@ object ToolRegistryConfig {
             iconType = "ghost",
             accentColorHex = 0xFFA78BFA, // Violet
             requiredPermissions = listOf("SYSTEM_ALERT_WINDOW", "BIND_ACCESSIBILITY_SERVICE", "FOREGROUND_SERVICE_MEDIA_PROJECTION")
+        ),
+        ToolDefinition(
+            id = "terminal",
+            name = "Cyber Terminal",
+            shortTagline = "Linux shell emulator with command execution, pipes & saved snippets.",
+            description = "Full-featured Linux / Ubuntu style terminal emulator for Android. Execute standard system binaries (curl, ping, ip, ls, cat, grep, ps, uname, df, env), inspect device files and network sockets, navigate directories with stateful 'cd', pipe and redirect output, and maintain a library of reusable saved commands & curl templates for instant one-click execution.",
+            version = "1.0.0",
+            category = "System & Developer Tools",
+            author = "Core Systems",
+            iconType = "terminal",
+            accentColorHex = 0xFF10B981, // Emerald
+            requiredPermissions = listOf("INTERNET", "ACCESS_NETWORK_STATE")
         )
     )
 

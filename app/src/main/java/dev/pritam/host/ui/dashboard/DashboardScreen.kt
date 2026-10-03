@@ -749,6 +749,22 @@ private fun ToolIsometricIcon(
                     drawCircle(color = color, radius = 2.5.dp.toPx(), center = Offset(cx - w * 0.12f, cy - h * 0.08f))
                     drawCircle(color = color, radius = 2.5.dp.toPx(), center = Offset(cx + w * 0.12f, cy - h * 0.08f))
                 }
+                "terminal" -> {
+                    // Cyber Command Console & Prompt Cursor (> _)
+                    val promptPath = Path().apply {
+                        moveTo(cx - w * 0.28f, cy - h * 0.2f)
+                        lineTo(cx - w * 0.04f, cy)
+                        lineTo(cx - w * 0.28f, cy + h * 0.2f)
+                    }
+                    drawPath(promptPath, color = color, style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    drawLine(
+                        color = color,
+                        start = Offset(cx + w * 0.06f, cy + h * 0.2f),
+                        end = Offset(cx + w * 0.32f, cy + h * 0.2f),
+                        strokeWidth = 2.dp.toPx(),
+                        cap = StrokeCap.Round
+                    )
+                }
                 else -> {
                     // Generic Cyber Chip
                     drawRect(color = color, topLeft = Offset(cx - w * 0.3f, cy - h * 0.3f), size = Size(w * 0.6f, h * 0.6f), style = Stroke(1.5.dp.toPx()))

@@ -984,6 +984,7 @@ private fun HomescreenShortcutsCard(context: Context) {
                                 "dynamic-tool" -> "⚡"
                                 "manual" -> "📖"
                                 "ghost" -> "👻"
+                                "terminal" -> "💻"
                                 else -> "🔧"
                             }
 

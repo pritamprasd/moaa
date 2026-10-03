@@ -61,42 +61,30 @@ import dev.pritam.host.ui.theme.TextSecondary
 import dev.pritam.host.ui.theme.Violet
 
 /**
- * Luminous Liquid Rainbow Gradient Brushes.
- * Flowing chromatic spectrum: Sky -> Indigo -> Violet -> Rose -> Amber -> Emerald -> Sky.
+ * Clean Hairline Border Brushes for plain minimalist dark mode.
+ * Subtle 1px neutral dividers without fluorescent rainbow glare.
  */
 val RainbowBorderBrush = Brush.linearGradient(
     listOf(
-        Color(0xFF38BDF8), // Sky/Cyan
-        Color(0xFF818CF8), // Indigo
-        Color(0xFFA855F7), // Purple/Violet
-        Color(0xFFEC4899), // Rose/Pink
-        Color(0xFFF59E0B), // Amber/Gold
-        Color(0xFF10B981), // Emerald/Green
-        Color(0xFF38BDF8)  // Back to Sky/Cyan
+        Color(0xFF222531),
+        Color(0xFF2D3142),
+        Color(0xFF222531)
     )
 )
 
 val RainbowGlassBorderBrush = Brush.linearGradient(
     listOf(
-        Color(0xCC38BDF8), // Sky/Cyan @ 80%
-        Color(0xCC818CF8), // Indigo @ 80%
-        Color(0xCCA855F7), // Purple @ 80%
-        Color(0xCCEC4899), // Rose @ 80%
-        Color(0xCCF59E0B), // Amber @ 80%
-        Color(0xCC10B981), // Emerald @ 80%
-        Color(0xCC38BDF8)  // Back to Sky/Cyan
+        Color(0xFF222531),
+        Color(0xFF2D3142),
+        Color(0xFF222531)
     )
 )
 
 val RainbowSoftGlowBrush = Brush.linearGradient(
     listOf(
-        Color(0x5038BDF8),
-        Color(0x50818CF8),
-        Color(0x50A855F7),
-        Color(0x50EC4899),
-        Color(0x50F59E0B),
-        Color(0x5010B981),
-        Color(0x5038BDF8)
+        Color(0x10222531),
+        Color(0x102D3142),
+        Color(0x10222531)
     )
 )
 
@@ -116,144 +104,45 @@ fun LiquidGlassBackground(
                 Brush.verticalGradient(
                     listOf(
                         SpaceBackground,
-                        Color(0xFF090E1A),
+                        Color(0xFF0B0C11),
                         SpaceBackgroundEnd
                     )
                 )
             )
     ) {
-        // Cyan / Sky Liquid Light Orb (Top-Left)
-        Box(
-            modifier = Modifier
-                .size(320.dp)
-                .offset(x = (-80).dp, y = (-60).dp)
-                .clip(RoundedCornerShape(160.dp))
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            Cyan.copy(alpha = 0.18f),
-                            Cyan.copy(alpha = 0.05f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
-        // Violet Neon Ambient Orb (Center-Right)
-        Box(
-            modifier = Modifier
-                .size(360.dp)
-                .align(Alignment.CenterEnd)
-                .offset(x = 100.dp, y = 80.dp)
-                .clip(RoundedCornerShape(180.dp))
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            Violet.copy(alpha = 0.22f),
-                            Violet.copy(alpha = 0.06f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
-        // Rose / Emerald Chromatic Orb (Bottom-Left)
-        Box(
-            modifier = Modifier
-                .size(340.dp)
-                .align(Alignment.BottomStart)
-                .offset(x = (-60).dp, y = 80.dp)
-                .clip(RoundedCornerShape(170.dp))
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            Rose.copy(alpha = 0.14f),
-                            Color(0xFF34D399).copy(alpha = 0.05f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
-        // Main App Content rendered over liquid glass background
         content()
     }
 }
 
 /**
- * Translucent Liquid Glass Card with clean shadow (no duplicate borders) and specular refraction border.
+ * Plain Minimalist Dark Card with clean 1px hairline border and matte elevation.
  */
 @Composable
 fun IsometricCard(
     modifier: Modifier = Modifier,
     glowColor: Color = Cyan,
-    elevationDepth: Dp = 3.dp,
+    elevationDepth: Dp = 2.dp,
     useRainbowBorder: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val cornerRadius = 14.dp
+    val cornerRadius = 12.dp
     val shape = RoundedCornerShape(cornerRadius)
 
-    val borderBrush = if (useRainbowBorder) {
-        RainbowGlassBorderBrush
+    val borderStroke = if (useRainbowBorder) {
+        BorderStroke(1.dp, RainbowGlassBorderBrush)
     } else {
-        Brush.linearGradient(
-            listOf(
-                GlassBorderHighlight,
-                glowColor.copy(alpha = 0.65f),
-                GlassBorder,
-                glowColor.copy(alpha = 0.25f)
-            )
-        )
+        BorderStroke(1.dp, GlassBorder)
     }
 
     Box(modifier = modifier.fillMaxWidth()) {
-        // 1. Clean Depth Shadow Backplate (WITHOUT duplicate border stroke)
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .offset(x = 1.dp, y = elevationDepth)
-                .clip(shape)
-                .background(Color(0x45030712))
-        )
-
-        // 2. Main Frosted Acrylic Glass Layer with Single Clean Border
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0x3D1E293B), // Translucent frost top (~24%)
-                            Color(0x1F0F172A), // Lighter translucent frost bottom (~12%)
-                        )
-                    )
-                )
-                .border(
-                    BorderStroke(1.dp, borderBrush),
-                    shape
-                )
+                .background(GlassSurface)
+                .border(borderStroke, shape)
         ) {
-            // Specular Top Shine Glint Line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                Color.White.copy(alpha = 0.35f),
-                                if (useRainbowBorder) Color(0xCC38BDF8) else glowColor.copy(alpha = 0.5f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
-            // Content Container with Padding
-            Box(modifier = Modifier.padding(16.dp)) {
+            Box(modifier = Modifier.padding(14.dp)) {
                 content()
             }
         }
@@ -261,14 +150,13 @@ fun IsometricCard(
 }
 
 /**
- * Dedicated Rainbow Liquid Glass Card:
- * Clean, soft liquid shadow beneath + single radiant rainbow gradient border on frosted glass.
+ * Dedicated Minimalist Card with subtle 1px hairline border.
  */
 @Composable
 fun RainbowGlassCard(
     modifier: Modifier = Modifier,
-    cornerRadius: Dp = 14.dp,
-    elevationDepth: Dp = 3.dp,
+    cornerRadius: Dp = 12.dp,
+    elevationDepth: Dp = 2.dp,
     contentPadding: PaddingValues = PaddingValues(14.dp),
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -281,32 +169,12 @@ fun RainbowGlassCard(
             .fillMaxWidth()
             .animateContentSize()
     ) {
-        // 1. Soft Liquid Glass Depth Shadow (Pure diffused dark glass, NO duplicate border!)
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .offset(x = 1.dp, y = elevationDepth)
-                .clip(shape)
-                .background(Color(0x55030712))
-        )
-
-        // 2. Frosted Acrylic Glass Card with Single Rainbow Gradient Border
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(shape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0x401E293B), // Translucent frost (~25%)
-                            Color(0x1C0F172A)  // Deep translucent frost (~11%)
-                        )
-                    )
-                )
-                .border(
-                    BorderStroke(1.dp, RainbowGlassBorderBrush),
-                    shape
-                )
+                .background(GlassSurface)
+                .border(BorderStroke(1.dp, GlassBorder), shape)
                 .then(
                     if (onClick != null) {
                         Modifier.clickable(
@@ -316,24 +184,6 @@ fun RainbowGlassCard(
                     } else Modifier
                 )
         ) {
-            // Top Specular Refraction Shine
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                Color.White.copy(alpha = 0.4f),
-                                Color(0xFF38BDF8).copy(alpha = 0.6f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
-            // Inner Content
             Box(modifier = Modifier.padding(contentPadding)) {
                 content()
             }
@@ -342,8 +192,8 @@ fun RainbowGlassCard(
 }
 
 /**
- * Liquid Glass Button:
- * Frosted translucent acrylic button with Rainbow or Accent Border and specular shine.
+ * Plain Minimalist Dark Action Button:
+ * Matte elevated surface with crisp 1px outline and high-contrast typography.
  */
 @Composable
 fun LiquidGlassButton(
@@ -353,73 +203,44 @@ fun LiquidGlassButton(
     glowColor: Color = Cyan,
     useRainbowBorder: Boolean = false,
     enabled: Boolean = true,
-    shape: RoundedCornerShape = RoundedCornerShape(10.dp),
+    shape: RoundedCornerShape = RoundedCornerShape(8.dp),
     contentPadding: PaddingValues = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
     content: (@Composable () -> Unit)? = null,
 ) {
-    val borderBrush = if (useRainbowBorder) {
-        RainbowGlassBorderBrush
-    } else {
-        Brush.linearGradient(
-            listOf(
-                GlassBorderHighlight,
-                if (enabled) glowColor else TextSecondary.copy(alpha = 0.4f),
-                GlassBorder
-            )
-        )
-    }
+    val borderStroke = BorderStroke(
+        1.dp,
+        if (!enabled) Color(0xFF1C1E28) else Color(0xFF2E3345)
+    )
 
     Surface(
         modifier = modifier
             .clip(shape)
             .clickable(enabled = enabled) { onClick() }
-            .border(BorderStroke(1.dp, borderBrush), shape),
-        color = if (enabled) GlassSurfaceElevated else GlassSurfaceDeep,
+            .border(borderStroke, shape),
+        color = if (enabled) GlassSurfaceElevated else Color(0xFF101117),
         shape = shape
     ) {
-        Box {
-            // Specular Top Shine Line matching parent size
-            Box(
-                modifier = Modifier.matchParentSize()
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    Color.Transparent,
-                                    Color.White.copy(alpha = 0.4f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
+        Box(
+            modifier = Modifier.padding(contentPadding),
+            contentAlignment = Alignment.Center
+        ) {
+            if (content != null) {
+                content()
+            } else if (text != null) {
+                Text(
+                    text = text,
+                    color = if (enabled) TextPrimary else TextSecondary.copy(alpha = 0.5f),
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp,
+                    letterSpacing = 0.3.sp
                 )
-            }
-
-            Box(
-                modifier = Modifier.padding(contentPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                if (content != null) {
-                    content()
-                } else if (text != null) {
-                    Text(
-                        text = text,
-                        color = if (enabled) glowColor else TextSecondary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 11.sp,
-                        letterSpacing = 0.5.sp
-                    )
-                }
             }
         }
     }
 }
 
 /**
- * Frosted Liquid Glass Metric Display Tile with luminous values and acrylic transparency.
+ * Minimalist Dark Metric Display Tile with clean typography and monospace values.
  */
 @Composable
 fun IsometricStatTile(
@@ -429,32 +250,13 @@ fun IsometricStatTile(
     accentColor: Color = Cyan,
     modifier: Modifier = Modifier,
 ) {
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(10.dp)
 
     Box(
         modifier = modifier
             .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0x351E293B),
-                        Color(0x180F172A)
-                    )
-                )
-            )
-            .border(
-                BorderStroke(
-                    1.dp,
-                    Brush.linearGradient(
-                        listOf(
-                            Color.White.copy(alpha = 0.3f),
-                            accentColor.copy(alpha = 0.45f),
-                            Color.White.copy(alpha = 0.08f)
-                        )
-                    )
-                ),
-                shape
-            )
+            .background(GlassSurface)
+            .border(BorderStroke(1.dp, GlassBorder), shape)
             .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
         Column {
@@ -462,8 +264,8 @@ fun IsometricStatTile(
                 text = label.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = TextSecondary,
-                letterSpacing = 1.sp,
-                fontSize = 10.sp
+                letterSpacing = 0.8.sp,
+                fontSize = 9.5.sp
             )
             Spacer(Modifier.height(4.dp))
             Row(verticalAlignment = Alignment.Bottom) {
@@ -488,6 +290,7 @@ fun IsometricStatTile(
         }
     }
 }
+
 
 /**
  * Standard Liquid Glass OutlinedTextField colors with translucent acrylic background and vibrant accent focus.
@@ -523,19 +326,20 @@ fun LiquidGlassChip(
     activeColor: Color = Cyan,
     useRainbowWhenSelected: Boolean = false,
 ) {
-    val shape = RoundedCornerShape(8.dp)
-    val borderBrush = when {
-        isSelected && useRainbowWhenSelected -> RainbowGlassBorderBrush
-        isSelected -> Brush.linearGradient(listOf(activeColor, activeColor.copy(alpha = 0.6f)))
-        else -> Brush.linearGradient(listOf(GlassBorder, GlassBorder.copy(alpha = 0.4f)))
-    }
+    val shape = RoundedCornerShape(6.dp)
 
     Surface(
         modifier = modifier
             .clip(shape)
             .clickable { onClick() }
-            .border(BorderStroke(1.dp, borderBrush), shape),
-        color = if (isSelected) activeColor.copy(alpha = 0.16f) else GlassSurfaceDeep,
+            .border(
+                BorderStroke(
+                    1.dp,
+                    if (isSelected) activeColor else GlassBorder
+                ),
+                shape
+            ),
+        color = if (isSelected) Color(0xFF202330) else GlassSurface,
         shape = shape
     ) {
         Box(
@@ -545,7 +349,7 @@ fun LiquidGlassChip(
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (isSelected) activeColor else TextSecondary,
+                color = if (isSelected) TextPrimary else TextSecondary,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                 fontSize = 11.sp
             )
@@ -554,13 +358,13 @@ fun LiquidGlassChip(
 }
 
 /**
- * Frosted liquid glass back button with enlarged arrow icon and no text.
+ * Plain minimalist dark back button with clean 1px hairline border.
  */
 @Composable
 fun GlassBackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: Color = Cyan,
+    tint: Color = TextPrimary,
     contentDescription: String = "Back"
 ) {
     IconButton(
@@ -571,7 +375,7 @@ fun GlassBackButton(
             modifier = Modifier
                 .size(36.dp)
                 .clip(CircleShape)
-                .background(Color(0x221E293B))
+                .background(GlassSurfaceElevated)
                 .border(BorderStroke(1.dp, GlassBorder), CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -579,7 +383,7 @@ fun GlassBackButton(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = contentDescription,
                 tint = tint,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
     }

@@ -82,6 +82,37 @@ data class DynamicToolBundle(
             append("  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\">\n")
             append("  <title>${escapeHtml(manifest.displayName)}</title>\n")
             append("  <style>\n")
+            append("""
+                :root {
+                  --bg-root: #090a0e;
+                  --surface-base: #121319;
+                  --surface-elevated: #181a22;
+                  --surface-active: #202330;
+                  --border-default: #222531;
+                  --border-subtle: #181b24;
+                  --text-primary: #f4f4f6;
+                  --text-secondary: #9ca3af;
+                  --text-muted: #64748b;
+                  --accent-primary: #38bdf8;
+                  --accent-secondary: #818cf8;
+                  --accent-tertiary: #34d399;
+                  --status-success: #10b981;
+                  --status-warning: #f59e0b;
+                  --status-error: #ef4444;
+                  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+                }
+                * { box-sizing: border-box; }
+                body {
+                  margin: 0;
+                  padding: 14px;
+                  background-color: var(--bg-root);
+                  color: var(--text-primary);
+                  font-family: var(--font-sans);
+                  -webkit-font-smoothing: antialiased;
+                }
+            """.trimIndent())
+            append("\n")
             append(css)
             append("\n  </style>\n")
             append("</head>\n<body>\n")

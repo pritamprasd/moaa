@@ -88,15 +88,16 @@ object DefaultToolsSeed {
 
         val css = """
             :root {
-              --bg: #0B0F19;
-              --card: #1E293B;
+              --bg: #090A0E;
+              --card: #121319;
+              --card-elevated: #181A22;
               --cyan: #38BDF8;
-              --violet: #A78BFA;
-              --rose: #F472B6;
-              --emerald: #34D399;
-              --text: #F8FAFC;
-              --text-sec: #94A3B8;
-              --glass-border: rgba(148, 163, 184, 0.15);
+              --violet: #A855F7;
+              --rose: #F43F5E;
+              --emerald: #10B981;
+              --text: #F4F4F6;
+              --text-sec: #9CA3AF;
+              --glass-border: #222531;
             }
             * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
             body {
@@ -434,15 +435,15 @@ object DefaultToolsSeed {
 
         val css = """
             :root {
-              --bg: #0B0F19;
-              --card: #1E293B;
-              --violet: #A78BFA;
+              --bg: #090A0E;
+              --card: #121319;
+              --violet: #A855F7;
               --cyan: #38BDF8;
-              --emerald: #34D399;
-              --rose: #F472B6;
-              --text: #F8FAFC;
-              --text-sec: #94A3B8;
-              --border: rgba(148, 163, 184, 0.15);
+              --emerald: #10B981;
+              --rose: #F43F5E;
+              --text: #F4F4F6;
+              --text-sec: #9CA3AF;
+              --border: #222531;
             }
             * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
             body {

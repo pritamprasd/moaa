@@ -230,11 +230,10 @@ fun DashboardScreen(
                             focusedContainerColor = dev.pritam.host.ui.theme.GlassSurfaceDeep,
                             unfocusedContainerColor = dev.pritam.host.ui.theme.GlassSurfaceDeep
                         ),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(52.dp)
-                            .border(BorderStroke(1.dp, dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush), RoundedCornerShape(12.dp))
+                            .height(50.dp)
                     )
                 }
             }
@@ -246,9 +245,9 @@ fun DashboardScreen(
                 exit = fadeOut() + shrinkVertically()
             ) {
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0x338B5CF6),
-                    border = BorderStroke(1.dp, Violet.copy(alpha = 0.6f)),
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFF181A22),
+                    border = BorderStroke(1.dp, Violet.copy(alpha = 0.5f)),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
                 ) {
                     Row(
@@ -428,57 +427,22 @@ private fun ExpandableToolGalleryCard(
     }
 
     val iconType = definition?.iconType ?: if (tool.id.value.startsWith("dynamic_")) "dynamic-tool" else "generic"
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(12.dp)
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        // 1. Clean Liquid Glass Depth Shadow
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .offset(x = 1.dp, y = 3.dp)
-                .clip(shape)
-                .background(Color(0x50030712))
-        )
-
-        // 2. Main Frosted Acrylic Glass Layer
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(shape)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            if (isReorderMode) Violet.copy(alpha = 0.15f) else if (isExpanded) accentColor.copy(alpha = 0.18f) else Color(0x3E1E293B),
-                            Color(0x1D0F172A)
-                        )
-                    )
-                )
-                .border(
-                    BorderStroke(
-                        if (isReorderMode) 1.5.dp else 1.dp,
-                        if (isReorderMode) SolidColor(Violet.copy(alpha = 0.7f)) else dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush
-                    ),
-                    shape
-                )
-        ) {
-            // Specular Top Shine Line
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                Color.White.copy(alpha = 0.45f),
-                                (if (isReorderMode) Violet else Color(0xFF38BDF8)).copy(alpha = 0.55f),
-                                Color.Transparent
-                            )
-                        )
-                    )
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(Color(0xFF121319))
+            .border(
+                BorderStroke(
+                    1.dp,
+                    if (isReorderMode) Violet.copy(alpha = 0.8f) else Color(0xFF222531)
+                ),
+                shape
             )
-
-            val innerPadding = if (columnCount >= 3) 8.dp else (dashboardPaddingDp * 0.72f).coerceIn(10f, 18f).dp
+    ) {
+        val innerPadding = if (columnCount >= 3) 8.dp else (dashboardPaddingDp * 0.72f).coerceIn(10f, 18f).dp
 
             Column(
                 modifier = Modifier
@@ -768,7 +732,6 @@ private fun ExpandableToolGalleryCard(
             }
         }
     }
-}
 
 /**
  * 3D Isometric Reorder / Drag Icon

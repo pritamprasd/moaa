@@ -37,13 +37,18 @@ private val BaseDarkColorScheme = darkColorScheme(
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
     val dialogOpacity by AppSettingsManager.dialogOpacityPercent.collectAsStateWithLifecycle()
+    val accentPalette by AppSettingsManager.accentPalette.collectAsStateWithLifecycle()
     val dynamicDialogSurface = AppSettingsManager.getDialogSurfaceColor(dialogOpacity)
 
     val colorScheme = BaseDarkColorScheme.copy(
+        primary = accentPalette.primary,
+        secondary = accentPalette.secondary,
+        tertiary = accentPalette.tertiary,
         surface = dynamicDialogSurface,
         surfaceContainer = dynamicDialogSurface,
         surfaceContainerHigh = dynamicDialogSurface,
         surfaceContainerHighest = dynamicDialogSurface,
+        outline = GlassBorder
     )
 
     MaterialTheme(

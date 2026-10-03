@@ -79,6 +79,27 @@ class AppSettingsTest {
         assertEquals(2, AppSettingsManager.galleryColumnCount.value)
         assertEquals(94, AppSettingsManager.dialogOpacityPercent.value)
         assertTrue(AppSettingsManager.toolOrder.value.isEmpty())
+        assertEquals(AccentPalette.LINEAR_CYAN, AppSettingsManager.accentPalette.value)
+    }
+
+    @Test
+    fun testAccentPaletteSelection() {
+        assertEquals(AccentPalette.LINEAR_CYAN, AppSettingsManager.accentPalette.value)
+        AppSettingsManager.setAccentPalette(AccentPalette.NOTHING_AMBER)
+        assertEquals(AccentPalette.NOTHING_AMBER, AppSettingsManager.accentPalette.value)
+        assertEquals(AccentPalette.NOTHING_AMBER, AccentPalette.fromId("nothing_amber"))
+
+        AppSettingsManager.setAccentPalette(AccentPalette.NORDIC_EMERALD)
+        assertEquals(AccentPalette.NORDIC_EMERALD, AppSettingsManager.accentPalette.value)
+
+        AppSettingsManager.setAccentPalette(AccentPalette.TOKYO_VIOLET)
+        assertEquals(AccentPalette.TOKYO_VIOLET, AppSettingsManager.accentPalette.value)
+
+        AppSettingsManager.setAccentPalette(AccentPalette.SOLARIS_COPPER)
+        assertEquals(AccentPalette.SOLARIS_COPPER, AppSettingsManager.accentPalette.value)
+
+        AppSettingsManager.resetToDefaults()
+        assertEquals(AccentPalette.LINEAR_CYAN, AppSettingsManager.accentPalette.value)
     }
 
     @Test

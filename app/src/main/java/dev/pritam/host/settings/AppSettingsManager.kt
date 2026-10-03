@@ -20,6 +20,68 @@ enum class LogRetentionPolicy(
     KEEP_ALL("Keep All Logs", Long.MAX_VALUE, "Never automatically delete logs until buffer cap"),
 }
 
+enum class AccentPalette(
+    val id: String,
+    val displayName: String,
+    val description: String,
+    val primary: Color,
+    val secondary: Color,
+    val tertiary: Color,
+    val borderTint: Color,
+) {
+    LINEAR_CYAN(
+        id = "linear_cyan",
+        displayName = "Linear Ice",
+        description = "Crisp ice blue & soft indigo inspired by Linear & VS Code",
+        primary = Color(0xFF38BDF8),
+        secondary = Color(0xFF818CF8),
+        tertiary = Color(0xFF34D399),
+        borderTint = Color(0xFF1E293B)
+    ),
+    NOTHING_AMBER(
+        id = "nothing_amber",
+        displayName = "Industrial Amber",
+        description = "High-contrast monochrome & warm amber inspired by Nothing OS",
+        primary = Color(0xFFF59E0B),
+        secondary = Color(0xFFF4F4F6),
+        tertiary = Color(0xFFE2E8F0),
+        borderTint = Color(0xFF262626)
+    ),
+    NORDIC_EMERALD(
+        id = "nordic_emerald",
+        displayName = "Nordic Emerald",
+        description = "Calming organic terminal look with high legibility emerald & teal",
+        primary = Color(0xFF10B981),
+        secondary = Color(0xFF06B6D4),
+        tertiary = Color(0xFFA7F3D0),
+        borderTint = Color(0xFF132E24)
+    ),
+    TOKYO_VIOLET(
+        id = "tokyo_violet",
+        displayName = "Tokyo Dusk",
+        description = "Atmospheric developer tool aesthetic with subtle electric violet",
+        primary = Color(0xFFA855F7),
+        secondary = Color(0xFFEC4899),
+        tertiary = Color(0xFF818CF8),
+        borderTint = Color(0xFF2A1B3D)
+    ),
+    SOLARIS_COPPER(
+        id = "solaris_copper",
+        displayName = "Solaris Copper",
+        description = "Dense hardware monitor feel with burnished copper & crimson",
+        primary = Color(0xFFFB923C),
+        secondary = Color(0xFFF43F5E),
+        tertiary = Color(0xFFFDE047),
+        borderTint = Color(0xFF331E17)
+    );
+
+    companion object {
+        fun fromId(id: String?): AccentPalette =
+            entries.find { it.id.equals(id, ignoreCase = true) || it.name.equals(id, ignoreCase = true) }
+                ?: LINEAR_CYAN
+    }
+}
+
 /**
  * Global App Settings manager holding user configurations such as gallery layout,
  * dashboard padding, dialog opacity, and log retention.
@@ -33,6 +95,7 @@ object AppSettingsManager {
     private const val KEY_DIALOG_OPACITY = "dialog_opacity_percent"
     private const val KEY_VIBRATION = "vibration_feedback"
     private const val KEY_LOG_RETENTION = "log_retention_policy"
+    private const val KEY_ACCENT_PALETTE = "app_accent_palette"
     private const val KEY_SECTION_GENERAL = "section_general_expanded"
     private const val KEY_SECTION_AI = "section_ai_expanded"
     private const val KEY_SECTION_AUTOMATION = "section_automation_expanded"
@@ -41,6 +104,9 @@ object AppSettingsManager {
     private const val KEY_TOOL_ORDER = "tool_order_list"
 
     private var prefs: SharedPreferences? = null
+
+    private val _accentPalette = MutableStateFlow(AccentPalette.LINEAR_CYAN)
+    val accentPalette: StateFlow<AccentPalette> = _accentPalette.asStateFlow()
 
     private val _toolOrder = MutableStateFlow<List<String>>(emptyList())
     val toolOrder: StateFlow<List<String>> = _toolOrder.asStateFlow()
@@ -90,6 +156,8 @@ object AppSettingsManager {
             } catch (e: Exception) {
                 LogRetentionPolicy.ONE_DAY
             }
+            val paletteRaw = p.getString(KEY_ACCENT_PALETTE, AccentPalette.LINEAR_CYAN.id)
+            _accentPalette.value = AccentPalette.fromId(paletteRaw)
             _sectionGeneralExpanded.value = p.getBoolean(KEY_SECTION_GENERAL, false)
             _sectionAiExpanded.value = p.getBoolean(KEY_SECTION_AI, false)
             _sectionAutomationExpanded.value = p.getBoolean(KEY_SECTION_AUTOMATION, false)
@@ -105,12 +173,17 @@ object AppSettingsManager {
 
     /**
      * Compute dialog surface color based on the configured opacity percent.
-     * High default opacity (~94%) ensures text and dialog controls are crisp and legible
-     * without background bleed-through.
+     * Matte dark obsidian tone ensures text and dialog controls are crisp and legible
+     * without harsh glare or background bleed-through.
      */
     fun getDialogSurfaceColor(opacityPercent: Int = _dialogOpacityPercent.value): Color {
         val clamped = opacityPercent.coerceIn(50, 100)
-        return Color(0xFF0F172A).copy(alpha = clamped / 100f)
+        return Color(0xFF14161F).copy(alpha = clamped / 100f)
+    }
+
+    fun setAccentPalette(palette: AccentPalette) {
+        _accentPalette.value = palette
+        prefs?.edit()?.putString(KEY_ACCENT_PALETTE, palette.id)?.apply()
     }
 
     fun setGalleryColumnCount(count: Int) {
@@ -188,6 +261,7 @@ object AppSettingsManager {
         _sectionAutomationExpanded.value = false
         _sectionDiagnosticsExpanded.value = false
         _sectionAboutExpanded.value = false
+        _accentPalette.value = AccentPalette.LINEAR_CYAN
 
         prefs?.edit()
             ?.putInt(KEY_GALLERY_COLUMNS, 2)
@@ -195,6 +269,7 @@ object AppSettingsManager {
             ?.putInt(KEY_DIALOG_OPACITY, 94)
             ?.putBoolean(KEY_VIBRATION, true)
             ?.putString(KEY_LOG_RETENTION, LogRetentionPolicy.ONE_DAY.name)
+            ?.putString(KEY_ACCENT_PALETTE, AccentPalette.LINEAR_CYAN.id)
             ?.putBoolean(KEY_SECTION_GENERAL, false)
             ?.putBoolean(KEY_SECTION_AI, false)
             ?.putBoolean(KEY_SECTION_AUTOMATION, false)

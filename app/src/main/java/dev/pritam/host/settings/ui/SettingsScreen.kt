@@ -96,6 +96,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val currentColumns by AppSettingsManager.galleryColumnCount.collectAsStateWithLifecycle()
+    val currentPalette by AppSettingsManager.accentPalette.collectAsStateWithLifecycle()
     val currentPadding by AppSettingsManager.dashboardPaddingDp.collectAsStateWithLifecycle()
     val currentOpacity by AppSettingsManager.dialogOpacityPercent.collectAsStateWithLifecycle()
     val currentRetention by AppSettingsManager.logRetentionPolicy.collectAsStateWithLifecycle()
@@ -138,12 +139,21 @@ fun SettingsScreen(
             settingsSection(
                 title = "General",
                 emoji = "⚙️",
-                accentColor = Cyan,
+                accentColor = currentPalette.primary,
                 isExpanded = generalExpanded,
                 onToggle = { AppSettingsManager.setSectionGeneralExpanded(!generalExpanded) }
             ) {
                 item {
                     SystemManualSettingsCard(onOpenSystemManual = onOpenSystemManual)
+                }
+                item {
+                    AccentPaletteSettingsCard(
+                        currentPalette = currentPalette,
+                        onSelectPalette = {
+                            AppSettingsManager.setAccentPalette(it)
+                            Toast.makeText(context, "Accent theme set to ${it.displayName}", Toast.LENGTH_SHORT).show()
+                        }
+                    )
                 }
                 item {
                     GalleryLayoutSettingsCard(
@@ -381,6 +391,141 @@ private fun SystemManualSettingsCard(onOpenSystemManual: () -> Unit) {
                 useRainbowBorder = true,
                 text = "📖 Open System Manual"
             )
+        }
+    }
+}
+
+@Composable
+private fun AccentPaletteSettingsCard(
+    currentPalette: dev.pritam.host.settings.AccentPalette,
+    onSelectPalette: (dev.pritam.host.settings.AccentPalette) -> Unit,
+) {
+    IsometricCard(glowColor = currentPalette.primary) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "ACCENT COLOR THEME",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = currentPalette.primary,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = currentPalette.primary.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, currentPalette.primary.copy(alpha = 0.4f))
+                ) {
+                    Text(
+                        text = currentPalette.displayName,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = currentPalette.primary,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Choose from 5 curated minimalist dark palettes tuned for high contrast & minimal glare",
+                style = MaterialTheme.typography.bodySmall,
+                color = TextSecondary,
+                fontSize = 11.sp
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                dev.pritam.host.settings.AccentPalette.entries.forEach { palette ->
+                    val isSelected = palette == currentPalette
+                    Surface(
+                        onClick = { onSelectPalette(palette) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (isSelected) Color(0xFF1C1F2B) else Color(0xFF121319),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isSelected) palette.primary else Color(0xFF222531)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clip(CircleShape)
+                                            .background(palette.primary)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clip(CircleShape)
+                                            .background(palette.secondary)
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(14.dp)
+                                            .clip(CircleShape)
+                                            .background(palette.tertiary)
+                                    )
+                                }
+
+                                Spacer(Modifier.width(10.dp))
+
+                                Column {
+                                    Text(
+                                        text = palette.displayName,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                                        color = if (isSelected) TextPrimary else TextSecondary,
+                                        fontSize = 12.sp
+                                    )
+                                    Text(
+                                        text = palette.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = TextSecondary.copy(alpha = 0.8f),
+                                        fontSize = 10.sp
+                                    )
+                                }
+                            }
+
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .clip(CircleShape)
+                                        .background(palette.primary.copy(alpha = 0.2f))
+                                        .border(BorderStroke(1.dp, palette.primary), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = "✓",
+                                        color = palette.primary,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

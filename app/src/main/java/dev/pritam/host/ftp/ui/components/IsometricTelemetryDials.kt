@@ -41,7 +41,7 @@ fun IsometricTelemetryDials(
                 modifier = Modifier.weight(1f)
             )
             IsometricStatTile(
-                label = "Active Devices",
+                label = "Devices",
                 value = if (isRunning) "${telemetry.activeClientsCount}" else "0",
                 unit = if (telemetry.activeClientsCount == 1) "device" else "devices",
                 accentColor = Violet,

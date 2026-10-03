@@ -50,6 +50,17 @@ Users can select their preferred accent theme in the Settings tab. All 5 palette
 | `tokyo-violet` | **Tokyo Dusk** | `#A855F7` (Violet) | `#EC4899` (Rose) | `#818CF8` (Periwinkle) | `#2A1B3D` | Atmospheric developer look with subtle violet highlights. |
 | `solaris-copper` | **Solaris Copper** | `#FB923C` (Warm Copper)| `#F43F5E` (Crimson) | `#FDE047` (Warm Gold) | `#331E17` | High-density hardware telemetry feel with warm burnished copper tones. |
 
+### 2.4 Accent Theme Dropdown & Custom Color Combinations
+In Settings, the accent theme selector uses a compact single-row layout:
+- **Theme Dropdown Selector (`weight = 1f`)**: Displays the active tri-color dot preview, theme name, and expandable chevron. Opening the dropdown lists all 5 curated presets, active checkmarks, plus all user-created custom palettes with one-tap removal.
+- **New Accent Button (`+`)**: Positioned directly adjacent to the dropdown in the same row. Tapping opens the **Create Custom Accent Theme** dialog.
+- **Custom Theme Dialog**:
+  - Live interactive preview of the tri-color swatch, status tag, and button.
+  - Custom theme name input.
+  - Three-way segmented selector for **Primary**, **Secondary**, and **Tertiary** accents.
+  - 12 curated vibrant swatches for instant 1-tap assignment + custom 6-character Hex input for absolute color freedom.
+  - Saved custom combinations are persisted locally and applied instantly across the entire system.
+
 ---
 
 ## 3. Input & Output Container UX Design Architecture
@@ -62,6 +73,7 @@ Users can select their preferred accent theme in the Settings tab. All 5 palette
 | **Segmented Pill Pickers** (Intervals, Modes) | Recessed horizontal container (`#121319`), containing discrete pill items (`1s`, `3s`, `5s`, `10s`). | Active pill has `#202330` background, 1px accent outline, bold `#FFFFFF` text. | Single-tap instant switch. Instant haptic feedback. Touch target min 40dp height. |
 | **Terminal & Script Input Box** | Monospace text field with matte `#0C0D12` background, integrated action run/send button on the right edge. | Border transitions to accent. Caret blinks at 1s interval. | Preserves history stack (Up/Down arrow or history chip bar). Auto-clears or preserves based on tool context. |
 | **Form Fields & Settings Inputs** | Outlined container with top-aligned small label (`11sp`, `#9CA3AF`), input text (`14sp`, `#F4F4F6`), subtle hint. | Hairline accent border. Error state highlights in muted red (`#EF4444`). | Clear error message below field in `#EF4444`. Numbers open numeric keypad automatically. |
+| **Compact Settings Card Header** | Horizontal row: uppercase setting title (`11sp`, bold, accent color), optional status badge, and right-aligned info icon (`Icons.Default.Info`, 15dp). Inline descriptions are removed for compact vertical density. | Tapping info icon opens `SettingInfoDialog` modal. | Small modal popup (`#12141C`, 14dp rounded corners, hairline border `#222531`) displays title, full description, and accent "GOT IT" dismiss button. Preserves high screen density while providing contextual help. |
 | **Pill Switches & Toggles** | Minimalist 20dp high pill track with 16dp circular thumb. Inactive: `#222531` track, `#64748B` thumb. | Active: Accent track (`#38BDF8`), pure white `#FFFFFF` thumb. | Instant smooth slide animation (150ms spring), accompanied by gentle haptic tick. |
 
 ### 3.2 Output Containers & Data Telemetry Patterns

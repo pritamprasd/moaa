@@ -112,5 +112,33 @@ class AppSettingsTest {
         AppSettingsManager.resetToolOrder()
         assertTrue(AppSettingsManager.toolOrder.value.isEmpty())
     }
+
+    @Test
+    fun testCustomPaletteManagement() {
+        assertTrue(AppSettingsManager.customPalettes.value.isEmpty())
+
+        val customPrimary = androidx.compose.ui.graphics.Color(0xFFFF007F)
+        val customSecondary = androidx.compose.ui.graphics.Color(0xFF00FF7F)
+        val customTertiary = androidx.compose.ui.graphics.Color(0xFF7F00FF)
+
+        val created = AppSettingsManager.addCustomPalette(
+            name = "Cyberpunk Rose",
+            primary = customPrimary,
+            secondary = customSecondary,
+            tertiary = customTertiary
+        )
+
+        assertEquals("Cyberpunk Rose", created.displayName)
+        assertTrue(created.isCustom)
+        assertEquals(1, AppSettingsManager.customPalettes.value.size)
+        assertEquals(created, AppSettingsManager.accentPalette.value)
+
+        val found = AppSettingsManager.findPaletteById(created.id)
+        assertEquals(created, found)
+
+        AppSettingsManager.deleteCustomPalette(created.id)
+        assertTrue(AppSettingsManager.customPalettes.value.isEmpty())
+        assertEquals(AccentPalette.LINEAR_CYAN, AppSettingsManager.accentPalette.value)
+    }
 }
 

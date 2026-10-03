@@ -20,65 +20,130 @@ enum class LogRetentionPolicy(
     KEEP_ALL("Keep All Logs", Long.MAX_VALUE, "Never automatically delete logs until buffer cap"),
 }
 
-enum class AccentPalette(
+data class AccentPalette(
     val id: String,
     val displayName: String,
-    val description: String,
+    val description: String = "",
     val primary: Color,
     val secondary: Color,
     val tertiary: Color,
-    val borderTint: Color,
+    val borderTint: Color = Color(0xFF1E293B),
+    val isCustom: Boolean = false,
 ) {
-    LINEAR_CYAN(
-        id = "linear_cyan",
-        displayName = "Linear Ice",
-        description = "Crisp ice blue & soft indigo inspired by Linear & VS Code",
-        primary = Color(0xFF38BDF8),
-        secondary = Color(0xFF818CF8),
-        tertiary = Color(0xFF34D399),
-        borderTint = Color(0xFF1E293B)
-    ),
-    NOTHING_AMBER(
-        id = "nothing_amber",
-        displayName = "Industrial Amber",
-        description = "High-contrast monochrome & warm amber inspired by Nothing OS",
-        primary = Color(0xFFF59E0B),
-        secondary = Color(0xFFF4F4F6),
-        tertiary = Color(0xFFE2E8F0),
-        borderTint = Color(0xFF262626)
-    ),
-    NORDIC_EMERALD(
-        id = "nordic_emerald",
-        displayName = "Nordic Emerald",
-        description = "Calming organic terminal look with high legibility emerald & teal",
-        primary = Color(0xFF10B981),
-        secondary = Color(0xFF06B6D4),
-        tertiary = Color(0xFFA7F3D0),
-        borderTint = Color(0xFF132E24)
-    ),
-    TOKYO_VIOLET(
-        id = "tokyo_violet",
-        displayName = "Tokyo Dusk",
-        description = "Atmospheric developer tool aesthetic with subtle electric violet",
-        primary = Color(0xFFA855F7),
-        secondary = Color(0xFFEC4899),
-        tertiary = Color(0xFF818CF8),
-        borderTint = Color(0xFF2A1B3D)
-    ),
-    SOLARIS_COPPER(
-        id = "solaris_copper",
-        displayName = "Solaris Copper",
-        description = "Dense hardware monitor feel with burnished copper & crimson",
-        primary = Color(0xFFFB923C),
-        secondary = Color(0xFFF43F5E),
-        tertiary = Color(0xFFFDE047),
-        borderTint = Color(0xFF331E17)
-    );
+    fun toSerializedString(): String {
+        val cleanName = displayName.replace(":::", " ").replace(";;;", " ")
+        val cleanDesc = description.replace(":::", " ").replace(";;;", " ")
+        return "$id:::$cleanName:::$cleanDesc:::${colorToHex(primary)}:::${colorToHex(secondary)}:::${colorToHex(tertiary)}"
+    }
 
     companion object {
+        val LINEAR_CYAN = AccentPalette(
+            id = "linear_cyan",
+            displayName = "Linear Ice",
+            description = "Crisp ice blue & soft indigo inspired by Linear & VS Code",
+            primary = Color(0xFF38BDF8),
+            secondary = Color(0xFF818CF8),
+            tertiary = Color(0xFF34D399),
+            borderTint = Color(0xFF1E293B)
+        )
+        val NOTHING_AMBER = AccentPalette(
+            id = "nothing_amber",
+            displayName = "Industrial Amber",
+            description = "High-contrast monochrome & warm amber inspired by Nothing OS",
+            primary = Color(0xFFF59E0B),
+            secondary = Color(0xFFF4F4F6),
+            tertiary = Color(0xFFE2E8F0),
+            borderTint = Color(0xFF262626)
+        )
+        val NORDIC_EMERALD = AccentPalette(
+            id = "nordic_emerald",
+            displayName = "Nordic Emerald",
+            description = "Calming organic terminal look with high legibility emerald & teal",
+            primary = Color(0xFF10B981),
+            secondary = Color(0xFF06B6D4),
+            tertiary = Color(0xFFA7F3D0),
+            borderTint = Color(0xFF132E24)
+        )
+        val TOKYO_VIOLET = AccentPalette(
+            id = "tokyo_violet",
+            displayName = "Tokyo Dusk",
+            description = "Atmospheric developer tool aesthetic with subtle electric violet",
+            primary = Color(0xFFA855F7),
+            secondary = Color(0xFFEC4899),
+            tertiary = Color(0xFF818CF8),
+            borderTint = Color(0xFF2A1B3D)
+        )
+        val SOLARIS_COPPER = AccentPalette(
+            id = "solaris_copper",
+            displayName = "Solaris Copper",
+            description = "Dense hardware monitor feel with burnished copper & crimson",
+            primary = Color(0xFFFB923C),
+            secondary = Color(0xFFF43F5E),
+            tertiary = Color(0xFFFDE047),
+            borderTint = Color(0xFF331E17)
+        )
+
+        val builtInPalettes: List<AccentPalette> = listOf(
+            LINEAR_CYAN,
+            NOTHING_AMBER,
+            NORDIC_EMERALD,
+            TOKYO_VIOLET,
+            SOLARIS_COPPER
+        )
+
+        val entries: List<AccentPalette> get() = builtInPalettes
+
         fun fromId(id: String?): AccentPalette =
-            entries.find { it.id.equals(id, ignoreCase = true) || it.name.equals(id, ignoreCase = true) }
-                ?: LINEAR_CYAN
+            AppSettingsManager.findPaletteById(id)
+
+        fun colorToHex(color: Color): String {
+            val r = (color.red * 255).toInt().coerceIn(0, 255)
+            val g = (color.green * 255).toInt().coerceIn(0, 255)
+            val b = (color.blue * 255).toInt().coerceIn(0, 255)
+            return String.format("#%02X%02X%02X", r, g, b)
+        }
+
+        fun parseHexColor(hex: String?, fallback: Color): Color {
+            if (hex.isNullOrBlank()) return fallback
+            val clean = hex.removePrefix("#").trim()
+            return try {
+                when (clean.length) {
+                    6 -> {
+                        val rgb = clean.toLong(16)
+                        Color((0xFF000000L or rgb).toInt())
+                    }
+                    8 -> {
+                        val argb = clean.toLong(16)
+                        Color(argb.toInt())
+                    }
+                    else -> fallback
+                }
+            } catch (_: Exception) {
+                fallback
+            }
+        }
+
+        fun parsePaletteFromString(serialized: String): AccentPalette? {
+            val parts = serialized.split(":::")
+            if (parts.size < 6) return null
+            val id = parts[0].trim()
+            val name = parts[1].trim()
+            val desc = parts[2].trim()
+            val primary = parseHexColor(parts[3], Color(0xFF38BDF8))
+            val secondary = parseHexColor(parts[4], Color(0xFF818CF8))
+            val tertiary = parseHexColor(parts[5], Color(0xFF34D399))
+            if (id.isEmpty() || name.isEmpty()) return null
+            return AccentPalette(
+                id = id,
+                displayName = name,
+                description = desc,
+                primary = primary,
+                secondary = secondary,
+                tertiary = tertiary,
+                borderTint = primary.copy(alpha = 0.25f),
+                isCustom = true
+            )
+        }
     }
 }
 
@@ -96,6 +161,7 @@ object AppSettingsManager {
     private const val KEY_VIBRATION = "vibration_feedback"
     private const val KEY_LOG_RETENTION = "log_retention_policy"
     private const val KEY_ACCENT_PALETTE = "app_accent_palette"
+    private const val KEY_CUSTOM_PALETTES = "custom_accent_palettes_v1"
     private const val KEY_SECTION_GENERAL = "section_general_expanded"
     private const val KEY_SECTION_AI = "section_ai_expanded"
     private const val KEY_SECTION_AUTOMATION = "section_automation_expanded"
@@ -104,6 +170,9 @@ object AppSettingsManager {
     private const val KEY_TOOL_ORDER = "tool_order_list"
 
     private var prefs: SharedPreferences? = null
+
+    private val _customPalettes = MutableStateFlow<List<AccentPalette>>(emptyList())
+    val customPalettes: StateFlow<List<AccentPalette>> = _customPalettes.asStateFlow()
 
     private val _accentPalette = MutableStateFlow(AccentPalette.LINEAR_CYAN)
     val accentPalette: StateFlow<AccentPalette> = _accentPalette.asStateFlow()
@@ -156,8 +225,9 @@ object AppSettingsManager {
             } catch (e: Exception) {
                 LogRetentionPolicy.ONE_DAY
             }
+            _customPalettes.value = loadCustomPalettes(p)
             val paletteRaw = p.getString(KEY_ACCENT_PALETTE, AccentPalette.LINEAR_CYAN.id)
-            _accentPalette.value = AccentPalette.fromId(paletteRaw)
+            _accentPalette.value = findPaletteById(paletteRaw)
             _sectionGeneralExpanded.value = p.getBoolean(KEY_SECTION_GENERAL, false)
             _sectionAiExpanded.value = p.getBoolean(KEY_SECTION_AI, false)
             _sectionAutomationExpanded.value = p.getBoolean(KEY_SECTION_AUTOMATION, false)
@@ -169,6 +239,60 @@ object AppSettingsManager {
                 _toolOrder.value = orderRaw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
             }
         }
+    }
+
+    fun getAllAvailablePalettes(): List<AccentPalette> =
+        AccentPalette.builtInPalettes + _customPalettes.value
+
+    fun findPaletteById(id: String?): AccentPalette {
+        if (id.isNullOrBlank()) return AccentPalette.LINEAR_CYAN
+        return _customPalettes.value.find { it.id.equals(id, ignoreCase = true) }
+            ?: AccentPalette.builtInPalettes.find { it.id.equals(id, ignoreCase = true) }
+            ?: AccentPalette.LINEAR_CYAN
+    }
+
+    fun addCustomPalette(
+        name: String,
+        primary: Color,
+        secondary: Color,
+        tertiary: Color,
+    ): AccentPalette {
+        val id = "custom_" + System.currentTimeMillis()
+        val palette = AccentPalette(
+            id = id,
+            displayName = name.trim().ifEmpty { "Custom Theme" },
+            description = "User created custom color combination",
+            primary = primary,
+            secondary = secondary,
+            tertiary = tertiary,
+            borderTint = primary.copy(alpha = 0.25f),
+            isCustom = true
+        )
+        val updated = _customPalettes.value + palette
+        _customPalettes.value = updated
+        persistCustomPalettes(updated)
+        setAccentPalette(palette)
+        return palette
+    }
+
+    fun deleteCustomPalette(id: String) {
+        val updated = _customPalettes.value.filterNot { it.id == id }
+        _customPalettes.value = updated
+        persistCustomPalettes(updated)
+        if (_accentPalette.value.id == id) {
+            setAccentPalette(AccentPalette.LINEAR_CYAN)
+        }
+    }
+
+    private fun persistCustomPalettes(list: List<AccentPalette>) {
+        val serialized = list.joinToString(";;;") { it.toSerializedString() }
+        prefs?.edit()?.putString(KEY_CUSTOM_PALETTES, serialized)?.apply()
+    }
+
+    private fun loadCustomPalettes(p: SharedPreferences): List<AccentPalette> {
+        val raw = p.getString(KEY_CUSTOM_PALETTES, null) ?: return emptyList()
+        return raw.split(";;;")
+            .mapNotNull { AccentPalette.parsePaletteFromString(it) }
     }
 
     /**
@@ -261,6 +385,7 @@ object AppSettingsManager {
         _sectionAutomationExpanded.value = false
         _sectionDiagnosticsExpanded.value = false
         _sectionAboutExpanded.value = false
+        _customPalettes.value = emptyList()
         _accentPalette.value = AccentPalette.LINEAR_CYAN
 
         prefs?.edit()
@@ -270,6 +395,7 @@ object AppSettingsManager {
             ?.putBoolean(KEY_VIBRATION, true)
             ?.putString(KEY_LOG_RETENTION, LogRetentionPolicy.ONE_DAY.name)
             ?.putString(KEY_ACCENT_PALETTE, AccentPalette.LINEAR_CYAN.id)
+            ?.remove(KEY_CUSTOM_PALETTES)
             ?.putBoolean(KEY_SECTION_GENERAL, false)
             ?.putBoolean(KEY_SECTION_AI, false)
             ?.putBoolean(KEY_SECTION_AUTOMATION, false)

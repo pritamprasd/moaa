@@ -116,7 +116,7 @@ class SensorsViewModel(application: Application) : AndroidViewModel(application)
 
         AppLogHub.log(
             toolId = "sensors",
-            toolName = "Sensors Live",
+            toolName = "Sensors",
             level = LogLevel.INFO,
             tag = "Export",
             message = "SENSORS TELEMETRY [EXPORT] Exported snapshot of ${availableSensors.value.size} sensors to clipboard"

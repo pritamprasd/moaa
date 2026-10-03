@@ -101,7 +101,7 @@ fun SensorsScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "SENSORS LIVE",
+                        text = "SENSORS",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
@@ -755,4 +755,48 @@ private fun SensorLiveCard(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun SensorLiveCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        SensorLiveCard(
+            sensor = dev.pritam.host.tool.sensors.model.SensorInfoItem(
+                id = 1,
+                type = 1,
+                name = "Linear Accelerometer 3-Axis",
+                vendor = "STMicroelectronics",
+                version = 1,
+                stringType = "android.sensor.accelerometer",
+                category = dev.pritam.host.tool.sensors.model.SensorCategory.MOTION,
+                maxRange = 78.4f,
+                resolution = 0.002f,
+                powerMa = 0.25f,
+                minDelayUs = 5000,
+                fifoMaxEventCount = 0,
+                isWakeUp = false,
+                isDynamic = false,
+                reportingMode = "CONTINUOUS"
+            ),
+            reading = dev.pritam.host.tool.sensors.model.SensorValueReading(
+                sensorType = 1,
+                timestampNanos = System.nanoTime(),
+                accuracy = 3,
+                accuracyLabel = "HIGH",
+                rawValues = listOf(0.12f, 9.78f, 0.45f),
+                primaryDisplay = "9.81 m/s²",
+                formattedAxes = listOf("X" to "+0.12", "Y" to "+9.78", "Z" to "+0.45"),
+                unit = "m/s²",
+                formattedTime = "22:50:01.120"
+            ),
+            isExpanded = true,
+            isActive = true,
+            onToggleExpand = {},
+            onToggleActive = {}
+        )
+    }
+}
+
+
+
 

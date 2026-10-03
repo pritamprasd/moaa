@@ -218,3 +218,22 @@ fun PersonaConfigDialog(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun PersonaConfigDialogPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        PersonaConfigDialog(
+            session = dev.pritam.host.tool.llmchat.model.ChatSession(
+                title = "Ops Specialist",
+                systemPrompt = "You are a cybernetic network operations specialist.",
+                temperature = 0.7f,
+                targetModelOverride = "gemini-2.5-flash"
+            ),
+            onDismiss = {},
+            onSave = { _, _, _ -> }
+        )
+    }
+}
+
+

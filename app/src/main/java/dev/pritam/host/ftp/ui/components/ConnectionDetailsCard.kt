@@ -220,3 +220,29 @@ fun ConnectionDetailsCard(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun ConnectionDetailsCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        ConnectionDetailsCard(
+            serverState = FtpServerState.Running(
+                ipAddress = "192.168.1.105",
+                port = 2121,
+                rootPath = "/storage/emulated/0",
+                username = "admin"
+            ),
+            config = FtpConfig(
+                port = 2121,
+                username = "admin",
+                password = "secretpassword"
+            ),
+            localIp = "192.168.1.105",
+            onCopyUrl = {},
+            onCopyCredentials = {},
+            onEditSettings = {}
+        )
+    }
+}
+
+

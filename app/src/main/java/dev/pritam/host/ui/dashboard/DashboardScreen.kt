@@ -810,3 +810,70 @@ private fun TileExpandChevron(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun DashboardScreenPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        DashboardScreen(
+            tools = listOf(
+                dev.pritam.pluginapi.ToolInfo(
+                    id = dev.pritam.pluginapi.ToolId("ftp-server"),
+                    name = "FTP Server",
+                    description = "Embedded wireless FTP server with live speed dials, credential controls, and connected client telemetry.",
+                    version = "1.0.0",
+                    state = dev.pritam.pluginapi.ToolState.INSTALLED
+                ),
+                dev.pritam.pluginapi.ToolInfo(
+                    id = dev.pritam.pluginapi.ToolId("ftp-client"),
+                    name = "FTP Client",
+                    description = "High-speed remote FTP explorer with directory navigation and file actions.",
+                    version = "1.0.0",
+                    state = dev.pritam.pluginapi.ToolState.INSTALLED
+                ),
+                dev.pritam.pluginapi.ToolInfo(
+                    id = dev.pritam.pluginapi.ToolId("nfc-tool"),
+                    name = "NFC Commander",
+                    description = "Deep NFC tag analyzer, beam emulator, and batch tag cloning utility.",
+                    version = "1.0.0",
+                    state = dev.pritam.pluginapi.ToolState.INSTALLED
+                ),
+                dev.pritam.pluginapi.ToolInfo(
+                    id = dev.pritam.pluginapi.ToolId("llm-chat"),
+                    name = "AI Cyber Chat",
+                    description = "Interactive LLM conversation interface with multi-persona intelligence.",
+                    version = "1.0.0",
+                    state = dev.pritam.pluginapi.ToolState.INSTALLED
+                ),
+                dev.pritam.pluginapi.ToolInfo(
+                    id = dev.pritam.pluginapi.ToolId("dynamic-tools-studio"),
+                    name = "AI Tools",
+                    description = "Build and execute interactive web tools on-device.",
+                    version = "1.0.0",
+                    state = dev.pritam.pluginapi.ToolState.INSTALLED
+                )
+            ),
+            onToolClick = {},
+            onOpenSettings = {}
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun ExpandableToolGalleryCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        ExpandableToolGalleryCard(
+            tool = dev.pritam.pluginapi.ToolInfo(
+                id = dev.pritam.pluginapi.ToolId("ftp-server"),
+                name = "FTP Server",
+                description = "Embedded wireless FTP server with live speed dials, credential controls, and connected client telemetry.",
+                version = "1.0.0",
+                state = dev.pritam.pluginapi.ToolState.INSTALLED
+            ),
+            columnCount = 2,
+            dashboardPaddingDp = 18,
+            onLaunch = {}
+        )
+    }
+}

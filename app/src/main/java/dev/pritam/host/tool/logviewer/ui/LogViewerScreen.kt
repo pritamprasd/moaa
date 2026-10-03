@@ -103,7 +103,7 @@ fun LogViewerScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "SYSTEM LOGS",
+                        text = "LOGS",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
@@ -901,10 +901,21 @@ private fun copyToClipboard(context: Context, label: String, text: String) {
     clipboard.setPrimaryClip(clip)
     AppLogHub.logClipboardOperation(
         toolId = "log-viewer",
-        toolName = "System Logs",
+        toolName = "Logs",
         operationType = "COPY",
         label = label,
         content = text
     )
     Toast.makeText(context, "Copied $label to clipboard", Toast.LENGTH_SHORT).show()
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun LogViewerScreenPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        LogViewerScreen(
+            onNavigateBack = {}
+        )
+    }
+}
+

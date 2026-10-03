@@ -216,3 +216,20 @@ fun FtpConfigDialog(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun FtpConfigDialogPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        FtpConfigDialog(
+            initialConfig = dev.pritam.host.ftp.model.FtpConfig(
+                username = "admin",
+                password = "mypassword",
+                port = 2121
+            ),
+            onDismiss = {},
+            onSave = {}
+        )
+    }
+}
+

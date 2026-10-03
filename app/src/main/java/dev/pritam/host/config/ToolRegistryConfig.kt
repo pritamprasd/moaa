@@ -41,7 +41,7 @@ object ToolRegistryConfig {
     val INSTALLED_TOOLS: List<ToolDefinition> = listOf(
         ToolDefinition(
             id = "ftp-server",
-            name = "LAN FTP Server",
+            name = "FTP Server",
             shortTagline = "Host local phone storage over Wi-Fi with custom credentials.",
             description = "High-performance embedded FTP server engine. Allows devices on your Local Area Network (Windows Explorer, macOS Finder, mobile FTP apps) to browse, download, and upload files from phone storage with background execution support.",
             version = "1.0.0",
@@ -77,7 +77,7 @@ object ToolRegistryConfig {
         ),
         ToolDefinition(
             id = "log-viewer",
-            name = "System Logs",
+            name = "Logs",
             shortTagline = "Centralized real-time diagnostic and operation stream.",
             description = "Universal diagnostic hub and telemetry console. Collects, filters, searches, and exports real-time execution logs, file transfers, operations, and NFC events across the super-app.",
             version = "1.0.0",
@@ -89,7 +89,7 @@ object ToolRegistryConfig {
         ),
         ToolDefinition(
             id = "sensors",
-            name = "Sensors Live",
+            name = "Sensors",
             shortTagline = "Real-time hardware sensor monitor with dynamic 1s/2s/5s sampling.",
             description = "Discover and inspect all physical hardware sensors available on this device (Accelerometer, Gyroscope, Magnetometer, Barometer, Light, Proximity, Temperature, Step Counter, etc.). Features configurable live update intervals (1s, 2s, 5s, fast sampling, or paused), real-time telemetry meters, multi-axis decomposition, hardware specs, and telemetry export.",
             version = "1.0.0",
@@ -113,7 +113,7 @@ object ToolRegistryConfig {
         ),
         ToolDefinition(
             id = "llm-chat",
-            name = "CyberChat AI",
+            name = "Chat",
             shortTagline = "Local LLM chat studio powered by LLM Gateway failover proxy.",
             description = "Full-featured interactive conversational AI client powered by the LLM Gateway loopback proxy. Features real-time token streaming, multi-turn thread history management, customizable AI personas (Code Architect, Cyberpunk Hacker, Hardware Specialist, Creative Muse), markdown & code formatting with one-click copy, temperature sliders, and instant failover between Cloud Gemini/OpenAI and Desktop Ollama.",
             version = "1.0.0",
@@ -125,7 +125,7 @@ object ToolRegistryConfig {
         ),
         ToolDefinition(
             id = "dynamic-tools-studio",
-            name = "Dynamic Tools Studio",
+            name = "Custom Tools",
             shortTagline = "Synthesize and run custom web tools with AI prompts.",
             description = "AI-powered dynamic custom tool generator and runner. Generate lightweight, fully interactive runtime tools (Scientific Calculator, Unit Converter, Regex Tester, Pomodoro Timer, JSON Validator) using simple natural language prompts connected to the local LLM Gateway. Supports instant hot-reloading, live code editing (HTML/CSS/JS), and offline sandboxed local execution.",
             version = "1.0.0",

@@ -795,3 +795,33 @@ private fun GlassTextField(hint: String, value: String, onValueChange: (String) 
         maxLines = 3,
     )
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun GhostTaskCardPreview() {
+    MaterialTheme {
+        GhostTaskCard(
+            task = GhostTask(
+                taskId = "task_insta_scroll",
+                name = "Auto Scroll & Like",
+                description = "Automatically opens target app, scrolls feeds and triggers interactions via accessibility automation.",
+                targetAppPackage = "com.instagram.android",
+                steps = listOf(
+                    GhostStep(
+                        stepId = "step_1",
+                        label = "Open Feed",
+                        type = StepType.NATURAL_LANGUAGE,
+                        nlPrompt = "Scroll down by 500px and double-tap photo"
+                    )
+                ),
+                createdAt = System.currentTimeMillis()
+            ),
+            isRunning = false,
+            onRun = {},
+            onEdit = {},
+            onDelete = {}
+        )
+    }
+}
+
+

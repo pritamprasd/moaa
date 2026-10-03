@@ -276,3 +276,20 @@ private fun DrawScope.drawDataPackets(
         )
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun IsometricServerNodeRunningPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        IsometricServerNode(isRunning = true)
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun IsometricServerNodeStoppedPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        IsometricServerNode(isRunning = false)
+    }
+}
+

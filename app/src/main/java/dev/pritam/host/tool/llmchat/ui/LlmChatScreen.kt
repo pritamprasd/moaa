@@ -109,7 +109,7 @@ fun LlmChatScreen(
                 title = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = activeSession?.title ?: "CYBERCHAT AI",
+                            text = activeSession?.title ?: "CHAT",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,

@@ -125,7 +125,7 @@ object SystemManualData {
         ),
         ManualSection(
             id = "dynamic-tools",
-            title = "Dynamic Tools Studio (AI Web App Generator)",
+            title = "AI Web App Generator",
             category = "AI & Dynamic Web Tools",
             tagline = "Synthesize, refine, edit, and run custom HTML/CSS/JS micro-apps on-device.",
             iconEmoji = "✨",
@@ -903,3 +903,15 @@ private fun ManualSectionCard(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun SystemManualScreenPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        SystemManualScreen(
+            onNavigateBack = {},
+            onNavigateToTool = {}
+        )
+    }
+}
+

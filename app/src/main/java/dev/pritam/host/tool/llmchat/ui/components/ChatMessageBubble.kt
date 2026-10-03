@@ -399,3 +399,36 @@ private fun McpToolCallsAccordion(
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun ChatMessageBubbleUserPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        ChatMessageBubble(
+            message = ChatMessage(
+                id = "1",
+                role = "user",
+                content = "Can you scan the nearby BLE and FTP devices on the local network?",
+                timestamp = System.currentTimeMillis()
+            )
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun ChatMessageBubbleAssistantPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        ChatMessageBubble(
+            message = ChatMessage(
+                id = "2",
+                role = "assistant",
+                content = "Running scan across subnet `192.168.1.0/24`:\n- Found **FTP Server** on port 2121\n- Active telemetry: 12.4 MB/s transfer speed.",
+                timestamp = System.currentTimeMillis(),
+                modelUsed = "gemini-2.5-flash"
+            )
+        )
+    }
+}
+
+
+

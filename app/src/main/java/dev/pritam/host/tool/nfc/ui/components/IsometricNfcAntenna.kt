@@ -214,3 +214,20 @@ private fun DrawScope.drawRadiatingFluxWaves(
         drawPath(wavePath, color = color.copy(alpha = alpha), style = Stroke(1.5.dp.toPx()))
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun IsometricNfcAntennaScanPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        IsometricNfcAntenna(isScanningOrWriting = true, isWriteMode = false)
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun IsometricNfcAntennaWritePreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        IsometricNfcAntenna(isScanningOrWriting = true, isWriteMode = true)
+    }
+}
+

@@ -26,7 +26,7 @@ fun IsometricTelemetryDials(
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             IsometricStatTile(
                 label = "Download",
@@ -48,7 +48,7 @@ fun IsometricTelemetryDials(
                 modifier = Modifier.weight(1f)
             )
             IsometricStatTile(
-                label = "Total Transferred",
+                label = "Total",
                 value = telemetry.formatBytes(telemetry.totalBytesDownloaded + telemetry.totalBytesUploaded),
                 accentColor = Cyan,
                 modifier = Modifier.weight(1f)
@@ -56,3 +56,21 @@ fun IsometricTelemetryDials(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun IsometricTelemetryDialsPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        IsometricTelemetryDials(
+            telemetry = FtpTelemetry(
+                currentDownloadSpeedBps = 1024 * 1024 * 12L,
+                currentUploadSpeedBps = 1024 * 512L,
+                activeClientsCount = 2,
+                totalBytesDownloaded = 1024 * 1024 * 250L,
+                totalBytesUploaded = 1024 * 1024 * 45L
+            ),
+            isRunning = true
+        )
+    }
+}
+

@@ -90,7 +90,7 @@ fun FtpScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "LAN FTP SERVER",
+                        text = "FTP SERVER",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary,
@@ -270,7 +270,7 @@ private fun copyToClipboard(context: Context, label: String, text: String) {
     clipboard.setPrimaryClip(clip)
     dev.pritam.host.logging.AppLogHub.logClipboardOperation(
         toolId = "ftp-server",
-        toolName = "LAN FTP Server",
+        toolName = "FTP Server",
         operationType = "COPY",
         label = label,
         content = text

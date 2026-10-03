@@ -219,3 +219,28 @@ private fun ClientDeviceItem(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun ConnectedDevicesCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        ConnectedDevicesCard(
+            clients = listOf(
+                FtpClientSessionInfo(
+                    sessionId = "sess-1",
+                    ip = "192.168.1.142",
+                    port = 52344,
+                    username = "pritam",
+                    connectedAtEpochMs = System.currentTimeMillis() - 120_000,
+                    bytesDownloaded = 1024 * 1024 * 14L,
+                    bytesUploaded = 1024 * 350L,
+                    currentActivity = "RETR /Downloads/archive.zip"
+                )
+            ),
+            isRunning = true,
+            onDisconnectClient = {}
+        )
+    }
+}
+
+

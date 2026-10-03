@@ -33,6 +33,11 @@ object AppSettingsManager {
     private const val KEY_DIALOG_OPACITY = "dialog_opacity_percent"
     private const val KEY_VIBRATION = "vibration_feedback"
     private const val KEY_LOG_RETENTION = "log_retention_policy"
+    private const val KEY_SECTION_GENERAL = "section_general_expanded"
+    private const val KEY_SECTION_AI = "section_ai_expanded"
+    private const val KEY_SECTION_AUTOMATION = "section_automation_expanded"
+    private const val KEY_SECTION_DIAGNOSTICS = "section_diagnostics_expanded"
+    private const val KEY_SECTION_ABOUT = "section_about_expanded"
 
     private var prefs: SharedPreferences? = null
 
@@ -51,6 +56,22 @@ object AppSettingsManager {
     private val _logRetentionPolicy = MutableStateFlow(LogRetentionPolicy.ONE_DAY)
     val logRetentionPolicy: StateFlow<LogRetentionPolicy> = _logRetentionPolicy.asStateFlow()
 
+    // ── Collapsible Section States (Collapsed by default: false) ───────────
+    private val _sectionGeneralExpanded = MutableStateFlow(false)
+    val sectionGeneralExpanded: StateFlow<Boolean> = _sectionGeneralExpanded.asStateFlow()
+
+    private val _sectionAiExpanded = MutableStateFlow(false)
+    val sectionAiExpanded: StateFlow<Boolean> = _sectionAiExpanded.asStateFlow()
+
+    private val _sectionAutomationExpanded = MutableStateFlow(false)
+    val sectionAutomationExpanded: StateFlow<Boolean> = _sectionAutomationExpanded.asStateFlow()
+
+    private val _sectionDiagnosticsExpanded = MutableStateFlow(false)
+    val sectionDiagnosticsExpanded: StateFlow<Boolean> = _sectionDiagnosticsExpanded.asStateFlow()
+
+    private val _sectionAboutExpanded = MutableStateFlow(false)
+    val sectionAboutExpanded: StateFlow<Boolean> = _sectionAboutExpanded.asStateFlow()
+
     fun init(context: Context) {
         if (prefs == null) {
             val p = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -65,6 +86,11 @@ object AppSettingsManager {
             } catch (e: Exception) {
                 LogRetentionPolicy.ONE_DAY
             }
+            _sectionGeneralExpanded.value = p.getBoolean(KEY_SECTION_GENERAL, false)
+            _sectionAiExpanded.value = p.getBoolean(KEY_SECTION_AI, false)
+            _sectionAutomationExpanded.value = p.getBoolean(KEY_SECTION_AUTOMATION, false)
+            _sectionDiagnosticsExpanded.value = p.getBoolean(KEY_SECTION_DIAGNOSTICS, false)
+            _sectionAboutExpanded.value = p.getBoolean(KEY_SECTION_ABOUT, false)
         }
     }
 
@@ -107,12 +133,42 @@ object AppSettingsManager {
         prefs?.edit()?.putString(KEY_LOG_RETENTION, policy.name)?.apply()
     }
 
+    fun setSectionGeneralExpanded(expanded: Boolean) {
+        _sectionGeneralExpanded.value = expanded
+        prefs?.edit()?.putBoolean(KEY_SECTION_GENERAL, expanded)?.apply()
+    }
+
+    fun setSectionAiExpanded(expanded: Boolean) {
+        _sectionAiExpanded.value = expanded
+        prefs?.edit()?.putBoolean(KEY_SECTION_AI, expanded)?.apply()
+    }
+
+    fun setSectionAutomationExpanded(expanded: Boolean) {
+        _sectionAutomationExpanded.value = expanded
+        prefs?.edit()?.putBoolean(KEY_SECTION_AUTOMATION, expanded)?.apply()
+    }
+
+    fun setSectionDiagnosticsExpanded(expanded: Boolean) {
+        _sectionDiagnosticsExpanded.value = expanded
+        prefs?.edit()?.putBoolean(KEY_SECTION_DIAGNOSTICS, expanded)?.apply()
+    }
+
+    fun setSectionAboutExpanded(expanded: Boolean) {
+        _sectionAboutExpanded.value = expanded
+        prefs?.edit()?.putBoolean(KEY_SECTION_ABOUT, expanded)?.apply()
+    }
+
     fun resetToDefaults() {
         _galleryColumnCount.value = 2
         _dashboardPaddingDp.value = 18
         _dialogOpacityPercent.value = 94
         _isVibrationFeedbackEnabled.value = true
         _logRetentionPolicy.value = LogRetentionPolicy.ONE_DAY
+        _sectionGeneralExpanded.value = false
+        _sectionAiExpanded.value = false
+        _sectionAutomationExpanded.value = false
+        _sectionDiagnosticsExpanded.value = false
+        _sectionAboutExpanded.value = false
 
         prefs?.edit()
             ?.putInt(KEY_GALLERY_COLUMNS, 2)
@@ -120,6 +176,12 @@ object AppSettingsManager {
             ?.putInt(KEY_DIALOG_OPACITY, 94)
             ?.putBoolean(KEY_VIBRATION, true)
             ?.putString(KEY_LOG_RETENTION, LogRetentionPolicy.ONE_DAY.name)
+            ?.putBoolean(KEY_SECTION_GENERAL, false)
+            ?.putBoolean(KEY_SECTION_AI, false)
+            ?.putBoolean(KEY_SECTION_AUTOMATION, false)
+            ?.putBoolean(KEY_SECTION_DIAGNOSTICS, false)
+            ?.putBoolean(KEY_SECTION_ABOUT, false)
             ?.apply()
     }
 }
+

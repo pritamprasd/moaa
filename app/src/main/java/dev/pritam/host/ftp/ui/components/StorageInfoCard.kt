@@ -167,3 +167,25 @@ fun StorageInfoCard(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun StorageInfoCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        StorageInfoCard(
+            currentPath = "/storage/emulated/0/Downloads",
+            storageInfo = StorageUtils.StorageInfo(
+                rootPath = "/storage/emulated/0/Downloads",
+                totalBytes = 128L * 1024 * 1024 * 1024,
+                freeBytes = 48L * 1024 * 1024 * 1024,
+                usedBytes = 80L * 1024 * 1024 * 1024
+            ),
+            hasStoragePermission = true,
+            isRunning = false,
+            onChangeFolder = {},
+            onRequestPermission = {}
+        )
+    }
+}
+
+

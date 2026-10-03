@@ -114,7 +114,7 @@ fun DynamicToolsStudioScreen(
                 title = {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "DYNAMIC TOOLS STUDIO",
+                            text = "AI TOOLS",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
@@ -785,3 +785,48 @@ private fun DynamicToolItemCard(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun DynamicToolItemCardPreview() {
+    MaterialTheme {
+        DynamicToolItemCard(
+            bundle = DynamicToolBundle(
+                manifest = dev.pritam.dynamictools.model.DynamicToolManifest(
+                    toolId = "dynamic_hash_calc",
+                    displayName = "SHA-256 Hash Calculator",
+                    description = "Computes cryptographic hashes and checksums instantly in browser JS runtime.",
+                    iconName = "key",
+                    version = "1.0.0"
+                ),
+                html = "<html><body>Hash Calculator</body></html>",
+                css = "body { background: #000; color: #fff; }",
+                js = "console.log('ready');"
+            ),
+            onLaunch = {},
+            onRefinePrompt = {},
+            onEditCode = {},
+            onShareJson = {},
+            onDelete = {}
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun GeneratorPromptCardPreview() {
+    MaterialTheme {
+        GeneratorPromptCard(
+            prompt = "Create a real-time subnet IP calculator",
+            isGenerating = false,
+            generationStatus = null,
+            errorMessage = null,
+            onPromptChange = {},
+            onSelectPreset = {},
+            onGenerate = {},
+            onClearError = {}
+        )
+    }
+}
+
+

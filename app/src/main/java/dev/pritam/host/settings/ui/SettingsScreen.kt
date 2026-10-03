@@ -32,6 +32,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +61,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -97,12 +100,12 @@ fun SettingsScreen(
     val currentOpacity by AppSettingsManager.dialogOpacityPercent.collectAsStateWithLifecycle()
     val currentRetention by AppSettingsManager.logRetentionPolicy.collectAsStateWithLifecycle()
 
-    // ── Section expanded state ─────────────────────────────────────────────
-    var generalExpanded    by remember { mutableStateOf(true) }
-    var aiExpanded         by remember { mutableStateOf(true) }
-    var automationExpanded by remember { mutableStateOf(true) }
-    var diagnosticsExpanded by remember { mutableStateOf(false) }
-    var aboutExpanded      by remember { mutableStateOf(false) }
+    // ── Persistent Section expanded state (Collapsed by default: false) ────
+    val generalExpanded    by AppSettingsManager.sectionGeneralExpanded.collectAsStateWithLifecycle()
+    val aiExpanded         by AppSettingsManager.sectionAiExpanded.collectAsStateWithLifecycle()
+    val automationExpanded by AppSettingsManager.sectionAutomationExpanded.collectAsStateWithLifecycle()
+    val diagnosticsExpanded by AppSettingsManager.sectionDiagnosticsExpanded.collectAsStateWithLifecycle()
+    val aboutExpanded      by AppSettingsManager.sectionAboutExpanded.collectAsStateWithLifecycle()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -137,7 +140,7 @@ fun SettingsScreen(
                 emoji = "⚙️",
                 accentColor = Cyan,
                 isExpanded = generalExpanded,
-                onToggle = { generalExpanded = !generalExpanded }
+                onToggle = { AppSettingsManager.setSectionGeneralExpanded(!generalExpanded) }
             ) {
                 item {
                     SystemManualSettingsCard(onOpenSystemManual = onOpenSystemManual)
@@ -178,7 +181,7 @@ fun SettingsScreen(
                 emoji = "🤖",
                 accentColor = Violet,
                 isExpanded = aiExpanded,
-                onToggle = { aiExpanded = !aiExpanded }
+                onToggle = { AppSettingsManager.setSectionAiExpanded(!aiExpanded) }
             ) {
                 item { DefaultLlmSettingsCard(context = context) }
                 item { McpServersSettingsCard(context = context) }
@@ -191,7 +194,7 @@ fun SettingsScreen(
                 emoji = "👻",
                 accentColor = Violet,
                 isExpanded = automationExpanded,
-                onToggle = { automationExpanded = !automationExpanded }
+                onToggle = { AppSettingsManager.setSectionAutomationExpanded(!automationExpanded) }
             ) {
                 item { GhostAgentSettingsCard(context = context) }
             }
@@ -202,7 +205,7 @@ fun SettingsScreen(
                 emoji = "🔬",
                 accentColor = Amber,
                 isExpanded = diagnosticsExpanded,
-                onToggle = { diagnosticsExpanded = !diagnosticsExpanded }
+                onToggle = { AppSettingsManager.setSectionDiagnosticsExpanded(!diagnosticsExpanded) }
             ) {
                 item {
                     DiagnosticsSettingsCard(
@@ -229,7 +232,7 @@ fun SettingsScreen(
                 emoji = "ℹ️",
                 accentColor = Color(0xFF94A3B8),
                 isExpanded = aboutExpanded,
-                onToggle = { aboutExpanded = !aboutExpanded }
+                onToggle = { AppSettingsManager.setSectionAboutExpanded(!aboutExpanded) }
             ) {
                 item {
                     AboutInfoCard(
@@ -387,76 +390,98 @@ private fun GalleryLayoutSettingsCard(
     currentColumns: Int,
     onSelectColumns: (Int) -> Unit,
 ) {
+    val layoutDescription = when (currentColumns) {
+        1 -> "1 Column: Full-width detailed list with expanded descriptions"
+        2 -> "2 Columns: Dual isometric cards (Balanced Default)"
+        3 -> "3 Columns: Matrix grid for high density & rapid launch"
+        4 -> "4 Columns: Micro-deck dense tiles for compact overview"
+        else -> "$currentColumns Columns Grid"
+    }
+
     IsometricCard(glowColor = Cyan) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = "HOME GALLERY LAYOUT",
-                style = MaterialTheme.typography.labelSmall,
-                color = Cyan,
-                letterSpacing = 1.sp,
-                fontSize = 11.sp
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "HOME GALLERY LAYOUT",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Cyan,
+                    letterSpacing = 1.sp,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Cyan.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, Cyan.copy(alpha = 0.3f))
+                ) {
+                    Text(
+                        text = "$currentColumns Column${if (currentColumns > 1) "s" else ""}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Cyan,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Choose how many columns to display on the dashboard tool grid",
+                text = layoutDescription,
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
                 fontSize = 11.sp
             )
 
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
 
-            val options = listOf(
-                1 to ("1 Column" to "Full-width detailed list with expanded descriptions"),
-                2 to ("2 Columns" to "Isometric dual card grid (Balanced Default)"),
-                3 to ("3 Columns" to "Matrix multi-deck grid for quick navigation"),
-                4 to ("4 Columns" to "Micro-deck dense tiles for compact overview")
+            // Column count slider (1 to 4 columns)
+            Slider(
+                value = currentColumns.toFloat(),
+                onValueChange = { onSelectColumns(it.toInt().coerceIn(1, 4)) },
+                valueRange = 1f..4f,
+                steps = 2,
+                colors = SliderDefaults.colors(
+                    thumbColor = Cyan,
+                    activeTrackColor = Cyan,
+                    inactiveTrackColor = GlassBorder
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                options.forEach { (cols, info) ->
-                    val isSelected = currentColumns == cols
-                    val shape = RoundedCornerShape(10.dp)
+            Spacer(Modifier.height(6.dp))
 
+            // Quick Preset Column Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                (1..4).forEach { cols ->
+                    val isSel = currentColumns == cols
                     Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
+                        border = BorderStroke(1.dp, if (isSel) Cyan else GlassBorder),
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(shape)
+                            .weight(1f)
+                            .clip(RoundedCornerShape(6.dp))
                             .clickable { onSelectColumns(cols) }
-                            .border(
-                                BorderStroke(1.dp, if (isSelected) Cyan else GlassBorder),
-                                shape
-                            ),
-                        color = if (isSelected) Cyan.copy(alpha = 0.15f) else GlassSurfaceDeep,
-                        shape = shape
                     ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(12.dp),
-                                shape = CircleShape,
-                                color = if (isSelected) Cyan else Color(0xFF475569)
-                            ) {}
-
-                            Spacer(Modifier.width(12.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = info.first,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (isSelected) Cyan else TextPrimary
-                                )
-                                Text(
-                                    text = info.second,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary,
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
+                        Text(
+                            text = if (cols == 1) "1 Col" else "$cols Cols",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSel) Cyan else TextSecondary,
+                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                            fontSize = 10.sp,
+                            modifier = Modifier
+                                .padding(vertical = 6.dp)
+                                .fillMaxWidth(),
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
             }
@@ -733,6 +758,8 @@ private fun DiagnosticsSettingsCard(
     onOpenLogViewer: () -> Unit,
     onClearLogs: () -> Unit,
 ) {
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
     IsometricCard(glowColor = Rose) {
         Column(modifier = Modifier.fillMaxWidth()) {
             Row(
@@ -745,14 +772,16 @@ private fun DiagnosticsSettingsCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = Rose,
                     letterSpacing = 1.sp,
-                    fontSize = 11.sp
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
                 )
                 Surface(
                     shape = RoundedCornerShape(4.dp),
-                    color = Rose.copy(alpha = 0.15f)
+                    color = Rose.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, Rose.copy(alpha = 0.3f))
                 ) {
                     Text(
-                        text = "RETENTION: ${currentRetention.displayName.uppercase()}",
+                        text = currentRetention.displayName.uppercase(),
                         style = MaterialTheme.typography.labelSmall,
                         color = Rose,
                         fontSize = 9.sp,
@@ -771,62 +800,114 @@ private fun DiagnosticsSettingsCard(
 
             Spacer(Modifier.height(14.dp))
 
-            // Auto-delete / retention policy section
+            // Auto-delete / retention policy dropdown section
             Text(
-                text = "AUTO-DELETE OLD LOGS (FREE MEMORY)",
+                text = "AUTO-DELETE OLD LOGS (RETENTION POLICY)",
                 style = MaterialTheme.typography.labelSmall,
                 color = TextPrimary,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
 
-            val policies = dev.pritam.host.settings.LogRetentionPolicy.entries
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                policies.forEach { policy ->
-                    val isSelected = currentRetention == policy
-                    val shape = RoundedCornerShape(8.dp)
-
-                    Surface(
+            // Dropdown anchor box
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = GlassSurfaceDeep,
+                    border = BorderStroke(1.dp, if (dropdownExpanded) Rose else GlassBorder),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { dropdownExpanded = !dropdownExpanded }
+                ) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(shape)
-                            .clickable { onSelectRetention(policy) }
-                            .border(
-                                BorderStroke(1.dp, if (isSelected) Rose else GlassBorder),
-                                shape
-                            ),
-                        color = if (isSelected) Rose.copy(alpha = 0.15f) else GlassSurfaceDeep,
-                        shape = shape
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Surface(
-                                modifier = Modifier.size(10.dp),
-                                shape = CircleShape,
-                                color = if (isSelected) Rose else Color(0xFF475569)
-                            ) {}
-
-                            Spacer(Modifier.width(10.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
+                            Text("⏱️", fontSize = 16.sp)
+                            Column {
                                 Text(
-                                    text = policy.displayName,
+                                    text = currentRetention.displayName,
                                     style = MaterialTheme.typography.titleSmall,
-                                    color = if (isSelected) Rose else TextPrimary,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = Rose,
+                                    fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )
                                 Text(
-                                    text = policy.description,
+                                    text = currentRetention.description,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = TextSecondary,
-                                    fontSize = 9.sp
+                                    fontSize = 10.sp
                                 )
                             }
                         }
+
+                        Text(
+                            text = if (dropdownExpanded) "▲" else "▼",
+                            color = Rose,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                }
+
+                DropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false },
+                    modifier = Modifier
+                        .background(dev.pritam.host.settings.AppSettingsManager.getDialogSurfaceColor())
+                        .border(BorderStroke(1.dp, Rose.copy(alpha = 0.4f)), RoundedCornerShape(8.dp))
+                ) {
+                    dev.pritam.host.settings.LogRetentionPolicy.entries.forEach { policy ->
+                        val isSelected = currentRetention == policy
+                        DropdownMenuItem(
+                            text = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = policy.displayName,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (isSelected) Rose else TextPrimary,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 12.sp
+                                        )
+                                        Text(
+                                            text = policy.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextSecondary,
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                    if (isSelected) {
+                                        Text(
+                                            text = "✓",
+                                            color = Rose,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            onClick = {
+                                dropdownExpanded = false
+                                onSelectRetention(policy)
+                            }
+                        )
                     }
                 }
             }
@@ -868,12 +949,13 @@ private fun HomescreenShortcutsCard(context: Context) {
                     style = MaterialTheme.typography.labelSmall,
                     color = Cyan,
                     letterSpacing = 1.sp,
-                    fontSize = 11.sp
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(4.dp))
             Text(
-                text = "Pin dedicated direct-launch icons to your home screen. Tapping an icon opens that tool directly, bypassing the dashboard.",
+                text = "Tap any icon below to pin a direct-launch shortcut to your device home screen.",
                 style = MaterialTheme.typography.bodySmall,
                 color = TextSecondary,
                 fontSize = 11.sp
@@ -881,69 +963,88 @@ private fun HomescreenShortcutsCard(context: Context) {
 
             Spacer(Modifier.height(14.dp))
 
+            val chunkedTools = tools.chunked(3)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                tools.forEach { tool ->
-                    val accentColor = Color(tool.accentColorHex)
-                    val shape = RoundedCornerShape(8.dp)
-
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(shape)
-                            .border(BorderStroke(1.dp, GlassBorder), shape),
-                        color = GlassSurfaceDeep,
-                        shape = shape
+                chunkedTools.forEach { rowTools ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = accentColor.copy(alpha = 0.2f)
-                                    ) {
-                                        Text(
-                                            text = tool.category.uppercase(),
-                                            color = accentColor,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 8.sp,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                        )
+                        rowTools.forEach { tool ->
+                            val accentColor = Color(tool.accentColorHex)
+                            val shape = RoundedCornerShape(10.dp)
+                            val emoji = when (tool.iconType) {
+                                "ftp" -> "📡"
+                                "nfc" -> "📶"
+                                "ftp-client" -> "☁️"
+                                "logs" -> "📋"
+                                "sensors" -> "🧭"
+                                "brain" -> "🧠"
+                                "chat" -> "💬"
+                                "dynamic-tool" -> "⚡"
+                                "manual" -> "📖"
+                                "ghost" -> "👻"
+                                else -> "🔧"
+                            }
+
+                            Surface(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(shape)
+                                    .clickable {
+                                        dev.pritam.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, tool)
                                     }
+                                    .border(
+                                        BorderStroke(1.dp, accentColor.copy(alpha = 0.35f)),
+                                        shape
+                                    ),
+                                color = GlassSurfaceDeep,
+                                shape = shape
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 6.dp, vertical = 10.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Surface(
+                                        modifier = Modifier.size(38.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = accentColor.copy(alpha = 0.15f),
+                                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.4f))
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = emoji,
+                                                fontSize = 20.sp
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(Modifier.height(6.dp))
+
                                     Text(
                                         text = tool.name,
-                                        style = MaterialTheme.typography.titleSmall,
+                                        style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = TextPrimary,
-                                        fontSize = 12.sp
+                                        fontSize = 10.sp,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        lineHeight = 12.sp
                                     )
                                 }
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = tool.shortTagline,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary,
-                                    fontSize = 10.sp
-                                )
                             }
+                        }
 
-                            Spacer(Modifier.width(8.dp))
-
-                            LiquidGlassButton(
-                                onClick = {
-                                    dev.pritam.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, tool)
-                                },
-                                glowColor = accentColor,
-                                useRainbowBorder = true,
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                            ) {
-                                Text("📌 Pin", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = accentColor)
-                            }
+                        // Pad out remaining columns if last row has less than 3 tools
+                        repeat(3 - rowTools.size) {
+                            Spacer(Modifier.weight(1f))
                         }
                     }
                 }
@@ -1458,3 +1559,63 @@ private fun GhostAgentSettingsCard(context: android.content.Context) {
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun SettingsScreenPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        SettingsScreen(
+            onNavigateBack = {},
+            onOpenLogViewer = {},
+            onOpenSystemManual = {}
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun DialogOpacitySettingsCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        DialogOpacitySettingsCard(
+            currentOpacity = 94,
+            onOpacityChange = {}
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun DashboardPaddingSettingsCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        DashboardPaddingSettingsCard(
+            currentPadding = 18,
+            onPaddingChange = {}
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun GalleryLayoutSettingsCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        GalleryLayoutSettingsCard(
+            currentColumns = 2,
+            onSelectColumns = {}
+        )
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun DiagnosticsSettingsCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        DiagnosticsSettingsCard(
+            currentRetention = dev.pritam.host.settings.LogRetentionPolicy.ONE_DAY,
+            onSelectRetention = {},
+            onOpenLogViewer = {},
+            onClearLogs = {}
+        )
+    }
+}
+
+

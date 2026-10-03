@@ -614,3 +614,24 @@ private fun McpToolItemRow(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun McpSummaryCardPreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        McpSummaryCard(
+            servers = listOf(
+                dev.pritam.host.tool.llmgateway.mcp.model.McpServerProfile(
+                    id = "sqlite",
+                    name = "SQLite MCP Server",
+                    transportType = dev.pritam.host.tool.llmgateway.mcp.model.McpTransportType.SSE,
+                    endpointUrl = "http://192.168.1.100:8000/sse",
+                    isEnabled = true
+                )
+            ),
+            onAddServerClick = {}
+        )
+    }
+}
+
+

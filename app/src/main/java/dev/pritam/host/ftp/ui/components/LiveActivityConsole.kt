@@ -143,3 +143,31 @@ private fun LogItemRow(entry: FtpLogEntry) {
         )
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
+@Composable
+private fun LiveActivityConsolePreview() {
+    dev.pritam.host.ui.theme.AppTheme {
+        LiveActivityConsole(
+            logs = listOf(
+                FtpLogEntry(
+                    timestampMs = System.currentTimeMillis() - 4000,
+                    level = FtpLogLevel.INFO,
+                    message = "FTP Server listening on port 2121"
+                ),
+                FtpLogEntry(
+                    timestampMs = System.currentTimeMillis() - 2000,
+                    level = FtpLogLevel.AUTH,
+                    message = "User 'pritam' authenticated from 192.168.1.142"
+                ),
+                FtpLogEntry(
+                    timestampMs = System.currentTimeMillis() - 500,
+                    level = FtpLogLevel.TRANSFER,
+                    message = "Uploaded 4.2 MB: /Downloads/dataset.json"
+                )
+            )
+        )
+    }
+}
+
+

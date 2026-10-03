@@ -492,39 +492,40 @@ private fun ExpandableToolGalleryCard(
                     }
                     .padding(innerPadding)
             ) {
-                // Top Row: Icon + Name + Modern Animated Chevron Expander / Reorder Handle
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        ToolIsometricIcon(
-                            iconType = iconType,
-                            color = if (isReorderMode) Violet else accentColor,
-                            size = if (columnCount == 1) 42.dp else if (columnCount == 2) 34.dp else 26.dp
-                        )
+                if (columnCount >= 3) {
+                    // 3+ Column Compact Layout: Prominent larger icon & tool name (no descriptions on tiles)
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            ToolIsometricIcon(
+                                iconType = iconType,
+                                color = if (isReorderMode) Violet else accentColor,
+                                size = 42.dp
+                            )
 
-                        Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.height(8.dp))
 
-                        Column {
                             Text(
                                 text = tool.name,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary,
-                                maxLines = if (columnCount >= 3) 1 else 2,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis,
-                                fontSize = if (columnCount == 1) 14.sp else if (columnCount == 2) 12.sp else 10.sp
+                                textAlign = TextAlign.Center,
+                                fontSize = 11.5.sp,
+                                modifier = Modifier.fillMaxWidth()
                             )
-                            if (tool.id.value.startsWith("dynamic_") && columnCount <= 2) {
+
+                            if (tool.id.value.startsWith("dynamic_")) {
                                 Surface(
                                     shape = RoundedCornerShape(3.dp),
                                     color = Color(0x3038BDF8),
-                                    modifier = Modifier.padding(top = 2.dp)
+                                    modifier = Modifier.padding(top = 3.dp)
                                 ) {
                                     Text(
                                         text = "AI",
@@ -537,44 +538,116 @@ private fun ExpandableToolGalleryCard(
                                 }
                             }
                         }
-                    }
 
-                    if (isReorderMode) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = Violet.copy(alpha = 0.2f),
-                            border = BorderStroke(1.dp, Violet.copy(alpha = 0.5f))
+                        if (isReorderMode) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Violet.copy(alpha = 0.2f),
+                                border = BorderStroke(1.dp, Violet.copy(alpha = 0.5f)),
+                                modifier = Modifier.align(Alignment.TopEnd)
+                            ) {
+                                Text(
+                                    text = "⠿",
+                                    color = Violet,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                )
+                            }
+                        } else {
+                            Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                                TileExpandChevron(
+                                    isExpanded = isExpanded,
+                                    accentColor = accentColor,
+                                    onClick = { isExpanded = !isExpanded }
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // 1 and 2 Column Layout: Horizontal icon + name with description
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Text(
-                                text = "⠿",
-                                color = Violet,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            ToolIsometricIcon(
+                                iconType = iconType,
+                                color = if (isReorderMode) Violet else accentColor,
+                                size = if (columnCount == 1) 42.dp else 34.dp
+                            )
+
+                            Spacer(Modifier.width(8.dp))
+
+                            Column {
+                                Text(
+                                    text = tool.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    fontSize = if (columnCount == 1) 14.sp else 12.sp
+                                )
+                                if (tool.id.value.startsWith("dynamic_")) {
+                                    Surface(
+                                        shape = RoundedCornerShape(3.dp),
+                                        color = Color(0x3038BDF8),
+                                        modifier = Modifier.padding(top = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "AI",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Cyan,
+                                            fontSize = 7.5.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 3.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        if (isReorderMode) {
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Violet.copy(alpha = 0.2f),
+                                border = BorderStroke(1.dp, Violet.copy(alpha = 0.5f))
+                            ) {
+                                Text(
+                                    text = "⠿",
+                                    color = Violet,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                )
+                            }
+                        } else {
+                            TileExpandChevron(
+                                isExpanded = isExpanded,
+                                accentColor = accentColor,
+                                onClick = { isExpanded = !isExpanded }
                             )
                         }
-                    } else {
-                        // Modern Smooth Chevron Expander
-                        TileExpandChevron(
-                            isExpanded = isExpanded,
-                            accentColor = accentColor,
-                            onClick = { isExpanded = !isExpanded }
+                    }
+
+                    // Short tagline (only for 1 and 2 column layouts)
+                    if (!isExpanded && !isReorderMode) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = definition?.shortTagline ?: tool.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            fontSize = if (columnCount == 1) 11.sp else 10.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            lineHeight = 14.sp
                         )
                     }
-                }
-
-                // Short tagline (hidden in 4-column compact mode for cleanliness)
-                if (columnCount <= 3 && !isExpanded && !isReorderMode) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = definition?.shortTagline ?: tool.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        fontSize = if (columnCount == 1) 11.sp else 10.sp,
-                        maxLines = if (columnCount <= 2) 2 else 1,
-                        overflow = TextOverflow.Ellipsis,
-                        lineHeight = 14.sp
-                    )
                 }
 
                 // Reorder Arrow Controls Row (Visible when in Reorder Mode)

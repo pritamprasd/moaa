@@ -461,7 +461,7 @@ fun SystemManualScreen(
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf("All") }
-    var expandedSectionIds by remember { mutableStateOf(setOf("overview", "dynamic-tools")) }
+    var expandedSectionIds by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     val categories = listOf("All") + SystemManualData.SECTIONS.map { it.category }.distinct()
 

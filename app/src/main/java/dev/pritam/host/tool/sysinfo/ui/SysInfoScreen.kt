@@ -96,7 +96,7 @@ fun SysInfoScreen(
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshInterval by viewModel.refreshInterval.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val collapsedGroupIds by viewModel.collapsedGroupIds.collectAsStateWithLifecycle()
+    val expandedGroupIds by viewModel.expandedGroupIds.collectAsStateWithLifecycle()
 
     var showIntervalDropdown by remember { mutableStateOf(false) }
 
@@ -208,7 +208,7 @@ fun SysInfoScreen(
 
             // ── COLLAPSIBLE SYSTEM INFO GROUPS ─────────────────────────────
             items(filteredGroups, key = { it.id }) { group ->
-                val isExpanded = !collapsedGroupIds.contains(group.id)
+                val isExpanded = expandedGroupIds.contains(group.id)
                 SystemInfoGroupCard(
                     group = group,
                     isExpanded = isExpanded,

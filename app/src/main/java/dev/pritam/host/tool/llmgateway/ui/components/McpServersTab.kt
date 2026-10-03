@@ -75,7 +75,7 @@ fun McpServersTab(
     onClearTestResult: () -> Unit
 ) {
     var testingToolDef by remember { mutableStateOf<McpToolDefinition?>(null) }
-    var expandedServerId by remember { mutableStateOf<String?>(servers.firstOrNull()?.id) }
+    var expandedServerId by remember { mutableStateOf<String?>(null) }
 
     if (testingToolDef != null) {
         TestMcpToolDialog(

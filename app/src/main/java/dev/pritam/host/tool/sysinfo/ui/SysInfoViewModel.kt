@@ -36,8 +36,8 @@ class SysInfoViewModel(application: Application) : AndroidViewModel(application)
 
     val searchQuery = MutableStateFlow("")
 
-    private val _collapsedGroupIds = MutableStateFlow<Set<String>>(emptySet())
-    val collapsedGroupIds: StateFlow<Set<String>> = _collapsedGroupIds.asStateFlow()
+    private val _expandedGroupIds = MutableStateFlow<Set<String>>(emptySet())
+    val expandedGroupIds: StateFlow<Set<String>> = _expandedGroupIds.asStateFlow()
 
     init {
         startTicker()
@@ -70,8 +70,8 @@ class SysInfoViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun toggleGroupExpansion(groupId: String) {
-        val current = _collapsedGroupIds.value
-        _collapsedGroupIds.value = if (current.contains(groupId)) {
+        val current = _expandedGroupIds.value
+        _expandedGroupIds.value = if (current.contains(groupId)) {
             current - groupId
         } else {
             current + groupId
@@ -79,11 +79,11 @@ class SysInfoViewModel(application: Application) : AndroidViewModel(application)
     }
 
     fun expandAll() {
-        _collapsedGroupIds.value = emptySet()
+        _expandedGroupIds.value = _report.value.groups.map { it.id }.toSet()
     }
 
     fun collapseAll() {
-        _collapsedGroupIds.value = _report.value.groups.map { it.id }.toSet()
+        _expandedGroupIds.value = emptySet()
     }
 
     fun copyItem(context: Context, item: SysInfoItem) {

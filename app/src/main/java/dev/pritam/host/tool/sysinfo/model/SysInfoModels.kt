@@ -26,7 +26,7 @@ data class SysInfoGroup(
     val emoji: String,
     val accentColor: Color,
     val items: List<SysInfoItem>,
-    val isExpanded: Boolean = true
+    val isExpanded: Boolean = false
 ) {
     fun toFormattedString(): String {
         val builder = StringBuilder()

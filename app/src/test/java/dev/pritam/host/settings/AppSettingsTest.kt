@@ -78,5 +78,18 @@ class AppSettingsTest {
         assertEquals(18, AppSettingsManager.dashboardPaddingDp.value)
         assertEquals(2, AppSettingsManager.galleryColumnCount.value)
         assertEquals(94, AppSettingsManager.dialogOpacityPercent.value)
+        assertTrue(AppSettingsManager.toolOrder.value.isEmpty())
+    }
+
+    @Test
+    fun testToolOrderPersistence() {
+        assertTrue(AppSettingsManager.toolOrder.value.isEmpty())
+        val customOrder = listOf("terminal", "net-topology", "ftp-server")
+        AppSettingsManager.setToolOrder(customOrder)
+        assertEquals(customOrder, AppSettingsManager.toolOrder.value)
+
+        AppSettingsManager.resetToolOrder()
+        assertTrue(AppSettingsManager.toolOrder.value.isEmpty())
     }
 }
+

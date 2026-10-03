@@ -38,8 +38,12 @@ object AppSettingsManager {
     private const val KEY_SECTION_AUTOMATION = "section_automation_expanded"
     private const val KEY_SECTION_DIAGNOSTICS = "section_diagnostics_expanded"
     private const val KEY_SECTION_ABOUT = "section_about_expanded"
+    private const val KEY_TOOL_ORDER = "tool_order_list"
 
     private var prefs: SharedPreferences? = null
+
+    private val _toolOrder = MutableStateFlow<List<String>>(emptyList())
+    val toolOrder: StateFlow<List<String>> = _toolOrder.asStateFlow()
 
     private val _galleryColumnCount = MutableStateFlow(2) // 1, 2, 3, or 4 columns
     val galleryColumnCount: StateFlow<Int> = _galleryColumnCount.asStateFlow()
@@ -91,6 +95,11 @@ object AppSettingsManager {
             _sectionAutomationExpanded.value = p.getBoolean(KEY_SECTION_AUTOMATION, false)
             _sectionDiagnosticsExpanded.value = p.getBoolean(KEY_SECTION_DIAGNOSTICS, false)
             _sectionAboutExpanded.value = p.getBoolean(KEY_SECTION_ABOUT, false)
+
+            val orderRaw = p.getString(KEY_TOOL_ORDER, null)
+            if (!orderRaw.isNullOrBlank()) {
+                _toolOrder.value = orderRaw.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+            }
         }
     }
 
@@ -156,6 +165,16 @@ object AppSettingsManager {
     fun setSectionAboutExpanded(expanded: Boolean) {
         _sectionAboutExpanded.value = expanded
         prefs?.edit()?.putBoolean(KEY_SECTION_ABOUT, expanded)?.apply()
+    }
+
+    fun setToolOrder(order: List<String>) {
+        _toolOrder.value = order
+        prefs?.edit()?.putString(KEY_TOOL_ORDER, order.joinToString(","))?.apply()
+    }
+
+    fun resetToolOrder() {
+        _toolOrder.value = emptyList()
+        prefs?.edit()?.remove(KEY_TOOL_ORDER)?.apply()
     }
 
     fun resetToDefaults() {

@@ -114,6 +114,12 @@ fun HostNavHost(
                 },
                 onOpenSettings = {
                     navController.navigate(HostRoutes.SETTINGS)
+                },
+                onReorderTools = { fromIndex, toIndex ->
+                    hostAppState.reorderTools(fromIndex, toIndex)
+                },
+                onResetOrder = {
+                    hostAppState.resetToolOrder()
                 }
             )
         }

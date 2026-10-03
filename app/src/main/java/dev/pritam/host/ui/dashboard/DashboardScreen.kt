@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,6 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -93,11 +95,14 @@ fun DashboardScreen(
     modifier: Modifier = Modifier,
     onToolClick: (ToolInfo) -> Unit = {},
     onOpenSettings: () -> Unit = {},
+    onReorderTools: (fromIndex: Int, toIndex: Int) -> Unit = { _, _ -> },
+    onResetOrder: () -> Unit = {},
 ) {
     val columnCount by AppSettingsManager.galleryColumnCount.collectAsStateWithLifecycle()
     val dashboardPaddingDp by AppSettingsManager.dashboardPaddingDp.collectAsStateWithLifecycle()
     var isSearchExpanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var isReorderMode by remember { mutableStateOf(false) }
 
     val filteredTools = remember(tools, searchQuery) {
         if (searchQuery.isBlank()) {
@@ -147,6 +152,23 @@ fun DashboardScreen(
                     )
                 },
                 actions = {
+                    // Rearrange Tools Mode Button
+                    IconButton(
+                        onClick = { isReorderMode = !isReorderMode },
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(if (isReorderMode) Violet.copy(alpha = 0.25f) else Color(0x221E293B))
+                                .border(BorderStroke(1.dp, if (isReorderMode) Violet else dev.pritam.host.ui.theme.GlassBorder), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            IsometricReorderIcon(color = if (isReorderMode) Violet else TextPrimary)
+                        }
+                    }
+
                     // Settings Icon Button
                     IconButton(
                         onClick = onOpenSettings,
@@ -217,7 +239,81 @@ fun DashboardScreen(
                 }
             }
 
-            Spacer(Modifier.height(6.dp))
+            // Reorder Mode Active Banner
+            AnimatedVisibility(
+                visible = isReorderMode,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0x338B5CF6),
+                    border = BorderStroke(1.dp, Violet.copy(alpha = 0.6f)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("✨", fontSize = 13.sp)
+                            Column {
+                                Text(
+                                    text = "DRAG & REARRANGE TOOLS",
+                                    color = Violet,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
+                                )
+                                Text(
+                                    text = "Drag cards or tap ◀/▶ arrows to reorder. Changes persist automatically.",
+                                    color = TextSecondary,
+                                    fontSize = 9.sp
+                                )
+                            }
+                        }
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Surface(
+                                onClick = onResetOrder,
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0x22EF4444),
+                                border = BorderStroke(1.dp, Rose.copy(alpha = 0.5f))
+                            ) {
+                                Text(
+                                    text = "Reset",
+                                    color = Rose,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                )
+                            }
+
+                            Surface(
+                                onClick = { isReorderMode = false },
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0x3310B981),
+                                border = BorderStroke(1.dp, Color(0xFF10B981))
+                            ) {
+                                Text(
+                                    text = "Done",
+                                    color = Color(0xFF34D399),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
 
             // Tool Gallery Grid (Columns and padding dynamically bound to AppSettingsManager)
             if (filteredTools.isEmpty()) {
@@ -250,11 +346,38 @@ fun DashboardScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    items(filteredTools, key = { it.id.value }) { tool ->
+                    itemsIndexed(filteredTools, key = { _, tool -> tool.id.value }) { index, tool ->
+                        val canMoveLeft = index > 0
+                        val canMoveRight = index < filteredTools.size - 1
+
                         ExpandableToolGalleryCard(
                             tool = tool,
                             columnCount = columnCount,
                             dashboardPaddingDp = dashboardPaddingDp,
+                            isReorderMode = isReorderMode,
+                            canMoveLeft = canMoveLeft,
+                            canMoveRight = canMoveRight,
+                            onMoveLeft = {
+                                if (canMoveLeft) {
+                                    val globalFrom = tools.indexOfFirst { it.id.value == tool.id.value }
+                                    val targetTool = filteredTools[index - 1]
+                                    val globalTo = tools.indexOfFirst { it.id.value == targetTool.id.value }
+                                    if (globalFrom != -1 && globalTo != -1) {
+                                        onReorderTools(globalFrom, globalTo)
+                                    }
+                                }
+                            },
+                            onMoveRight = {
+                                if (canMoveRight) {
+                                    val globalFrom = tools.indexOfFirst { it.id.value == tool.id.value }
+                                    val targetTool = filteredTools[index + 1]
+                                    val globalTo = tools.indexOfFirst { it.id.value == targetTool.id.value }
+                                    if (globalFrom != -1 && globalTo != -1) {
+                                        onReorderTools(globalFrom, globalTo)
+                                    }
+                                }
+                            },
+                            onEnterReorderMode = { isReorderMode = true },
                             onLaunch = { onToolClick(tool) }
                         )
                     }
@@ -274,6 +397,12 @@ private fun ExpandableToolGalleryCard(
     tool: ToolInfo,
     columnCount: Int,
     dashboardPaddingDp: Int = 18,
+    isReorderMode: Boolean = false,
+    canMoveLeft: Boolean = false,
+    canMoveRight: Boolean = false,
+    onMoveLeft: () -> Unit = {},
+    onMoveRight: () -> Unit = {},
+    onEnterReorderMode: () -> Unit = {},
     onLaunch: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -302,7 +431,7 @@ private fun ExpandableToolGalleryCard(
     val shape = RoundedCornerShape(14.dp)
 
     Box(modifier = Modifier.fillMaxWidth()) {
-        // 1. Clean Liquid Glass Depth Shadow (No duplicate border strokes!)
+        // 1. Clean Liquid Glass Depth Shadow
         Box(
             modifier = Modifier
                 .matchParentSize()
@@ -311,7 +440,7 @@ private fun ExpandableToolGalleryCard(
                 .background(Color(0x50030712))
         )
 
-        // 2. Main Frosted Acrylic Glass Layer with Single Radiant Rainbow Border
+        // 2. Main Frosted Acrylic Glass Layer
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -319,13 +448,16 @@ private fun ExpandableToolGalleryCard(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            if (isExpanded) accentColor.copy(alpha = 0.18f) else Color(0x3E1E293B),
+                            if (isReorderMode) Violet.copy(alpha = 0.15f) else if (isExpanded) accentColor.copy(alpha = 0.18f) else Color(0x3E1E293B),
                             Color(0x1D0F172A)
                         )
                     )
                 )
                 .border(
-                    BorderStroke(1.dp, dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush),
+                    BorderStroke(
+                        if (isReorderMode) 1.5.dp else 1.dp,
+                        if (isReorderMode) SolidColor(Violet.copy(alpha = 0.7f)) else dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush
+                    ),
                     shape
                 )
         ) {
@@ -339,7 +471,7 @@ private fun ExpandableToolGalleryCard(
                             listOf(
                                 Color.Transparent,
                                 Color.White.copy(alpha = 0.45f),
-                                Color(0xFF38BDF8).copy(alpha = 0.55f),
+                                (if (isReorderMode) Violet else Color(0xFF38BDF8)).copy(alpha = 0.55f),
                                 Color.Transparent
                             )
                         )
@@ -351,10 +483,16 @@ private fun ExpandableToolGalleryCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onLaunch() }
+                    .clickable {
+                        if (isReorderMode) {
+                            // In reorder mode, tapping card doesn't launch
+                        } else {
+                            onLaunch()
+                        }
+                    }
                     .padding(innerPadding)
             ) {
-                // Top Row: Icon + Name + Modern Animated Chevron Expander
+                // Top Row: Icon + Name + Modern Animated Chevron Expander / Reorder Handle
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -366,7 +504,7 @@ private fun ExpandableToolGalleryCard(
                     ) {
                         ToolIsometricIcon(
                             iconType = iconType,
-                            color = accentColor,
+                            color = if (isReorderMode) Violet else accentColor,
                             size = if (columnCount == 1) 42.dp else if (columnCount == 2) 34.dp else 26.dp
                         )
 
@@ -401,16 +539,32 @@ private fun ExpandableToolGalleryCard(
                         }
                     }
 
-                    // Modern Smooth Chevron Expander
-                    TileExpandChevron(
-                        isExpanded = isExpanded,
-                        accentColor = accentColor,
-                        onClick = { isExpanded = !isExpanded }
-                    )
+                    if (isReorderMode) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Violet.copy(alpha = 0.2f),
+                            border = BorderStroke(1.dp, Violet.copy(alpha = 0.5f))
+                        ) {
+                            Text(
+                                text = "⠿",
+                                color = Violet,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            )
+                        }
+                    } else {
+                        // Modern Smooth Chevron Expander
+                        TileExpandChevron(
+                            isExpanded = isExpanded,
+                            accentColor = accentColor,
+                            onClick = { isExpanded = !isExpanded }
+                        )
+                    }
                 }
 
                 // Short tagline (hidden in 4-column compact mode for cleanliness)
-                if (columnCount <= 3 && !isExpanded) {
+                if (columnCount <= 3 && !isExpanded && !isReorderMode) {
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = definition?.shortTagline ?: tool.description,
@@ -423,9 +577,44 @@ private fun ExpandableToolGalleryCard(
                     )
                 }
 
+                // Reorder Arrow Controls Row (Visible when in Reorder Mode)
+                if (isReorderMode) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Surface(
+                            onClick = onMoveLeft,
+                            enabled = canMoveLeft,
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (canMoveLeft) Violet.copy(alpha = 0.25f) else Color(0x111E293B),
+                            border = BorderStroke(1.dp, if (canMoveLeft) Violet.copy(alpha = 0.6f) else Color(0x22334155)),
+                            modifier = Modifier.weight(1f).height(28.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("◀ Left", color = if (canMoveLeft) Violet else TextSecondary.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        Surface(
+                            onClick = onMoveRight,
+                            enabled = canMoveRight,
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (canMoveRight) Violet.copy(alpha = 0.25f) else Color(0x111E293B),
+                            border = BorderStroke(1.dp, if (canMoveRight) Violet.copy(alpha = 0.6f) else Color(0x22334155)),
+                            modifier = Modifier.weight(1f).height(28.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("Right ▶", color = if (canMoveRight) Violet else TextSecondary.copy(alpha = 0.4f), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+
                 // Expanded Metadata Drawer
                 AnimatedVisibility(
-                    visible = isExpanded,
+                    visible = isExpanded && !isReorderMode,
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically()
                 ) {
@@ -433,7 +622,8 @@ private fun ExpandableToolGalleryCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp)
-                    ) {                        Surface(
+                    ) {
+                        Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = dev.pritam.host.ui.theme.GlassSurfaceDeep,
                             border = BorderStroke(1.dp, dev.pritam.host.ui.theme.GlassBorder),
@@ -504,6 +694,32 @@ private fun ExpandableToolGalleryCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * 3D Isometric Reorder / Drag Icon
+ */
+@Composable
+private fun IsometricReorderIcon(color: Color) {
+    Canvas(modifier = Modifier.size(18.dp)) {
+        val w = size.width
+        val h = size.height
+        val dotRadius = 1.3.dp.toPx()
+
+        // 3x2 dot grid
+        val col1 = w * 0.35f
+        val col2 = w * 0.65f
+        val row1 = h * 0.25f
+        val row2 = h * 0.5f
+        val row3 = h * 0.75f
+
+        drawCircle(color = color, radius = dotRadius, center = Offset(col1, row1))
+        drawCircle(color = color, radius = dotRadius, center = Offset(col2, row1))
+        drawCircle(color = color, radius = dotRadius, center = Offset(col1, row2))
+        drawCircle(color = color, radius = dotRadius, center = Offset(col2, row2))
+        drawCircle(color = color, radius = dotRadius, center = Offset(col1, row3))
+        drawCircle(color = color, radius = dotRadius, center = Offset(col2, row3))
     }
 }
 

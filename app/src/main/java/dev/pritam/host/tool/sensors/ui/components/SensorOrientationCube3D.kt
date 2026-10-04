@@ -15,10 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -77,6 +81,23 @@ fun SensorOrientationCube3D(
     val sinyCosp = 2f * (qw * qz + qx * qy)
     val cosyCosp = 1f - 2f * (qy * qy + qz * qz)
     val yawDeg = Math.toDegrees(atan2(sinyCosp.toDouble(), cosyCosp.toDouble())).toFloat()
+
+    // Smooth Euler angles with physics-based spring animation to eliminate discrete jitter
+    val animRoll by animateFloatAsState(
+        targetValue = rollDeg,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "animRoll"
+    )
+    val animPitch by animateFloatAsState(
+        targetValue = pitchDeg,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "animPitch"
+    )
+    val animYaw by animateFloatAsState(
+        targetValue = yawDeg,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "animYaw"
+    )
 
     Surface(
         shape = RoundedCornerShape(8.dp),
@@ -139,10 +160,10 @@ fun SensorOrientationCube3D(
                         floatArrayOf(-1f, 1f, 1f)
                     )
 
-                    // Convert Euler angles to radians
-                    val pitchRad = Math.toRadians(pitchDeg.toDouble()).toFloat()
-                    val rollRad = Math.toRadians(rollDeg.toDouble()).toFloat()
-                    val yawRad = Math.toRadians(yawDeg.toDouble()).toFloat()
+                    // Convert animated Euler angles to radians
+                    val pitchRad = Math.toRadians(animPitch.toDouble()).toFloat()
+                    val rollRad = Math.toRadians(animRoll.toDouble()).toFloat()
+                    val yawRad = Math.toRadians(animYaw.toDouble()).toFloat()
 
                     val cosP = cos(pitchRad)
                     val sinP = sin(pitchRad)

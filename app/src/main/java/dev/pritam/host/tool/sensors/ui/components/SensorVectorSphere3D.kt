@@ -12,10 +12,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -53,16 +57,32 @@ fun SensorVectorSphere3D(
     unit: String = "m/s²",
     modifier: Modifier = Modifier
 ) {
-    val x = rawValues?.getOrElse(0) { 0f } ?: 0f
-    val y = rawValues?.getOrElse(1) { 0f } ?: 0f
-    val z = rawValues?.getOrElse(2) { 0f } ?: 9.81f
+    val rawX = rawValues?.getOrElse(0) { 0f } ?: 0f
+    val rawY = rawValues?.getOrElse(1) { 0f } ?: 0f
+    val rawZ = rawValues?.getOrElse(2) { 0f } ?: 9.81f
 
-    val magnitude = sqrt(x * x + y * y + z * z)
+    val animX by animateFloatAsState(
+        targetValue = rawX,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "animX"
+    )
+    val animY by animateFloatAsState(
+        targetValue = rawY,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "animY"
+    )
+    val animZ by animateFloatAsState(
+        targetValue = rawZ,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "animZ"
+    )
+
+    val magnitude = sqrt(animX * animX + animY * animY + animZ * animZ)
     val gForce = magnitude / 9.80665f
 
-    // Pitch and Roll calculation relative to gravity
-    val pitchDeg = Math.toDegrees(atan2(y.toDouble(), sqrt((x * x + z * z).toDouble()))).toFloat()
-    val rollDeg = Math.toDegrees(atan2(-x.toDouble(), z.toDouble())).toFloat()
+    // Pitch and Roll calculation relative to gravity (smoothed)
+    val pitchDeg = Math.toDegrees(atan2(animY.toDouble(), sqrt((animX * animX + animZ * animZ).toDouble()))).toFloat()
+    val rollDeg = Math.toDegrees(atan2(-animX.toDouble(), animZ.toDouble())).toFloat()
 
     val forceColor = when {
         gForce > 2.2f -> Rose
@@ -173,8 +193,8 @@ fun SensorVectorSphere3D(
                     val maxNorm = 19.6f // ~2G max scale
                     val vectorLen = (magnitude / maxNorm).coerceIn(0.1f, 1f) * radius
 
-                    // Vector angle on 2D projection
-                    val vecAngle = atan2(-y.toDouble(), x.toDouble()).toFloat()
+                    // Vector angle on 2D projection (smoothed)
+                    val vecAngle = atan2(-animY.toDouble(), animX.toDouble()).toFloat()
                     val tipX = cx + cos(vecAngle) * vectorLen
                     val tipY = cy + sin(vecAngle) * vectorLen
 

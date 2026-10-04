@@ -14,10 +14,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -65,6 +72,20 @@ fun SensorCompassRose(
         if (deg < 0) deg += 360f
         deg
     }
+
+    // Continuous unwrapped heading to avoid 360°/0° spin glitches during spring interpolation
+    var continuousHeading by remember { mutableFloatStateOf(headingDeg) }
+    LaunchedEffect(headingDeg) {
+        val diff = (headingDeg - continuousHeading + 180f) % 360f - 180f
+        val shortestDiff = if (diff < -180f) diff + 360f else diff
+        continuousHeading += shortestDiff
+    }
+
+    val animHeading by animateFloatAsState(
+        targetValue = continuousHeading,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = Spring.DampingRatioNoBouncy),
+        label = "animHeading"
+    )
 
     // Magnitude of magnetic flux in microteslas (µT)
     val magnitude = remember(x, y, z) {
@@ -150,8 +171,8 @@ fun SensorCompassRose(
                         style = Stroke(width = 1.dp.toPx())
                     )
 
-                    // Tick marks around dial (rotate relative to heading)
-                    rotate(-headingDeg, pivot = center) {
+                    // Tick marks around dial (rotate smoothly relative to heading)
+                    rotate(-animHeading, pivot = center) {
                         for (angle in 0 until 360 step 15) {
                             val isMajor = angle % 90 == 0
                             val isMedium = angle % 30 == 0

@@ -9,7 +9,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -166,40 +165,6 @@ fun LogViewerScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // Quick Operation & Unknown Type Preset Chips
-            val quickPresets = listOf(
-                "All" to "",
-                "📁 File Ops" to "FILE OPERATION",
-                "📡 NFC Ops" to "NFC OPERATION",
-                "📋 Clipboard" to "CLIPBOARD OPERATION",
-                "⚠️ Unknown Types" to "UNKNOWN DATA TYPE"
-            )
-            val presetScroll = rememberScrollState()
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(presetScroll),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                quickPresets.forEach { (label, query) ->
-                    val isSelected = filterState.searchQuery == query || (query.isEmpty() && filterState.searchQuery.isEmpty())
-                    val chipColor = when {
-                        label.contains("Unknown") -> Color(0xFFF59E0B)
-                        label.contains("File") -> Cyan
-                        label.contains("NFC") -> Violet
-                        label.contains("Clipboard") -> Color(0xFFFBBF24)
-                        else -> TextSecondary
-                    }
-                    FilterChipBadge(
-                        label = label,
-                        isSelected = isSelected,
-                        color = chipColor,
-                        onClick = { viewModel.setSearchQuery(query) }
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(10.dp))
 
             // 3. Multiselect Dropdown Filter Controls (Levels & Tools)
             Row(

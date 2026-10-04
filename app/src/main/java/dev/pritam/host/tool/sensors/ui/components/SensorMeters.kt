@@ -2,9 +2,12 @@ package dev.pritam.host.tool.sensors.ui.components
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -65,6 +68,10 @@ fun SensorGimbalRings(
     val wy = rawValues?.getOrNull(1) ?: 0f // rad/s Roll rate
     val wz = rawValues?.getOrNull(2) ?: 0f // rad/s Yaw rate
 
+    val animWx by animateFloatAsState(targetValue = wx, animationSpec = spring(Spring.StiffnessMediumLow, Spring.DampingRatioNoBouncy), label = "animWx")
+    val animWy by animateFloatAsState(targetValue = wy, animationSpec = spring(Spring.StiffnessMediumLow, Spring.DampingRatioNoBouncy), label = "animWy")
+    val animWz by animateFloatAsState(targetValue = wz, animationSpec = spring(Spring.StiffnessMediumLow, Spring.DampingRatioNoBouncy), label = "animWz")
+
     val totalAngularRate = remember(wx, wy, wz) {
         sqrt(wx * wx + wy * wy + wz * wz)
     }
@@ -114,7 +121,7 @@ fun SensorGimbalRings(
 
                     // Outer Yaw Ring (Violet) - wz
                     val rZ = size.width * 0.44f
-                    val arcLenZ = (wz * 50f).coerceIn(-180f, 180f)
+                    val arcLenZ = (animWz * 50f).coerceIn(-180f, 180f)
                     drawCircle(
                         color = GlassBorder,
                         radius = rZ,
@@ -139,7 +146,7 @@ fun SensorGimbalRings(
                         size = Size(rX * 2, rX * 1.2f),
                         style = Stroke(width = 1.5.dp.toPx())
                     )
-                    val arcLenX = (wx * 50f).coerceIn(-180f, 180f)
+                    val arcLenX = (animWx * 50f).coerceIn(-180f, 180f)
                     drawArc(
                         color = Cyan,
                         startAngle = 0f,
@@ -158,7 +165,7 @@ fun SensorGimbalRings(
                         size = Size(rY * 1.2f, rY * 2),
                         style = Stroke(width = 1.5.dp.toPx())
                     )
-                    val arcLenY = (wy * 50f).coerceIn(-180f, 180f)
+                    val arcLenY = (animWy * 50f).coerceIn(-180f, 180f)
                     drawArc(
                         color = Emerald,
                         startAngle = -90f,
@@ -249,6 +256,12 @@ fun SensorLuxGauge(
         }
     }
 
+    val animFraction by animateFloatAsState(
+        targetValue = fraction,
+        animationSpec = spring(Spring.StiffnessMediumLow, Spring.DampingRatioNoBouncy),
+        label = "animFraction"
+    )
+
     val luxTier = remember(lux) {
         when {
             lux < 10 -> "Dark / Night"
@@ -319,8 +332,8 @@ fun SensorLuxGauge(
                         style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
                     )
 
-                    // Active Illuminance Arc (Gradient Amber -> Yellow)
-                    val activeSweep = sweepRange * fraction
+                    // Active Illuminance Arc (Gradient Amber -> Yellow, smoothly animated)
+                    val activeSweep = sweepRange * animFraction
                     if (activeSweep > 0f) {
                         drawArc(
                             brush = Brush.sweepGradient(
@@ -407,6 +420,12 @@ fun SensorAltimeterDial(
         (44330.0 * (1.0 - Math.pow(ratio, 0.190284))).toFloat()
     }
 
+    val animAltitude by animateFloatAsState(
+        targetValue = estimatedAltitudeMeters,
+        animationSpec = spring(Spring.StiffnessMediumLow, Spring.DampingRatioNoBouncy),
+        label = "animAltitude"
+    )
+
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = GlassSurfaceDeep,
@@ -454,8 +473,8 @@ fun SensorAltimeterDial(
                     // Bezel
                     drawCircle(color = GlassBorder, radius = radius, center = center, style = Stroke(2.dp.toPx()))
 
-                    // Altitude pointer angle: 0m = top (-90°), rotates 360° per 1000m
-                    val altAngleDeg = -90f + (estimatedAltitudeMeters % 1000f) * 0.36f
+                    // Altitude pointer angle: 0m = top (-90°), rotates 360° per 1000m (smoothly animated)
+                    val altAngleDeg = -90f + (animAltitude % 1000f) * 0.36f
                     val altRad = Math.toRadians(altAngleDeg.toDouble()).toFloat()
 
                     // Needle
@@ -651,6 +670,12 @@ fun SensorThermalGauge(
     val maxVal = if (isHumidity) 100f else 60f
     val fraction = ((value - minVal) / (maxVal - minVal)).coerceIn(0f, 1f)
 
+    val animFraction by animateFloatAsState(
+        targetValue = fraction,
+        animationSpec = spring(Spring.StiffnessMediumLow, Spring.DampingRatioNoBouncy),
+        label = "thermalFraction"
+    )
+
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = GlassSurfaceDeep,
@@ -695,7 +720,7 @@ fun SensorThermalGauge(
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(fraction)
+                        .fillMaxWidth(animFraction.coerceIn(0.01f, 1f))
                         .height(16.dp)
                         .background(
                             brush = if (isHumidity) {

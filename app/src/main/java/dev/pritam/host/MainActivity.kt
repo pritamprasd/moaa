@@ -23,6 +23,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
 
+        // Setup global crash handler to record any unhandled crash in AppLogHub
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                dev.pritam.host.logging.AppLogHub.log(
+                    toolId = "system-crash",
+                    toolName = "System Crash Handler",
+                    level = dev.pritam.host.logging.LogLevel.ERROR,
+                    tag = "UncaughtException",
+                    message = "FATAL CRASH on thread '${thread.name}': ${throwable.message ?: throwable.javaClass.simpleName}",
+                    throwable = throwable
+                )
+            } catch (_: Throwable) {}
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
+
         // Initialize App Settings persistence and values
         dev.pritam.host.settings.AppSettingsManager.init(applicationContext)
 

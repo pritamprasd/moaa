@@ -17,6 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -97,24 +98,35 @@ class SensorsManager(context: Context) {
     }
 
     fun setUpdateInterval(interval: UpdateInterval) {
-        _updateInterval.value = interval
-        AppLogHub.log(
-            toolId = "sensors",
-            toolName = "Sensors Live",
-            level = LogLevel.INFO,
-            tag = "Sampling",
-            message = "SENSORS RATE [INTERVAL CHANGE] Set sampling interval to ${interval.displayName}"
-        )
+        try {
+            _updateInterval.value = interval
+            AppLogHub.log(
+                toolId = "sensors",
+                toolName = "Sensors Live",
+                level = LogLevel.INFO,
+                tag = "Sampling",
+                message = "SENSORS RATE [INTERVAL CHANGE] Set sampling interval to ${interval.displayName}"
+            )
 
-        if (interval == UpdateInterval.PAUSED) {
-            stopAllSensors()
-        } else {
-            // Re-register active sensors with appropriate sampling rate
-            val currentActive = _activeSensorTypes.value
-            if (currentActive.isNotEmpty()) {
+            if (interval == UpdateInterval.PAUSED) {
                 stopAllSensors()
-                startStreamingSensors(currentActive)
+            } else {
+                // Re-register active sensors with appropriate sampling rate
+                val currentActive = _activeSensorTypes.value
+                if (currentActive.isNotEmpty()) {
+                    stopAllSensors()
+                    startStreamingSensors(currentActive)
+                }
             }
+        } catch (t: Throwable) {
+            AppLogHub.log(
+                toolId = "sensors",
+                toolName = "Sensors Live",
+                level = LogLevel.ERROR,
+                tag = "RateChange",
+                message = "Failed to switch sensor update interval to ${interval.displayName}: ${t.message ?: t.javaClass.simpleName}",
+                throwable = t
+            )
         }
     }
 
@@ -123,8 +135,9 @@ class SensorsManager(context: Context) {
         val interval = _updateInterval.value
         if (interval == UpdateInterval.PAUSED) return
 
+        // Use SENSOR_DELAY_GAME (~20ms / 50Hz) for live mode to prevent native sensor hardware flooding
         val samplingRateUs = when (interval) {
-            UpdateInterval.LIVE_FAST -> SensorManager.SENSOR_DELAY_FASTEST
+            UpdateInterval.LIVE_FAST -> SensorManager.SENSOR_DELAY_GAME
             UpdateInterval.EVERY_1_SEC -> SensorManager.SENSOR_DELAY_NORMAL
             UpdateInterval.EVERY_2_SEC -> SensorManager.SENSOR_DELAY_UI
             UpdateInterval.EVERY_5_SEC -> SensorManager.SENSOR_DELAY_NORMAL
@@ -138,33 +151,57 @@ class SensorsManager(context: Context) {
                     val listener = object : SensorEventListener {
                         override fun onSensorChanged(event: SensorEvent?) {
                             if (event == null) return
-                            val now = System.currentTimeMillis()
-                            val minInterval = interval.delayMs
+                            try {
+                                val now = System.currentTimeMillis()
+                                // Throttle live mode to ~50 FPS (20ms) max to ensure 60/120 FPS UI smoothness without frame drops
+                                val minInterval = if (interval == UpdateInterval.LIVE_FAST) 20L else interval.delayMs
 
-                            val lastTime = lastEmissionTimes[type] ?: 0L
-                            if (minInterval <= 0L || now - lastTime >= minInterval) {
-                                lastEmissionTimes[type] = now
-                                val timeFormatted = timeFormat.format(Date(now))
-                                val reading = SensorTelemetryFormatter.formatReading(
-                                    type = type,
-                                    values = event.values,
-                                    accuracy = event.accuracy,
-                                    timeFormatted = timeFormatted
-                                )
+                                val lastTime = lastEmissionTimes[type] ?: 0L
+                                if (minInterval <= 0L || now - lastTime >= minInterval) {
+                                    lastEmissionTimes[type] = now
+                                    val timeFormatted = timeFormat.format(Date(now))
+                                    // Clone values array immediately to avoid thread-safety issues with Android's internal buffer reuse
+                                    val safeValues = event.values.clone()
+                                    val reading = SensorTelemetryFormatter.formatReading(
+                                        type = type,
+                                        values = safeValues,
+                                        accuracy = event.accuracy,
+                                        timeFormatted = timeFormatted
+                                    )
 
-                                scope.launch {
-                                    val currentMap = _sensorReadings.value.toMutableMap()
-                                    currentMap[type] = reading
-                                    _sensorReadings.value = currentMap
+                                    // Atomic lock-free StateFlow update avoids spawning thousands of unconstrained coroutines
+                                    _sensorReadings.update { currentMap ->
+                                        currentMap + (type to reading)
+                                    }
                                 }
+                            } catch (t: Throwable) {
+                                AppLogHub.log(
+                                    toolId = "sensors",
+                                    toolName = "Sensors Live",
+                                    level = LogLevel.ERROR,
+                                    tag = "SensorEvent",
+                                    message = "CRASH / ERROR in sensor stream for type $type: ${t.message ?: t.javaClass.simpleName}",
+                                    throwable = t
+                                )
                             }
                         }
 
                         override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
                     }
 
-                    sm.registerListener(listener, sensor, samplingRateUs)
-                    sensorListeners[type] = listener
+                    try {
+                        sm.registerListener(listener, sensor, samplingRateUs)
+                        sensorListeners[type] = listener
+                    } catch (t: Throwable) {
+                        AppLogHub.log(
+                            toolId = "sensors",
+                            toolName = "Sensors Live",
+                            level = LogLevel.ERROR,
+                            tag = "RegisterListener",
+                            message = "Failed to register sensor listener for type $type: ${t.message ?: t.javaClass.simpleName}",
+                            throwable = t
+                        )
+                    }
                 }
             }
         }

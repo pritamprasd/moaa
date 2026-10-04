@@ -54,7 +54,9 @@ import kotlin.math.min
 
 enum class HistoryWindow(val label: String, val durationMs: Long) {
     LAST_30_SEC("30s", 30_000L),
-    LAST_1_MIN("1m", 60_000L)
+    LAST_1_MIN("1m", 60_000L),
+    LAST_5_MIN("5m", 300_000L),
+    LAST_30_MIN("30m", 1_800_000L)
 }
 
 private val CHANNEL_COLORS = listOf(
@@ -262,6 +264,8 @@ fun SensorStreamingChart(
                             var first = true
                             var startX = 0f
                             var lastX = 0f
+                            var prevX = 0f
+                            var prevY = 0f
 
                             visiblePoints.forEach { pt ->
                                 val channelValue = pt.values.getOrNull(chIdx) ?: return@forEach
@@ -275,15 +279,24 @@ fun SensorStreamingChart(
                                     fillPath.moveTo(x, h)
                                     fillPath.lineTo(x, y)
                                     startX = x
+                                    prevX = x
+                                    prevY = y
                                     first = false
                                 } else {
-                                    strokePath.lineTo(x, y)
-                                    fillPath.lineTo(x, y)
+                                    // Smooth quadratic Bezier spline through midpoints
+                                    val midX = (prevX + x) / 2f
+                                    val midY = (prevY + y) / 2f
+                                    strokePath.quadraticTo(prevX, prevY, midX, midY)
+                                    fillPath.quadraticTo(prevX, prevY, midX, midY)
+                                    prevX = x
+                                    prevY = y
                                 }
                                 lastX = x
                             }
 
                             if (!first) {
+                                strokePath.lineTo(prevX, prevY)
+                                fillPath.lineTo(prevX, prevY)
                                 fillPath.lineTo(lastX, h)
                                 fillPath.close()
 

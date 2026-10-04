@@ -3,9 +3,7 @@ package dev.pritam.host.settings.ui
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -17,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,21 +24,36 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.GridView
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Opacity
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.SmartToy
+import androidx.compose.material.icons.outlined.SpaceDashboard
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,7 +61,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -57,7 +70,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +80,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -80,7 +93,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.pritam.ghostagent.GhostAgentManager
 import dev.pritam.host.ftp.ui.components.GlassBackButton
-import dev.pritam.host.ftp.ui.components.IsometricCard
 import dev.pritam.host.ftp.ui.components.LiquidGlassButton
 import dev.pritam.host.ftp.ui.components.RainbowGlassBorderBrush
 import dev.pritam.host.ftp.ui.components.liquidGlassTextFieldColors
@@ -91,8 +103,6 @@ import dev.pritam.host.ui.theme.Amber
 import dev.pritam.host.ui.theme.Cyan
 import dev.pritam.host.ui.theme.Emerald
 import dev.pritam.host.ui.theme.GlassBorder
-import dev.pritam.host.ui.theme.GlassBorderHighlight
-import dev.pritam.host.ui.theme.GlassSurface
 import dev.pritam.host.ui.theme.GlassSurfaceDeep
 import dev.pritam.host.ui.theme.GlassSurfaceElevated
 import dev.pritam.host.ui.theme.Rose
@@ -117,332 +127,1581 @@ fun SettingsScreen(
     val currentOpacity by AppSettingsManager.dialogOpacityPercent.collectAsStateWithLifecycle()
     val currentRetention by AppSettingsManager.logRetentionPolicy.collectAsStateWithLifecycle()
 
-    // ── Persistent Section expanded state (Collapsed by default: false) ────
-    val generalExpanded    by AppSettingsManager.sectionGeneralExpanded.collectAsStateWithLifecycle()
-    val aiExpanded         by AppSettingsManager.sectionAiExpanded.collectAsStateWithLifecycle()
-    val automationExpanded by AppSettingsManager.sectionAutomationExpanded.collectAsStateWithLifecycle()
-    val diagnosticsExpanded by AppSettingsManager.sectionDiagnosticsExpanded.collectAsStateWithLifecycle()
-    val aboutExpanded      by AppSettingsManager.sectionAboutExpanded.collectAsStateWithLifecycle()
+    // ── Row inline expansion states ──────────────────────────────────────────
+    var accentExpanded by remember { mutableStateOf(false) }
+    var galleryExpanded by remember { mutableStateOf(false) }
+    var paddingExpanded by remember { mutableStateOf(false) }
+    var opacityExpanded by remember { mutableStateOf(false) }
+    var shortcutsExpanded by remember { mutableStateOf(false) }
+    var llmExpanded by remember { mutableStateOf(false) }
+    var mcpExpanded by remember { mutableStateOf(false) }
+    var ghostExpanded by remember { mutableStateOf(false) }
+    var retentionMenuExpanded by remember { mutableStateOf(false) }
+
+    // Dialog state for info dialogs
+    var activeInfoDialog by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var showCreatePaletteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
-        containerColor = Color.Transparent,
+        containerColor = Color(0xFF090A0E),
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "SETTINGS",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        letterSpacing = 1.sp
-                    )
-                },
-                navigationIcon = { GlassBackButton(onClick = onNavigateBack) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                GlassBackButton(onClick = onNavigateBack)
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = "Settings & Preferences",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFF8FAFC),
+                    fontSize = 20.sp,
+                    letterSpacing = (-0.2).sp
+                )
+            }
         }
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 40.dp)
         ) {
 
-            // ══ GENERAL ══════════════════════════════════════════════════════
-            settingsSection(
-                title = "General",
-                emoji = "⚙",
-                accentColor = currentPalette.primary,
-                isExpanded = generalExpanded,
-                onToggle = { AppSettingsManager.setSectionGeneralExpanded(!generalExpanded) }
-            ) {
-                item {
-                    SystemManualSettingsCard(onOpenSystemManual = onOpenSystemManual)
-                }
-                item {
-                    AccentPaletteSettingsCard(
-                        currentPalette = currentPalette,
-                        customPalettes = customPalettes,
-                        onSelectPalette = {
-                            AppSettingsManager.setAccentPalette(it)
-                            Toast.makeText(context, "Accent theme set to ${it.displayName}", Toast.LENGTH_SHORT).show()
+            // ═════════════════════════════════════════════════════════════════
+            // 1. DISPLAY & THEME
+            // ═════════════════════════════════════════════════════════════════
+            item(key = "title_display") {
+                SettingsSectionTitle(title = "Display & Theme")
+            }
+
+            item(key = "group_display") {
+                SettingsGroupCard {
+                    // Row 1: Accent Color Theme
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Palette,
+                        title = "Accent Color Theme",
+                        subtitle = currentPalette.displayName,
+                        iconTint = currentPalette.primary,
+                        iconBackgroundColor = currentPalette.primary.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Accent Color Theme" to
+                                "Choose from 5 curated minimalist dark palettes tuned for high contrast and minimal glare, or tap (+) to create custom tri-color combinations with instant system-wide application."
                         },
-                        onCreateCustomPalette = { name, primary, secondary, tertiary ->
-                            val created = AppSettingsManager.addCustomPalette(name, primary, secondary, tertiary)
-                            Toast.makeText(context, "Created & applied ${created.displayName}", Toast.LENGTH_SHORT).show()
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Box(Modifier.size(10.dp).clip(CircleShape).background(currentPalette.primary))
+                                    Box(Modifier.size(10.dp).clip(CircleShape).background(currentPalette.secondary))
+                                    Box(Modifier.size(10.dp).clip(CircleShape).background(currentPalette.tertiary))
+                                }
+                                SettingChevron(isExpanded = accentExpanded)
+                            }
                         },
-                        onDeleteCustomPalette = { id ->
-                            AppSettingsManager.deleteCustomPalette(id)
-                            Toast.makeText(context, "Custom palette removed", Toast.LENGTH_SHORT).show()
-                        }
+                        onClick = { accentExpanded = !accentExpanded }
                     )
-                }
-                item {
-                    GalleryLayoutSettingsCard(
-                        currentColumns = currentColumns,
-                        onSelectColumns = {
-                            AppSettingsManager.setGalleryColumnCount(it)
-                            Toast.makeText(context, "Gallery layout set to $it column${if (it > 1) "s" else ""}", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-                }
-                item {
-                    DashboardPaddingSettingsCard(
-                        currentPadding = currentPadding,
-                        onPaddingChange = {
-                            AppSettingsManager.setDashboardPadding(it)
-                        }
-                    )
-                }
-                item {
-                    DialogOpacitySettingsCard(
-                        currentOpacity = currentOpacity,
-                        onOpacityChange = {
-                            AppSettingsManager.setDialogOpacity(it)
-                        }
-                    )
-                }
-                item {
-                    HomescreenShortcutsCard(context = context)
-                }
-            }
 
-            // ══ AI & LLM ═════════════════════════════════════════════════════
-            settingsSection(
-                title = "AI & LLM",
-                emoji = "🤖",
-                accentColor = Violet,
-                isExpanded = aiExpanded,
-                onToggle = { AppSettingsManager.setSectionAiExpanded(!aiExpanded) }
-            ) {
-                item { DefaultLlmSettingsCard(context = context) }
-                item { McpServersSettingsCard(context = context) }
-                item { LlmGatewaySettingsCard(context = context) }
-            }
+                    // Inline expand: Accent Theme Selector & Custom Creator
+                    AnimatedVisibility(
+                        visible = accentExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            var dropdownMenuExpanded by remember { mutableStateOf(false) }
 
-            // ══ AUTOMATION (GHOST AGENT) ══════════════════════════════════════
-            settingsSection(
-                title = "Automation",
-                emoji = "👻",
-                accentColor = Violet,
-                isExpanded = automationExpanded,
-                onToggle = { AppSettingsManager.setSectionAutomationExpanded(!automationExpanded) }
-            ) {
-                item { GhostAgentSettingsCard(context = context) }
-            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // Dropdown selector trigger
+                                Box(modifier = Modifier.weight(1f)) {
+                                    Surface(
+                                        onClick = { dropdownMenuExpanded = true },
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = Color(0xFF161822),
+                                        border = BorderStroke(1.dp, Color(0xFF242735)),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 12.dp, vertical = 9.dp),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                                                    Box(Modifier.size(10.dp).clip(CircleShape).background(currentPalette.primary))
+                                                    Box(Modifier.size(10.dp).clip(CircleShape).background(currentPalette.secondary))
+                                                    Box(Modifier.size(10.dp).clip(CircleShape).background(currentPalette.tertiary))
+                                                }
+                                                Text(
+                                                    text = currentPalette.displayName,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color(0xFFF1F5F9),
+                                                    fontWeight = FontWeight.Medium,
+                                                    fontSize = 12.sp
+                                                )
+                                            }
+                                            Icon(
+                                                imageVector = Icons.Default.KeyboardArrowDown,
+                                                contentDescription = "Expand",
+                                                tint = Color(0xFF94A3B8),
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
 
-            // ══ DIAGNOSTICS ═══════════════════════════════════════════════════
-            settingsSection(
-                title = "Diagnostics",
-                emoji = "🔬",
-                accentColor = Amber,
-                isExpanded = diagnosticsExpanded,
-                onToggle = { AppSettingsManager.setSectionDiagnosticsExpanded(!diagnosticsExpanded) }
-            ) {
-                item {
-                    DiagnosticsSettingsCard(
-                        currentRetention = currentRetention,
-                        onSelectRetention = { policy ->
-                            AppSettingsManager.setLogRetentionPolicy(policy)
-                            val purged = AppLogHub.pruneExpiredLogs(policy)
-                            val msg = if (purged > 0) "Retention: ${policy.displayName} ($purged old logs purged)"
-                                      else "Retention: ${policy.displayName}"
-                            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    DropdownMenu(
+                                        expanded = dropdownMenuExpanded,
+                                        onDismissRequest = { dropdownMenuExpanded = false },
+                                        modifier = Modifier
+                                            .background(Color(0xFF14161F))
+                                            .border(1.dp, Color(0xFF222531), RoundedCornerShape(8.dp))
+                                    ) {
+                                        Text(
+                                            text = "PRESETS",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = TextTertiary,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            letterSpacing = 1.sp,
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                        )
+
+                                        AccentPalette.builtInPalettes.forEach { palette ->
+                                            val isSelected = palette.id == currentPalette.id
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.fillMaxWidth()
+                                                    ) {
+                                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                            Box(Modifier.size(10.dp).clip(CircleShape).background(palette.primary))
+                                                            Box(Modifier.size(10.dp).clip(CircleShape).background(palette.secondary))
+                                                            Box(Modifier.size(10.dp).clip(CircleShape).background(palette.tertiary))
+                                                        }
+                                                        Spacer(Modifier.width(8.dp))
+                                                        Text(
+                                                            text = palette.displayName,
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                            color = if (isSelected) palette.primary else TextPrimary,
+                                                            fontSize = 12.sp
+                                                        )
+                                                    }
+                                                },
+                                                trailingIcon = {
+                                                    if (isSelected) {
+                                                        Text(
+                                                            text = "✓",
+                                                            color = palette.primary,
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 12.sp
+                                                        )
+                                                    }
+                                                },
+                                                onClick = {
+                                                    AppSettingsManager.setAccentPalette(palette)
+                                                    dropdownMenuExpanded = false
+                                                    Toast.makeText(context, "Accent set to ${palette.displayName}", Toast.LENGTH_SHORT).show()
+                                                }
+                                            )
+                                        }
+
+                                        if (customPalettes.isNotEmpty()) {
+                                            HorizontalDivider(
+                                                color = Color(0xFF222531),
+                                                thickness = 1.dp,
+                                                modifier = Modifier.padding(vertical = 4.dp)
+                                            )
+                                            Text(
+                                                text = "CUSTOM COMBINATIONS",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = currentPalette.primary,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                letterSpacing = 1.sp,
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                                            )
+
+                                            customPalettes.forEach { palette ->
+                                                val isSelected = palette.id == currentPalette.id
+                                                DropdownMenuItem(
+                                                    text = {
+                                                        Row(
+                                                            verticalAlignment = Alignment.CenterVertically,
+                                                            modifier = Modifier.fillMaxWidth()
+                                                        ) {
+                                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                                                Box(Modifier.size(10.dp).clip(CircleShape).background(palette.primary))
+                                                                Box(Modifier.size(10.dp).clip(CircleShape).background(palette.secondary))
+                                                                Box(Modifier.size(10.dp).clip(CircleShape).background(palette.tertiary))
+                                                            }
+                                                            Spacer(Modifier.width(8.dp))
+                                                            Text(
+                                                                text = palette.displayName,
+                                                                style = MaterialTheme.typography.bodyMedium,
+                                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                                color = if (isSelected) palette.primary else TextPrimary,
+                                                                fontSize = 12.sp
+                                                            )
+                                                        }
+                                                    },
+                                                    trailingIcon = {
+                                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            if (isSelected) {
+                                                                Text("✓", color = palette.primary, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                                                Spacer(Modifier.width(8.dp))
+                                                            }
+                                                            IconButton(
+                                                                onClick = {
+                                                                    AppSettingsManager.deleteCustomPalette(palette.id)
+                                                                    Toast.makeText(context, "Custom palette removed", Toast.LENGTH_SHORT).show()
+                                                                },
+                                                                modifier = Modifier.size(24.dp)
+                                                            ) {
+                                                                Icon(
+                                                                    imageVector = Icons.Default.Delete,
+                                                                    contentDescription = "Delete Custom Palette",
+                                                                    tint = TextSecondary.copy(alpha = 0.6f),
+                                                                    modifier = Modifier.size(14.dp)
+                                                                )
+                                                            }
+                                                        }
+                                                    },
+                                                    onClick = {
+                                                        AppSettingsManager.setAccentPalette(palette)
+                                                        dropdownMenuExpanded = false
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // (+) Button to create custom palette
+                                Surface(
+                                    onClick = { showCreatePaletteDialog = true },
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF161822),
+                                    border = BorderStroke(1.dp, currentPalette.primary.copy(alpha = 0.5f)),
+                                    modifier = Modifier.size(38.dp)
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center,
+                                        modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Create Custom Accent",
+                                            tint = currentPalette.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Quick Swatch Palette Row
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                items(AccentPalette.builtInPalettes) { pal ->
+                                    val isSel = pal.id == currentPalette.id
+                                    Surface(
+                                        onClick = {
+                                            AppSettingsManager.setAccentPalette(pal)
+                                            Toast.makeText(context, "Accent set to ${pal.displayName}", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isSel) pal.primary.copy(alpha = 0.15f) else Color(0xFF161822),
+                                        border = BorderStroke(1.dp, if (isSel) pal.primary else Color(0xFF242735))
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Box(Modifier.size(8.dp).clip(CircleShape).background(pal.primary))
+                                            Text(
+                                                text = pal.displayName,
+                                                fontSize = 11.sp,
+                                                color = if (isSel) pal.primary else Color(0xFF94A3B8),
+                                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsDivider()
+
+                    // Row 2: Gallery Columns
+                    SettingsRowItem(
+                        icon = Icons.Outlined.GridView,
+                        title = "Gallery Columns",
+                        subtitle = "$currentColumns Column${if (currentColumns > 1) "s" else ""}",
+                        iconTint = Cyan,
+                        iconBackgroundColor = Cyan.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Gallery Columns" to
+                                "Configure how tools are arranged on the home dashboard:\n\n• 1 Column: Full-width detailed list\n• 2 Columns: Dual isometric cards (Balanced Default)\n• 3 Columns: Matrix grid for high density\n• 4 Columns: Micro-deck dense tiles"
                         },
-                        onOpenLogViewer = onOpenLogViewer,
-                        onClearLogs = {
-                            AppLogHub.clear()
-                            Toast.makeText(context, "Diagnostic logs cleared", Toast.LENGTH_SHORT).show()
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                (1..4).forEach { cols ->
+                                    val isSel = currentColumns == cols
+                                    Surface(
+                                        onClick = {
+                                            AppSettingsManager.setGalleryColumnCount(cols)
+                                            Toast.makeText(context, "Gallery set to $cols column${if (cols > 1) "s" else ""}", Toast.LENGTH_SHORT).show()
+                                        },
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isSel) Cyan.copy(alpha = 0.2f) else Color(0xFF1B1D26),
+                                        border = BorderStroke(1.dp, if (isSel) Cyan else Color(0xFF262936)),
+                                        modifier = Modifier.size(width = 28.dp, height = 26.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text(
+                                                text = "$cols",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = if (isSel) Cyan else Color(0xFF94A3B8),
+                                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                                fontSize = 11.sp
+                                            )
+                                        }
+                                    }
+                                }
+                                Spacer(Modifier.width(2.dp))
+                                SettingChevron(isExpanded = galleryExpanded)
+                            }
+                        },
+                        onClick = { galleryExpanded = !galleryExpanded }
+                    )
+
+                    // Inline expand: Gallery layout fine slider
+                    AnimatedVisibility(
+                        visible = galleryExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            val layoutDescription = when (currentColumns) {
+                                1 -> "1 Column: Full-width detailed list with expanded descriptions"
+                                2 -> "2 Columns: Dual isometric cards (Balanced Default)"
+                                3 -> "3 Columns: Matrix grid for high density & rapid launch"
+                                4 -> "4 Columns: Micro-deck dense tiles for compact overview"
+                                else -> "$currentColumns Columns Grid"
+                            }
+                            Text(
+                                text = layoutDescription,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF94A3B8),
+                                fontSize = 11.sp
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Slider(
+                                value = currentColumns.toFloat(),
+                                onValueChange = { AppSettingsManager.setGalleryColumnCount(it.toInt().coerceIn(1, 4)) },
+                                valueRange = 1f..4f,
+                                steps = 2,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Cyan,
+                                    activeTrackColor = Cyan,
+                                    inactiveTrackColor = Color(0xFF20222A)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
+                    SettingsDivider()
+
+                    // Row 3: Dashboard Padding
+                    SettingsRowItem(
+                        icon = Icons.Outlined.SpaceDashboard,
+                        title = "Dashboard Padding",
+                        subtitle = "$currentPadding dp",
+                        iconTint = Cyan,
+                        iconBackgroundColor = Cyan.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Dashboard Padding" to
+                                "Adjust outer screen margins and card spacing across the dashboard. Range: 8dp to 32dp."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(text = "$currentPadding dp", color = Cyan)
+                                SettingChevron(isExpanded = paddingExpanded)
+                            }
+                        },
+                        onClick = { paddingExpanded = !paddingExpanded }
+                    )
+
+                    // Inline expand: Dashboard padding slider & quick presets
+                    AnimatedVisibility(
+                        visible = paddingExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Slider(
+                                value = currentPadding.toFloat(),
+                                onValueChange = { AppSettingsManager.setDashboardPadding(it.toInt()) },
+                                valueRange = 8f..32f,
+                                steps = 11,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Cyan,
+                                    activeTrackColor = Cyan,
+                                    inactiveTrackColor = Color(0xFF20222A)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(
+                                    10 to "Compact (10dp)",
+                                    18 to "Default (18dp)",
+                                    26 to "Spacious (26dp)"
+                                ).forEach { (dpValue, label) ->
+                                    val isSel = currentPadding == dpValue
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isSel) Cyan.copy(alpha = 0.2f) else Color(0xFF161822),
+                                        border = BorderStroke(1.dp, if (isSel) Cyan else Color(0xFF242735)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .clickable { AppSettingsManager.setDashboardPadding(dpValue) }
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSel) Cyan else Color(0xFF94A3B8),
+                                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 10.sp,
+                                            modifier = Modifier.padding(vertical = 6.dp).fillMaxWidth(),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsDivider()
+
+                    // Row 4: Dialog Opacity
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Opacity,
+                        title = "Dialog Opacity",
+                        subtitle = "$currentOpacity%",
+                        iconTint = Cyan,
+                        iconBackgroundColor = Cyan.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Dialog Opacity" to
+                                "Controls background bleed-through for dialogs and popups. Range: 50% to 100% opacity."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(text = "$currentOpacity%", color = Cyan)
+                                SettingChevron(isExpanded = opacityExpanded)
+                            }
+                        },
+                        onClick = { opacityExpanded = !opacityExpanded }
+                    )
+
+                    // Inline expand: Dialog Opacity slider, quick presets & preview box
+                    AnimatedVisibility(
+                        visible = opacityExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 16.dp, vertical = 12.dp)
+                        ) {
+                            Slider(
+                                value = currentOpacity.toFloat(),
+                                onValueChange = { AppSettingsManager.setDialogOpacity(it.toInt()) },
+                                valueRange = 50f..100f,
+                                steps = 9,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Cyan,
+                                    activeTrackColor = Cyan,
+                                    inactiveTrackColor = Color(0xFF20222A)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                listOf(
+                                    70 to "Frost (70%)",
+                                    94 to "Focus (94%)",
+                                    100 to "Solid (100%)"
+                                ).forEach { (opacityVal, label) ->
+                                    val isSel = currentOpacity == opacityVal
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = if (isSel) Cyan.copy(alpha = 0.2f) else Color(0xFF161822),
+                                        border = BorderStroke(1.dp, if (isSel) Cyan else Color(0xFF242735)),
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(6.dp))
+                                            .clickable { AppSettingsManager.setDialogOpacity(opacityVal) }
+                                    ) {
+                                        Text(
+                                            text = label,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isSel) Cyan else Color(0xFF94A3B8),
+                                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                            fontSize = 10.sp,
+                                            modifier = Modifier.padding(vertical = 6.dp).fillMaxWidth(),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            // Live Preview Box
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = AppSettingsManager.getDialogSurfaceColor(currentOpacity),
+                                border = BorderStroke(1.dp, Color(0xFF222531)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = "PREVIEW: Dialog Content Clarity",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Color(0xFFF1F5F9),
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp
+                                        )
+                                        Text(
+                                            text = "Background visibility is dimmed according to this setting",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFF94A3B8),
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = Cyan.copy(alpha = 0.2f),
+                                        border = BorderStroke(1.dp, Cyan)
+                                    ) {
+                                        Text(
+                                            text = "OK",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = Cyan,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 10.sp,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ═════════════════════════════════════════════════════════════════
+            // 2. TOOLS & SHORTCUTS
+            // ═════════════════════════════════════════════════════════════════
+            item(key = "title_tools") {
+                SettingsSectionTitle(title = "Tools & Shortcuts")
+            }
+
+            item(key = "group_tools") {
+                val tools = dev.pritam.host.config.ToolRegistryConfig.INSTALLED_TOOLS
+
+                SettingsGroupCard {
+                    // Row 1: Homescreen Shortcuts
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Apps,
+                        title = "Homescreen Shortcuts",
+                        subtitle = "Pin 1-tap direct launch shortcuts",
+                        iconTint = Cyan,
+                        iconBackgroundColor = Cyan.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Homescreen Shortcuts" to
+                                "Tap any tool icon below to pin a 1-tap direct launch shortcut to your Android launcher home screen."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(text = "${tools.size} TOOLS", color = Cyan)
+                                SettingChevron(isExpanded = shortcutsExpanded)
+                            }
+                        },
+                        onClick = { shortcutsExpanded = !shortcutsExpanded }
+                    )
+
+                    // Inline expand: Homescreen launcher shortcuts grid
+                    AnimatedVisibility(
+                        visible = shortcutsExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            val chunkedTools = tools.chunked(3)
+                            chunkedTools.forEach { rowTools ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    rowTools.forEach { tool ->
+                                        val accentColor = Color(tool.accentColorHex)
+                                        val shape = RoundedCornerShape(10.dp)
+                                        Surface(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .height(110.dp)
+                                                .clip(shape)
+                                                .clickable {
+                                                    dev.pritam.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, tool)
+                                                }
+                                                .border(BorderStroke(1.dp, accentColor.copy(alpha = 0.35f)), shape),
+                                            color = Color(0xFF14161F),
+                                            shape = shape
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .padding(horizontal = 6.dp, vertical = 10.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally,
+                                                verticalArrangement = Arrangement.Center
+                                            ) {
+                                                Surface(
+                                                    modifier = Modifier.size(36.dp),
+                                                    shape = RoundedCornerShape(8.dp),
+                                                    color = accentColor.copy(alpha = 0.15f),
+                                                    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.4f))
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier.fillMaxSize(),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(text = tool.emoji, fontSize = 18.sp)
+                                                    }
+                                                }
+                                                Spacer(Modifier.height(6.dp))
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .height(28.dp),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Text(
+                                                        text = tool.name,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFFF1F5F9),
+                                                        fontSize = 10.sp,
+                                                        textAlign = TextAlign.Center,
+                                                        maxLines = 2,
+                                                        overflow = TextOverflow.Ellipsis,
+                                                        lineHeight = 12.sp
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                    repeat(3 - rowTools.size) {
+                                        Spacer(modifier = Modifier.weight(1f).height(110.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsDivider()
+
+                    // Row 2: System Manual & Guide
+                    SettingsRowItem(
+                        icon = Icons.AutoMirrored.Outlined.MenuBook,
+                        title = "System Manual & Guide",
+                        subtitle = "Architecture, specs & tool guides",
+                        iconTint = Cyan,
+                        iconBackgroundColor = Cyan.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "System Manual" to
+                                "Interactive system manual, architectural specifications, tool guides, and design guidelines for Mother of All Apps."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(text = "DOCS", color = Cyan)
+                                SettingChevron()
+                            }
+                        },
+                        onClick = onOpenSystemManual
+                    )
+                }
+            }
+
+            // ═════════════════════════════════════════════════════════════════
+            // 3. AI & AUTOMATION
+            // ═════════════════════════════════════════════════════════════════
+            item(key = "title_ai") {
+                SettingsSectionTitle(title = "AI & Automation")
+            }
+
+            item(key = "group_ai") {
+                val repository = dev.pritam.host.tool.llmgateway.manager.LlmGatewayManager.getRepository(context)
+                val profiles by repository.profiles.collectAsStateWithLifecycle()
+                val defaultProfile = profiles.firstOrNull { it.isEnabled } ?: profiles.firstOrNull()
+
+                val mcpRepository = dev.pritam.host.tool.llmgateway.manager.LlmGatewayManager.getMcpRepository(context)
+                val mcpServers by mcpRepository.servers.collectAsStateWithLifecycle()
+                val activeToolsCount = mcpServers.filter { it.isEnabled }.sumOf { s -> s.discoveredTools.count { it.isEnabled } }
+
+                val httpServer = dev.pritam.host.tool.llmgateway.manager.LlmGatewayManager.getHttpServer(context)
+                val telemetry by httpServer.telemetry.collectAsStateWithLifecycle()
+
+                val isGhostConnected = GhostAgentManager.isAccessibilityServiceConnected()
+                val isBubbleVisible = GhostAgentManager.isBubbleVisible()
+
+                SettingsGroupCard {
+                    // Row 1: Default LLM Provider
+                    SettingsRowItem(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = "Default LLM Provider",
+                        subtitle = defaultProfile?.name ?: "Configure provider",
+                        iconTint = Violet,
+                        iconBackgroundColor = Violet.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Default LLM Route" to
+                                "Select the primary model used for CyberChat and default requests. If offline or rate-limited, requests fail over to the next priority target in the profile pool."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(text = defaultProfile?.targetModel ?: "AUTO", color = Violet)
+                                SettingChevron(isExpanded = llmExpanded)
+                            }
+                        },
+                        onClick = { llmExpanded = !llmExpanded }
+                    )
+
+                    // Inline expand: Default LLM Profile Selection
+                    AnimatedVisibility(
+                        visible = llmExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            profiles.forEach { profile ->
+                                val isDefault = profile.id == defaultProfile?.id
+                                val surfaceColor = if (isDefault) Violet.copy(alpha = 0.12f) else Color(0xFF14161F)
+                                val borderColor = if (isDefault) Violet else Color(0xFF222531)
+
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = surfaceColor,
+                                    border = BorderStroke(1.dp, borderColor),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            if (!isDefault) {
+                                                repository.setDefaultProfile(profile.id)
+                                                Toast.makeText(context, "Default LLM set to: ${profile.name}", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 9.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(16.dp)
+                                                    .border(2.dp, if (isDefault) Violet else Color(0xFF4B5263), CircleShape),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                if (isDefault) {
+                                                    Box(Modifier.size(8.dp).background(Violet, CircleShape))
+                                                }
+                                            }
+                                            Spacer(Modifier.width(10.dp))
+                                            Column {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                                ) {
+                                                    Text(
+                                                        text = profile.name,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = if (isDefault) Violet else Color(0xFFF1F5F9),
+                                                        fontWeight = if (isDefault) FontWeight.Bold else FontWeight.Medium,
+                                                        fontSize = 12.sp
+                                                    )
+                                                    if (isDefault) {
+                                                        Surface(
+                                                            shape = RoundedCornerShape(3.dp),
+                                                            color = Violet.copy(alpha = 0.2f)
+                                                        ) {
+                                                            Text(
+                                                                text = "DEFAULT",
+                                                                color = Violet,
+                                                                fontSize = 8.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                                Text(
+                                                    text = "${profile.providerType} • ${profile.targetModel ?: "auto"}",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = Color(0xFF6B7280),
+                                                    fontSize = 10.sp
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsDivider()
+
+                    // Row 2: MCP Tool Servers
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Extension,
+                        title = "Model Context Protocol (MCP)",
+                        subtitle = "$activeToolsCount active tools across ${mcpServers.size} servers",
+                        iconTint = Violet,
+                        iconBackgroundColor = Violet.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "MCP Tool Servers" to
+                                "Turn Model Context Protocol servers on or off. Active tools (hardware sensors, FTP, system logs, remote APIs) are dynamically exposed to LLMs for automated tool calling."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(text = "${mcpServers.size} SERVERS", color = Violet)
+                                SettingChevron(isExpanded = mcpExpanded)
+                            }
+                        },
+                        onClick = { mcpExpanded = !mcpExpanded }
+                    )
+
+                    // Inline expand: MCP Servers list with toggle
+                    AnimatedVisibility(
+                        visible = mcpExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            mcpServers.forEach { server ->
+                                val isBuiltin = server.transportType == dev.pritam.host.tool.llmgateway.mcp.model.McpTransportType.BUILTIN_DEVICE
+                                val enabledTools = server.discoveredTools.count { it.isEnabled }
+                                val totalTools = server.discoveredTools.size
+
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF14161F),
+                                    border = BorderStroke(1.dp, if (server.isEnabled) Violet.copy(alpha = 0.4f) else Color(0xFF222531)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 12.dp, vertical = 9.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                            ) {
+                                                Text(
+                                                    text = server.name,
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = if (server.isEnabled) Color(0xFFF1F5F9) else Color(0xFF6B7280),
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    fontSize = 12.sp
+                                                )
+                                                Surface(
+                                                    shape = RoundedCornerShape(3.dp),
+                                                    color = if (isBuiltin) Emerald.copy(alpha = 0.15f) else Cyan.copy(alpha = 0.15f)
+                                                ) {
+                                                    Text(
+                                                        text = if (isBuiltin) "BUILTIN" else server.transportType.name,
+                                                        color = if (isBuiltin) Emerald else Cyan,
+                                                        fontSize = 8.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                    )
+                                                }
+                                            }
+                                            Text(
+                                                text = if (isBuiltin) "$enabledTools of $totalTools tools active" else "${server.endpointUrl.ifBlank { "No endpoint" }} • $enabledTools tools",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = Color(0xFF6B7280),
+                                                fontSize = 10.sp
+                                            )
+                                        }
+
+                                        Switch(
+                                            checked = server.isEnabled,
+                                            onCheckedChange = { isChecked ->
+                                                mcpRepository.toggleServerEnabled(server.id, isChecked)
+                                                Toast.makeText(context, "${server.name} ${if (isChecked) "Enabled" else "Disabled"}", Toast.LENGTH_SHORT).show()
+                                            },
+                                            colors = SwitchDefaults.colors(
+                                                checkedThumbColor = Violet,
+                                                checkedTrackColor = Violet.copy(alpha = 0.35f),
+                                                uncheckedThumbColor = Color(0xFF6B7280),
+                                                uncheckedTrackColor = Color(0xFF1B1D26)
+                                            )
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsDivider()
+
+                    // Row 3: Local LLM Gateway
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Dns,
+                        title = "Local LLM Gateway Server",
+                        subtitle = if (telemetry.isRunning) "Running on :8080 (http://127.0.0.1:8080)" else "Stopped (http://127.0.0.1:8080)",
+                        iconTint = if (telemetry.isRunning) Emerald else Rose,
+                        iconBackgroundColor = (if (telemetry.isRunning) Emerald else Rose).copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Local LLM Gateway Server" to
+                                "Embedded local HTTP loopback server (http://127.0.0.1:8080) for container tools and local apps with OpenAI-compatible API spec, multi-account pooling & failover."
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = telemetry.isRunning,
+                                onCheckedChange = { start ->
+                                    if (start) {
+                                        httpServer.start()
+                                        Toast.makeText(context, "LLM Gateway started on :8080", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        httpServer.stop()
+                                        Toast.makeText(context, "LLM Gateway stopped", Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Emerald,
+                                    checkedTrackColor = Emerald.copy(alpha = 0.35f),
+                                    uncheckedThumbColor = Color(0xFF6B7280),
+                                    uncheckedTrackColor = Color(0xFF1B1D26)
+                                )
+                            )
+                        }
+                    )
+
+                    SettingsDivider()
+
+                    // Row 4: Ghost Agent
+                    SettingsRowItem(
+                        icon = Icons.Outlined.SmartToy,
+                        title = "Ghost Agent Automation",
+                        subtitle = if (isGhostConnected) "Accessibility service active" else "Accessibility permission required",
+                        iconTint = if (isGhostConnected) Emerald else Amber,
+                        iconBackgroundColor = (if (isGhostConnected) Emerald else Amber).copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Ghost Agent" to
+                                "Automates multi-step tasks across any app using Android Accessibility Service. Enable A11y access in system settings to start automation workflows."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(
+                                    text = if (isGhostConnected) "ACTIVE" else "DISABLED",
+                                    color = if (isGhostConnected) Emerald else Amber
+                                )
+                                SettingChevron(isExpanded = ghostExpanded)
+                            }
+                        },
+                        onClick = { ghostExpanded = !ghostExpanded }
+                    )
+
+                    // Inline expand: Ghost Agent controls
+                    AnimatedVisibility(
+                        visible = ghostExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = Color(0xFF14161F),
+                                border = BorderStroke(1.dp, Color(0xFF222531))
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 9.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Text(
+                                            text = "Floating Bubble Overlay",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFFF1F5F9),
+                                            fontWeight = FontWeight.Medium,
+                                            fontSize = 12.sp
+                                        )
+                                        Text(
+                                            text = "Always-on 👻 overlay over other apps",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = Color(0xFF6B7280),
+                                            fontSize = 10.sp
+                                        )
+                                    }
+                                    Switch(
+                                        checked = isBubbleVisible,
+                                        onCheckedChange = { enabled ->
+                                            if (enabled) GhostAgentManager.showFloatingBubble(context)
+                                            else GhostAgentManager.hideFloatingBubble(context)
+                                        },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Violet,
+                                            checkedTrackColor = Violet.copy(alpha = 0.35f),
+                                            uncheckedThumbColor = Color(0xFF6B7280),
+                                            uncheckedTrackColor = Color(0xFF1B1D26)
+                                        )
+                                    )
+                                }
+                            }
+
+                            if (!isGhostConnected) {
+                                LiquidGlassButton(
+                                    onClick = {
+                                        context.startActivity(
+                                            android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    glowColor = Amber,
+                                    text = "Enable Accessibility Service →"
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ═════════════════════════════════════════════════════════════════
+            // 4. DIAGNOSTICS & LOGS
+            // ═════════════════════════════════════════════════════════════════
+            item(key = "title_diagnostics") {
+                SettingsSectionTitle(title = "Diagnostics & Logs")
+            }
+
+            item(key = "group_diagnostics") {
+                SettingsGroupCard {
+                    // Row 1: System Diagnostic Logs
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Terminal,
+                        title = "Diagnostic Log Hub",
+                        subtitle = "Real-time telemetry & trace viewer",
+                        iconTint = Color(0xFF38BDF8),
+                        iconBackgroundColor = Color(0xFF38BDF8).copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "System Diagnostics & Logging" to
+                                "Manage real-time telemetry, auto-delete policy, and memory cleanup. View live diagnostic streams or purge logs to reclaim storage."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(text = "VIEW", color = Color(0xFF38BDF8))
+                                SettingChevron()
+                            }
+                        },
+                        onClick = onOpenLogViewer
+                    )
+
+                    SettingsDivider()
+
+                    // Row 2: Log Retention Policy
+                    SettingsRowItem(
+                        icon = Icons.Outlined.History,
+                        title = "Log Retention Policy",
+                        subtitle = currentRetention.description,
+                        iconTint = Amber,
+                        iconBackgroundColor = Amber.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Log Retention Policy" to
+                                "Configures how long diagnostic logs are kept on device before automatic pruning."
+                        },
+                        trailingContent = {
+                            Box {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    SettingBadge(text = currentRetention.displayName, color = Amber)
+                                    SettingChevron(isExpanded = retentionMenuExpanded)
+                                }
+
+                                DropdownMenu(
+                                    expanded = retentionMenuExpanded,
+                                    onDismissRequest = { retentionMenuExpanded = false },
+                                    modifier = Modifier
+                                        .background(Color(0xFF14161F))
+                                        .border(BorderStroke(1.dp, Color(0xFF222531)), RoundedCornerShape(8.dp))
+                                ) {
+                                    dev.pritam.host.settings.LogRetentionPolicy.entries.forEach { policy ->
+                                        val isSelected = currentRetention == policy
+                                        DropdownMenuItem(
+                                            text = {
+                                                Column {
+                                                    Text(
+                                                        text = policy.displayName,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = if (isSelected) Amber else Color(0xFFF1F5F9),
+                                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                        fontSize = 12.sp
+                                                    )
+                                                    Text(
+                                                        text = policy.description,
+                                                        style = MaterialTheme.typography.bodySmall,
+                                                        color = Color(0xFF6B7280),
+                                                        fontSize = 10.sp
+                                                    )
+                                                }
+                                            },
+                                            trailingIcon = {
+                                                if (isSelected) {
+                                                    Text(
+                                                        text = "✓",
+                                                        color = Amber,
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 14.sp
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                retentionMenuExpanded = false
+                                                AppSettingsManager.setLogRetentionPolicy(policy)
+                                                val purged = AppLogHub.pruneExpiredLogs(policy)
+                                                val msg = if (purged > 0) "Retention: ${policy.displayName} ($purged old logs purged)"
+                                                else "Retention: ${policy.displayName}"
+                                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        },
+                        onClick = { retentionMenuExpanded = !retentionMenuExpanded }
+                    )
+
+                    SettingsDivider()
+
+                    // Row 3: Clear Diagnostic Logs
+                    SettingsRowItem(
+                        icon = Icons.Outlined.DeleteOutline,
+                        title = "Clear All Logs",
+                        subtitle = "Purge in-memory telemetry buffer",
+                        iconTint = Rose,
+                        iconBackgroundColor = Rose.copy(alpha = 0.12f),
+                        trailingContent = {
+                            Surface(
+                                onClick = {
+                                    AppLogHub.clear()
+                                    Toast.makeText(context, "Diagnostic logs cleared", Toast.LENGTH_SHORT).show()
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                color = Rose.copy(alpha = 0.15f),
+                                border = BorderStroke(1.dp, Rose.copy(alpha = 0.4f))
+                            ) {
+                                Text(
+                                    text = "Clear",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Rose,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
                         }
                     )
                 }
             }
 
-            // ══ ABOUT ═════════════════════════════════════════════════════════
-            settingsSection(
-                title = "About",
-                emoji = "ℹ️",
-                accentColor = Color(0xFF94A3B8),
-                isExpanded = aboutExpanded,
-                onToggle = { AppSettingsManager.setSectionAboutExpanded(!aboutExpanded) }
-            ) {
-                item {
-                    AboutInfoCard(
-                        onResetDefaults = {
-                            AppSettingsManager.resetToDefaults()
-                            Toast.makeText(context, "Settings reset to defaults", Toast.LENGTH_SHORT).show()
+            // ═════════════════════════════════════════════════════════════════
+            // 5. ABOUT
+            // ═════════════════════════════════════════════════════════════════
+            item(key = "title_about") {
+                SettingsSectionTitle(title = "About")
+            }
+
+            item(key = "group_about") {
+                SettingsGroupCard {
+                    // Row 1: App Info
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Info,
+                        title = "Mother of All Apps",
+                        subtitle = "Modular Android Tool System",
+                        iconTint = Color(0xFF94A3B8),
+                        iconBackgroundColor = Color(0xFF1E222D),
+                        onInfoClick = {
+                            activeInfoDialog = "About Mother of All Apps" to
+                                "MotherOfAllApps · Android 14+ (API 34..36)\n\nArchitecture: Jetpack Compose + Modular Tool Plugins\nDesign Identity: Plain Minimalist Dark UI System\nTelemetry & Diagnostic Hub"
+                        },
+                        trailingContent = {
+                            Text(
+                                text = "v0.15.0 (Build 15)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF6B7280),
+                                fontSize = 11.sp,
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
+                    )
+
+                    SettingsDivider()
+
+                    // Row 2: Reset to Defaults
+                    SettingsRowItem(
+                        icon = Icons.Outlined.RestartAlt,
+                        title = "Reset Settings to Default",
+                        subtitle = "Restore all preferences to factory defaults",
+                        iconTint = Color(0xFF94A3B8),
+                        iconBackgroundColor = Color(0xFF1E222D),
+                        trailingContent = {
+                            Surface(
+                                onClick = {
+                                    AppSettingsManager.resetToDefaults()
+                                    Toast.makeText(context, "Settings reset to defaults", Toast.LENGTH_SHORT).show()
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFF1B1D26),
+                                border = BorderStroke(1.dp, Color(0xFF2C303E))
+                            ) {
+                                Text(
+                                    text = "Reset",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color(0xFFCBD5E1),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 11.sp,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
                         }
                     )
                 }
             }
-
-            item { Spacer(Modifier.height(32.dp)) }
-        }
-    }
-}
-
-/**
- * Extension on LazyListScope that renders a collapsible section header + animated content block.
- * The header is always visible; the content block slides in/out with spring animation.
- */
-private fun LazyListScope.settingsSection(
-    title: String,
-    emoji: String,
-    accentColor: Color,
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    content: LazyListScope.() -> Unit,
-) {
-    item(key = "section_header_$title") {
-        SettingsSectionHeader(
-            title = title,
-            emoji = emoji,
-            accentColor = accentColor,
-            isExpanded = isExpanded,
-            onToggle = onToggle,
-        )
-    }
-    if (isExpanded) {
-        content()
-        item(key = "section_spacer_$title") { Spacer(Modifier.height(4.dp)) }
-    }
-}
-
-@Composable
-private fun SettingsSectionHeader(
-    title: String,
-    emoji: String,
-    accentColor: Color,
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-) {
-    val chevronAngle by animateFloatAsState(
-        targetValue = if (isExpanded) 0f else -90f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
-        label = "chevron_$title"
-    )
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onToggle)
-            .background(accentColor.copy(alpha = if (isExpanded) 0.08f else 0.04f))
-            .border(BorderStroke(1.dp, accentColor.copy(alpha = if (isExpanded) 0.25f else 0.12f)), RoundedCornerShape(10.dp))
-            .padding(horizontal = 14.dp, vertical = 11.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(emoji, fontSize = 16.sp)
-            Text(
-                text = title.uppercase(),
-                style = MaterialTheme.typography.labelMedium,
-                color = accentColor,
-                fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.5.sp,
-                fontSize = 11.sp
-            )
-        }
-
-        // Animated chevron: ▼ when expanded, ▶ when collapsed
-        Surface(
-            shape = RoundedCornerShape(4.dp),
-            color = accentColor.copy(alpha = 0.12f)
-        ) {
-            Text(
-                text = "▼",
-                modifier = Modifier
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                    .rotate(chevronAngle),
-                color = accentColor,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-
-@Composable
-private fun SettingHeaderWithInfo(
-    title: String,
-    description: String,
-    accentColor: Color = Cyan,
-    badgeText: String? = null,
-    badgeColor: Color = accentColor,
-    leadingEmoji: String? = null,
-    modifier: Modifier = Modifier,
-) {
-    var showDialog by remember { mutableStateOf(false) }
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.weight(1f, fill = false)
-        ) {
-            if (leadingEmoji != null) {
-                Text(leadingEmoji, fontSize = 16.sp)
-            }
-            Text(
-                text = title.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = accentColor,
-                letterSpacing = 1.sp,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            if (!badgeText.isNullOrBlank()) {
-                Surface(
-                    shape = RoundedCornerShape(4.dp),
-                    color = badgeColor.copy(alpha = 0.15f),
-                    border = BorderStroke(1.dp, badgeColor.copy(alpha = 0.35f))
-                ) {
-                    Text(
-                        text = badgeText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = badgeColor,
-                        fontWeight = FontWeight.ExtraBold,
-                        fontSize = 10.sp,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-            }
-
-            IconButton(
-                onClick = { showDialog = true },
-                modifier = Modifier.size(24.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = "Info for $title",
-                    tint = TextSecondary.copy(alpha = 0.75f),
-                    modifier = Modifier.size(15.dp)
-                )
-            }
         }
     }
 
-    if (showDialog) {
+    // ── Dialogs ──────────────────────────────────────────────────────────────
+    activeInfoDialog?.let { (title, description) ->
         SettingInfoDialog(
             title = title,
             description = description,
-            accentColor = accentColor,
-            onDismiss = { showDialog = false }
+            accentColor = currentPalette.primary,
+            onDismiss = { activeInfoDialog = null }
+        )
+    }
+
+    if (showCreatePaletteDialog) {
+        CreateCustomPaletteDialog(
+            activePrimary = currentPalette.primary,
+            onDismiss = { showCreatePaletteDialog = false },
+            onCreate = { name, primary, secondary, tertiary ->
+                val created = AppSettingsManager.addCustomPalette(name, primary, secondary, tertiary)
+                Toast.makeText(context, "Created & applied ${created.displayName}", Toast.LENGTH_SHORT).show()
+                showCreatePaletteDialog = false
+            }
+        )
+    }
+}
+
+// ═════════════════════════════════════════════════════════════════════════════
+// REUSABLE MINIMALIST SETTINGS COMPONENTS
+// ═════════════════════════════════════════════════════════════════════════════
+
+@Composable
+private fun SettingsSectionTitle(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = title.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        color = Color(0xFF717686),
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+        letterSpacing = 0.8.sp,
+        modifier = modifier.padding(start = 6.dp, top = 16.dp, bottom = 6.dp)
+    )
+}
+
+@Composable
+private fun SettingsGroupCard(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .border(BorderStroke(1.dp, Color(0xFF20222A)), RoundedCornerShape(16.dp)),
+        color = Color(0xFF14151B),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SettingsRowItem(
+    icon: ImageVector,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    iconTint: Color = Color(0xFF94A3B8),
+    iconBackgroundColor: Color = Color(0xFF1C1E26),
+    onInfoClick: (() -> Unit)? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+) {
+    val clickableModifier = if (onClick != null) {
+        Modifier.clickable(onClick = onClick)
+    } else Modifier
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(clickableModifier)
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f, fill = false)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .background(iconBackgroundColor, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(17.dp)
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            Column {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFF1F5F9),
+                        fontSize = 13.sp
+                    )
+                    if (onInfoClick != null) {
+                        IconButton(
+                            onClick = onInfoClick,
+                            modifier = Modifier.size(18.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Info,
+                                contentDescription = "Info for $title",
+                                tint = Color(0xFF6B7280),
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                    }
+                }
+                if (!subtitle.isNullOrBlank()) {
+                    Spacer(Modifier.height(1.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF6B7280),
+                        fontSize = 11.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+
+        if (trailingContent != null) {
+            Spacer(Modifier.width(8.dp))
+            trailingContent()
+        }
+    }
+}
+
+@Composable
+private fun SettingsDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(
+        color = Color(0xFF1E2028),
+        thickness = 1.dp,
+        modifier = modifier.padding(start = 58.dp)
+    )
+}
+
+@Composable
+private fun SettingChevron(
+    isExpanded: Boolean = false,
+    modifier: Modifier = Modifier
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (isExpanded) 90f else 0f,
+        label = "chevron_rot"
+    )
+    Icon(
+        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+        contentDescription = null,
+        tint = Color(0xFF4B5263),
+        modifier = modifier
+            .size(18.dp)
+            .rotate(rotation)
+    )
+}
+
+@Composable
+private fun SettingBadge(
+    text: String,
+    color: Color = Color(0xFF94A3B8),
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        shape = RoundedCornerShape(4.dp),
+        color = color.copy(alpha = 0.12f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f)),
+        modifier = modifier
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Bold,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
         )
     }
 }
@@ -536,318 +1795,6 @@ private fun SettingInfoDialog(
 }
 
 @Composable
-private fun SystemManualSettingsCard(onOpenSystemManual: () -> Unit) {
-    IsometricCard(glowColor = Cyan) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "System Manual",
-                description = "Interactive system manual, architectural specifications, tool guides, and design guidelines for Mother of All Apps.",
-                accentColor = Cyan,
-                badgeText = "DOCS"
-            )
-            Spacer(Modifier.height(10.dp))
-            LiquidGlassButton(
-                onClick = onOpenSystemManual,
-                modifier = Modifier.fillMaxWidth(),
-                glowColor = Cyan,
-                useRainbowBorder = true,
-                text = "Open System Manual"
-            )
-        }
-    }
-}
-
-@Composable
-private fun AccentPaletteSettingsCard(
-    currentPalette: dev.pritam.host.settings.AccentPalette,
-    customPalettes: List<dev.pritam.host.settings.AccentPalette>,
-    onSelectPalette: (dev.pritam.host.settings.AccentPalette) -> Unit,
-    onCreateCustomPalette: (name: String, primary: Color, secondary: Color, tertiary: Color) -> Unit,
-    onDeleteCustomPalette: (String) -> Unit,
-) {
-    var isDropdownExpanded by remember { mutableStateOf(false) }
-    var showCreateDialog by remember { mutableStateOf(false) }
-
-    IsometricCard(glowColor = currentPalette.primary) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "Accent Color Theme",
-                description = "Choose from 5 curated minimalist dark palettes tuned for high contrast and minimal glare, or tap (+) to create custom tri-color combinations with instant system-wide application.",
-                accentColor = currentPalette.primary,
-                badgeText = if (currentPalette.isCustom) "CUSTOM" else currentPalette.displayName
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            // ── Single Row: [ Dropdown Menu Trigger (weight 1f) ] [ + New Accent Button ] ──
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Dropdown trigger
-                Box(modifier = Modifier.weight(1f)) {
-                    Surface(
-                        onClick = { isDropdownExpanded = true },
-                        shape = RoundedCornerShape(8.dp),
-                        color = Color(0xFF14161F),
-                        border = BorderStroke(1.dp, Color(0xFF222531)),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .clip(CircleShape)
-                                            .background(currentPalette.primary)
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .clip(CircleShape)
-                                            .background(currentPalette.secondary)
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .clip(CircleShape)
-                                            .background(currentPalette.tertiary)
-                                    )
-                                }
-
-                                Spacer(Modifier.width(10.dp))
-
-                                Text(
-                                    text = currentPalette.displayName,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = TextPrimary,
-                                    fontSize = 12.sp,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-
-                            Icon(
-                                imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Expand Accent Theme Dropdown",
-                                tint = TextSecondary,
-                                modifier = Modifier
-                                    .size(18.dp)
-                                    .rotate(if (isDropdownExpanded) 180f else 0f)
-                            )
-                        }
-                    }
-
-                    // Dropdown menu options
-                    DropdownMenu(
-                        expanded = isDropdownExpanded,
-                        onDismissRequest = { isDropdownExpanded = false },
-                        modifier = Modifier
-                            .background(Color(0xFF14161F))
-                            .border(1.dp, Color(0xFF222531), RoundedCornerShape(8.dp))
-                    ) {
-                        Text(
-                            text = "PRESETS",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextTertiary,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp,
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                        )
-
-                        dev.pritam.host.settings.AccentPalette.builtInPalettes.forEach { palette ->
-                            val isSelected = palette.id == currentPalette.id
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(10.dp)
-                                                    .clip(CircleShape)
-                                                    .background(palette.primary)
-                                            )
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(10.dp)
-                                                    .clip(CircleShape)
-                                                    .background(palette.secondary)
-                                            )
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(10.dp)
-                                                    .clip(CircleShape)
-                                                    .background(palette.tertiary)
-                                            )
-                                        }
-                                        Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            text = palette.displayName,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = if (isSelected) palette.primary else TextPrimary,
-                                            fontSize = 12.sp
-                                        )
-                                    }
-                                },
-                                trailingIcon = {
-                                    if (isSelected) {
-                                        Text(
-                                            text = "✓",
-                                            color = palette.primary,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 12.sp
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    onSelectPalette(palette)
-                                    isDropdownExpanded = false
-                                }
-                            )
-                        }
-
-                        if (customPalettes.isNotEmpty()) {
-                            HorizontalDivider(
-                                color = Color(0xFF222531),
-                                thickness = 1.dp,
-                                modifier = Modifier.padding(vertical = 4.dp)
-                            )
-                            Text(
-                                text = "CUSTOM COMBINATIONS",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = currentPalette.primary,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-                            )
-
-                            customPalettes.forEach { palette ->
-                                val isSelected = palette.id == currentPalette.id
-                                DropdownMenuItem(
-                                    text = {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(10.dp)
-                                                        .clip(CircleShape)
-                                                        .background(palette.primary)
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(10.dp)
-                                                        .clip(CircleShape)
-                                                        .background(palette.secondary)
-                                                )
-                                                Box(
-                                                    modifier = Modifier
-                                                        .size(10.dp)
-                                                        .clip(CircleShape)
-                                                        .background(palette.tertiary)
-                                                )
-                                            }
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(
-                                                text = palette.displayName,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = if (isSelected) palette.primary else TextPrimary,
-                                                fontSize = 12.sp
-                                            )
-                                        }
-                                    },
-                                    trailingIcon = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            if (isSelected) {
-                                                Text(
-                                                    text = "✓",
-                                                    color = palette.primary,
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 12.sp
-                                                )
-                                                Spacer(Modifier.width(8.dp))
-                                            }
-                                            IconButton(
-                                                onClick = { onDeleteCustomPalette(palette.id) },
-                                                modifier = Modifier.size(24.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Delete Custom Palette",
-                                                    tint = TextSecondary.copy(alpha = 0.6f),
-                                                    modifier = Modifier.size(14.dp)
-                                                )
-                                            }
-                                        }
-                                    },
-                                    onClick = {
-                                        onSelectPalette(palette)
-                                        isDropdownExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // (+) New Accent Button in the same row
-                Surface(
-                    onClick = { showCreateDialog = true },
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF14161F),
-                    border = BorderStroke(1.dp, currentPalette.primary.copy(alpha = 0.5f)),
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Create Custom Accent",
-                            tint = currentPalette.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    if (showCreateDialog) {
-        CreateCustomPaletteDialog(
-            activePrimary = currentPalette.primary,
-            onDismiss = { showCreateDialog = false },
-            onCreate = { name, primary, secondary, tertiary ->
-                onCreateCustomPalette(name, primary, secondary, tertiary)
-                showCreateDialog = false
-            }
-        )
-    }
-}
-
-@Composable
 private fun CreateCustomPaletteDialog(
     activePrimary: Color,
     onDismiss: () -> Unit,
@@ -860,23 +1807,22 @@ private fun CreateCustomPaletteDialog(
     var secondaryColor by remember { mutableStateOf(Color(0xFF818CF8)) }
     var tertiaryColor by remember { mutableStateOf(Color(0xFF34D399)) }
 
-    var hexInput by remember { mutableStateOf(dev.pritam.host.settings.AccentPalette.colorToHex(primaryColor).removePrefix("#")) }
+    var hexInput by remember { mutableStateOf(AccentPalette.colorToHex(primaryColor).removePrefix("#")) }
 
-    // Quick swatches
     val swatches = remember {
         listOf(
-            Color(0xFF38BDF8), // Cyan
-            Color(0xFF0284C7), // Sky Blue
-            Color(0xFF6366F1), // Indigo
-            Color(0xFFA855F7), // Purple
-            Color(0xFFEC4899), // Pink
-            Color(0xFFF43F5E), // Rose
-            Color(0xFFFB923C), // Orange
-            Color(0xFFF59E0B), // Amber
-            Color(0xFF10B981), // Emerald
-            Color(0xFF34D399), // Mint
-            Color(0xFFE2E8F0), // Platinum
-            Color(0xFF94A3B8)  // Slate
+            Color(0xFF38BDF8),
+            Color(0xFF0284C7),
+            Color(0xFF6366F1),
+            Color(0xFFA855F7),
+            Color(0xFFEC4899),
+            Color(0xFFF43F5E),
+            Color(0xFFFB923C),
+            Color(0xFFF59E0B),
+            Color(0xFF10B981),
+            Color(0xFF34D399),
+            Color(0xFFE2E8F0),
+            Color(0xFF94A3B8)
         )
     }
 
@@ -892,7 +1838,7 @@ private fun CreateCustomPaletteDialog(
             1 -> secondaryColor = color
             else -> tertiaryColor = color
         }
-        hexInput = dev.pritam.host.settings.AccentPalette.colorToHex(color).removePrefix("#")
+        hexInput = AccentPalette.colorToHex(color).removePrefix("#")
     }
 
     Dialog(
@@ -911,7 +1857,6 @@ private fun CreateCustomPaletteDialog(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -956,24 +1901,9 @@ private fun CreateCustomPaletteDialog(
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(14.dp)
-                                        .clip(CircleShape)
-                                        .background(primaryColor)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .size(14.dp)
-                                        .clip(CircleShape)
-                                        .background(secondaryColor)
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .size(14.dp)
-                                        .clip(CircleShape)
-                                        .background(tertiaryColor)
-                                )
+                                Box(Modifier.size(14.dp).clip(CircleShape).background(primaryColor))
+                                Box(Modifier.size(14.dp).clip(CircleShape).background(secondaryColor))
+                                Box(Modifier.size(14.dp).clip(CircleShape).background(tertiaryColor))
                             }
                             Spacer(Modifier.width(10.dp))
                             Text(
@@ -1004,7 +1934,6 @@ private fun CreateCustomPaletteDialog(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Name input
                 OutlinedTextField(
                     value = themeName,
                     onValueChange = { if (it.length <= 25) themeName = it },
@@ -1017,7 +1946,6 @@ private fun CreateCustomPaletteDialog(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Segmented Tab for Primary / Secondary / Tertiary
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1038,7 +1966,7 @@ private fun CreateCustomPaletteDialog(
                                     1 -> secondaryColor
                                     else -> tertiaryColor
                                 }
-                                hexInput = dev.pritam.host.settings.AccentPalette.colorToHex(target).removePrefix("#")
+                                hexInput = AccentPalette.colorToHex(target).removePrefix("#")
                             },
                             shape = RoundedCornerShape(4.dp),
                             color = if (isSelected) Color(0xFF1E222F) else Color.Transparent,
@@ -1050,12 +1978,7 @@ private fun CreateCustomPaletteDialog(
                                 horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(8.dp)
-                                        .clip(CircleShape)
-                                        .background(color)
-                                )
+                                Box(Modifier.size(8.dp).clip(CircleShape).background(color))
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     text = label,
@@ -1070,7 +1993,6 @@ private fun CreateCustomPaletteDialog(
 
                 Spacer(Modifier.height(12.dp))
 
-                // Color swatches row
                 Text(
                     text = "SELECT COLOR PRESET",
                     style = MaterialTheme.typography.labelSmall,
@@ -1116,7 +2038,6 @@ private fun CreateCustomPaletteDialog(
 
                 Spacer(Modifier.height(10.dp))
 
-                // Hex input
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -1128,7 +2049,7 @@ private fun CreateCustomPaletteDialog(
                             val filtered = input.filter { it.isLetterOrDigit() }.take(6).uppercase()
                             hexInput = filtered
                             if (filtered.length == 6) {
-                                val parsed = dev.pritam.host.settings.AccentPalette.parseHexColor("#$filtered", currentEditingColor)
+                                val parsed = AccentPalette.parseHexColor("#$filtered", currentEditingColor)
                                 when (selectedTab) {
                                     0 -> primaryColor = parsed
                                     1 -> secondaryColor = parsed
@@ -1154,7 +2075,6 @@ private fun CreateCustomPaletteDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Actions: CANCEL / SAVE & APPLY
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1178,978 +2098,3 @@ private fun CreateCustomPaletteDialog(
         }
     }
 }
-
-@Composable
-private fun GalleryLayoutSettingsCard(
-    currentColumns: Int,
-    onSelectColumns: (Int) -> Unit,
-) {
-    val layoutDescription = when (currentColumns) {
-        1 -> "1 Column: Full-width detailed list with expanded descriptions"
-        2 -> "2 Columns: Dual isometric cards (Balanced Default)"
-        3 -> "3 Columns: Matrix grid for high density & rapid launch"
-        4 -> "4 Columns: Micro-deck dense tiles for compact overview"
-        else -> "$currentColumns Columns Grid"
-    }
-
-    IsometricCard(glowColor = Cyan) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "Home Gallery Layout",
-                description = "Configure how tools are arranged on the home dashboard:\n\n• 1 Column: Full-width detailed list with expanded descriptions\n• 2 Columns: Dual isometric cards (Balanced Default)\n• 3 Columns: Matrix grid for high density & rapid launch\n• 4 Columns: Micro-deck dense tiles for compact overview",
-                accentColor = Cyan,
-                badgeText = "$currentColumns Column${if (currentColumns > 1) "s" else ""}"
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            // Column count slider (1 to 4 columns)
-            Slider(
-                value = currentColumns.toFloat(),
-                onValueChange = { onSelectColumns(it.toInt().coerceIn(1, 4)) },
-                valueRange = 1f..4f,
-                steps = 2,
-                colors = SliderDefaults.colors(
-                    thumbColor = Cyan,
-                    activeTrackColor = Cyan,
-                    inactiveTrackColor = GlassBorder
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            // Quick Preset Column Buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                (1..4).forEach { cols ->
-                    val isSel = currentColumns == cols
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
-                        border = BorderStroke(1.dp, if (isSel) Cyan else GlassBorder),
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onSelectColumns(cols) }
-                    ) {
-                        Text(
-                            text = if (cols == 1) "1 Col" else "$cols Cols",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isSel) Cyan else TextSecondary,
-                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 10.sp,
-                            modifier = Modifier
-                                .padding(vertical = 6.dp)
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DashboardPaddingSettingsCard(
-    currentPadding: Int,
-    onPaddingChange: (Int) -> Unit,
-) {
-    val presetDescription = when {
-        currentPadding <= 10 -> "High Density / Compact"
-        currentPadding <= 16 -> "Balanced"
-        currentPadding <= 22 -> "Comfortable (Default)"
-        else -> "Spacious / Relaxed"
-    }
-
-    IsometricCard(glowColor = Cyan) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "Dashboard Padding & Spacing",
-                description = "Adjust outer screen margins and card spacing across the dashboard ($presetDescription). Range: 8dp to 32dp.",
-                accentColor = Cyan,
-                badgeText = "$currentPadding dp"
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            // Padding Slider (8dp to 32dp in steps of 2dp)
-            Slider(
-                value = currentPadding.toFloat(),
-                onValueChange = { onPaddingChange(it.toInt()) },
-                valueRange = 8f..32f,
-                steps = 11,
-                colors = SliderDefaults.colors(
-                    thumbColor = Cyan,
-                    activeTrackColor = Cyan,
-                    inactiveTrackColor = GlassBorder
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            // Preset Quick Buttons Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf(
-                    10 to "Compact (10dp)",
-                    18 to "Default (18dp)",
-                    26 to "Spacious (26dp)"
-                ).forEach { (dpValue, label) ->
-                    val isSel = currentPadding == dpValue
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
-                        border = BorderStroke(1.dp, if (isSel) Cyan else GlassBorder),
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onPaddingChange(dpValue) }
-                    ) {
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isSel) Cyan else TextSecondary,
-                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 10.sp,
-                            modifier = Modifier
-                                .padding(vertical = 6.dp)
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DialogOpacitySettingsCard(
-    currentOpacity: Int,
-    onOpacityChange: (Int) -> Unit,
-) {
-    val opacityDescription = when {
-        currentOpacity <= 60 -> "High Transparency (Translucent)"
-        currentOpacity <= 80 -> "Medium Frost (Aero Glass)"
-        currentOpacity <= 95 -> "High Contrast Acrylic (Recommended)"
-        else -> "100% Solid Opaque"
-    }
-
-    IsometricCard(glowColor = Cyan) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "Dialog & Popup Opacity",
-                description = "Controls background bleed-through for dialogs and popups ($opacityDescription). Range: 50% to 100% opacity.",
-                accentColor = Cyan,
-                badgeText = "$currentOpacity%"
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            // Opacity Slider (50% to 100% in steps of 5%)
-            Slider(
-                value = currentOpacity.toFloat(),
-                onValueChange = { onOpacityChange(it.toInt()) },
-                valueRange = 50f..100f,
-                steps = 9,
-                colors = SliderDefaults.colors(
-                    thumbColor = Cyan,
-                    activeTrackColor = Cyan,
-                    inactiveTrackColor = GlassBorder
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(6.dp))
-
-            // Preset Quick Buttons Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf(
-                    70 to "Frost (70%)",
-                    94 to "Focus (94%)",
-                    100 to "Solid (100%)"
-                ).forEach { (opacityVal, label) ->
-                    val isSel = currentOpacity == opacityVal
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = if (isSel) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
-                        border = BorderStroke(1.dp, if (isSel) Cyan else GlassBorder),
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { onOpacityChange(opacityVal) }
-                    ) {
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (isSel) Cyan else TextSecondary,
-                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                            fontSize = 10.sp,
-                            modifier = Modifier
-                                .padding(vertical = 6.dp)
-                                .fillMaxWidth(),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(10.dp))
-
-            // Live Dialog Surface Preview Box
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = AppSettingsManager.getDialogSurfaceColor(currentOpacity),
-                border = BorderStroke(1.dp, RainbowGlassBorderBrush),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "PREVIEW: Dialog Content Clarity",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp
-                        )
-                        Text(
-                            text = "Background visibility is dimmed according to this setting",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
-                            fontSize = 10.sp
-                        )
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = Cyan.copy(alpha = 0.2f),
-                        border = BorderStroke(1.dp, Cyan)
-                    ) {
-                        Text(
-                            text = "OK",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Cyan,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 10.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DiagnosticsSettingsCard(
-    currentRetention: dev.pritam.host.settings.LogRetentionPolicy,
-    onSelectRetention: (dev.pritam.host.settings.LogRetentionPolicy) -> Unit,
-    onOpenLogViewer: () -> Unit,
-    onClearLogs: () -> Unit,
-) {
-    var dropdownExpanded by remember { mutableStateOf(false) }
-
-    IsometricCard(glowColor = Rose) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "System Diagnostics & Logging",
-                description = "Manage real-time telemetry, auto-delete policy, and memory cleanup. View live diagnostic streams or purge logs to reclaim storage.",
-                accentColor = Rose,
-                badgeText = currentRetention.displayName.uppercase()
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            // Auto-delete / retention policy dropdown section
-            Text(
-                text = "AUTO-DELETE OLD LOGS (RETENTION POLICY)",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextPrimary,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(Modifier.height(6.dp))
-
-            // Dropdown anchor box
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = GlassSurfaceDeep,
-                    border = BorderStroke(1.dp, if (dropdownExpanded) Rose else GlassBorder),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { dropdownExpanded = !dropdownExpanded }
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("⏱️", fontSize = 16.sp)
-                            Column {
-                                Text(
-                                    text = currentRetention.displayName,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = Rose,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = currentRetention.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary,
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
-
-                        Text(
-                            text = if (dropdownExpanded) "▲" else "▼",
-                            color = Rose,
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                    }
-                }
-
-                DropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = { dropdownExpanded = false },
-                    modifier = Modifier
-                        .background(dev.pritam.host.settings.AppSettingsManager.getDialogSurfaceColor())
-                        .border(BorderStroke(1.dp, Rose.copy(alpha = 0.4f)), RoundedCornerShape(8.dp))
-                ) {
-                    dev.pritam.host.settings.LogRetentionPolicy.entries.forEach { policy ->
-                        val isSelected = currentRetention == policy
-                        DropdownMenuItem(
-                            text = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Text(
-                                            text = policy.displayName,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (isSelected) Rose else TextPrimary,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            fontSize = 12.sp
-                                        )
-                                        Text(
-                                            text = policy.description,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = TextSecondary,
-                                            fontSize = 10.sp
-                                        )
-                                    }
-                                    if (isSelected) {
-                                        Text(
-                                            text = "✓",
-                                            color = Rose,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 14.sp,
-                                            modifier = Modifier.padding(start = 8.dp)
-                                        )
-                                    }
-                                }
-                            },
-                            onClick = {
-                                dropdownExpanded = false
-                                onSelectRetention(policy)
-                            }
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(14.dp))
-
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LiquidGlassButton(
-                    onClick = onOpenLogViewer,
-                    modifier = Modifier.weight(1f),
-                    glowColor = Violet,
-                    text = "Open System Logs"
-                )
-
-                LiquidGlassButton(
-                    onClick = onClearLogs,
-                    modifier = Modifier.weight(1f),
-                    glowColor = Rose,
-                    text = "Clear Buffer"
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HomescreenShortcutsCard(context: Context) {
-    val tools = dev.pritam.host.config.ToolRegistryConfig.INSTALLED_TOOLS
-
-    IsometricCard(glowColor = Cyan) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "Homescreen Shortcuts",
-                description = "Tap any tool icon below to pin a 1-tap direct launch shortcut to your Android launcher home screen.",
-                accentColor = Cyan,
-                badgeText = "PIN TO LAUNCHER"
-            )
-
-            Spacer(Modifier.height(14.dp))
-
-            val chunkedTools = tools.chunked(3)
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                chunkedTools.forEach { rowTools ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        rowTools.forEach { tool ->
-                            val accentColor = Color(tool.accentColorHex)
-                            val shape = RoundedCornerShape(10.dp)
-                            val emoji = tool.emoji
-
-                            Surface(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(116.dp)
-                                    .clip(shape)
-                                    .clickable {
-                                        dev.pritam.host.shortcut.ShortcutUtils.pinToolToHomeScreen(context, tool)
-                                    }
-                                    .border(
-                                        BorderStroke(1.dp, accentColor.copy(alpha = 0.35f)),
-                                        shape
-                                    ),
-                                color = GlassSurfaceDeep,
-                                shape = shape
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(horizontal = 6.dp, vertical = 12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Surface(
-                                        modifier = Modifier.size(38.dp),
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = accentColor.copy(alpha = 0.15f),
-                                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.4f))
-                                    ) {
-                                        Box(
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Text(
-                                                text = emoji,
-                                                fontSize = 20.sp
-                                            )
-                                        }
-                                    }
-
-                                    Spacer(Modifier.height(8.dp))
-
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(28.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Text(
-                                            text = tool.name,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
-                                            color = TextPrimary,
-                                            fontSize = 10.sp,
-                                            textAlign = TextAlign.Center,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                            lineHeight = 12.sp
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Pad out remaining columns if last row has less than 3 tools so all containers remain equal size
-                        repeat(3 - rowTools.size) {
-                            Spacer(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(116.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LlmGatewaySettingsCard(context: Context) {
-    val httpServer = dev.pritam.host.tool.llmgateway.manager.LlmGatewayManager.getHttpServer(context)
-    val telemetry by httpServer.telemetry.collectAsStateWithLifecycle()
-
-    IsometricCard(glowColor = if (telemetry.isRunning) Color(0xFF34D399) else Rose) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "Local LLM Gateway Server",
-                description = "Embedded local HTTP loopback server (http://127.0.0.1:8080) for container tools and local apps with OpenAI-compatible API spec, multi-account pooling & failover.",
-                accentColor = if (telemetry.isRunning) Color(0xFF34D399) else Rose,
-                badgeText = if (telemetry.isRunning) "● RUNNING :8080" else "○ STOPPED",
-                badgeColor = if (telemetry.isRunning) Color(0xFF34D399) else Rose
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            LiquidGlassButton(
-                onClick = {
-                    if (telemetry.isRunning) {
-                        httpServer.stop()
-                        Toast.makeText(context, "LLM Gateway Server stopped", Toast.LENGTH_SHORT).show()
-                    } else {
-                        httpServer.start()
-                        Toast.makeText(context, "LLM Gateway Server started on :8080", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                glowColor = if (telemetry.isRunning) Rose else Color(0xFF34D399),
-                useRainbowBorder = !telemetry.isRunning,
-                text = if (telemetry.isRunning) "Stop Gateway Server" else "Start Gateway Server"
-            )
-        }
-    }
-}
-
-@Composable
-private fun AboutInfoCard(
-    onResetDefaults: () -> Unit,
-) {
-    IsometricCard(glowColor = Color(0xFF475569)) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "About Mother of All Apps",
-                description = "MotherOfAllApps · Android 14+ (API 34..36)\n\nArchitecture: Jetpack Compose + Modular Tool Plugins\nDesign Identity: Plain Minimalist Dark UI System\nTelemetry & Diagnostic Hub",
-                accentColor = Color(0xFF94A3B8),
-                badgeText = "v0.15.0"
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            LiquidGlassButton(
-                onClick = onResetDefaults,
-                modifier = Modifier.fillMaxWidth(),
-                glowColor = Color(0xFF94A3B8),
-                text = "Reset App Preferences to Defaults"
-            )
-        }
-    }
-}
-
-@Composable
-private fun DefaultLlmSettingsCard(context: Context) {
-    val repository = dev.pritam.host.tool.llmgateway.manager.LlmGatewayManager.getRepository(context)
-    val profiles by repository.profiles.collectAsStateWithLifecycle()
-    val defaultProfile = profiles.firstOrNull { it.isEnabled } ?: profiles.firstOrNull()
-
-    IsometricCard(glowColor = Cyan) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "Default LLM Route",
-                description = "Select the primary model used for CyberChat and default requests. If offline or rate-limited, requests fail over to the next priority target in the profile pool.",
-                accentColor = Cyan,
-                badgeText = "PRIORITY #1"
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                profiles.forEach { profile ->
-                    val isDefault = profile.id == defaultProfile?.id
-                    val borderColor = if (isDefault) Cyan else GlassBorder
-                    val surfaceColor = if (isDefault) Cyan.copy(alpha = 0.12f) else GlassSurfaceDeep
-
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = surfaceColor,
-                        border = BorderStroke(1.dp, borderColor),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                if (!isDefault) {
-                                    repository.setDefaultProfile(profile.id)
-                                    Toast.makeText(context, "Default LLM set to: ${profile.name}", Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                // Radio selection indicator
-                                Box(
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .border(
-                                            width = 2.dp,
-                                            color = if (isDefault) Cyan else TextSecondary.copy(alpha = 0.5f),
-                                            shape = CircleShape
-                                        ),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (isDefault) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(10.dp)
-                                                .background(Cyan, CircleShape)
-                                        )
-                                    }
-                                }
-
-                                Spacer(Modifier.width(10.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = profile.name,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (isDefault) Cyan else TextPrimary,
-                                            fontWeight = if (isDefault) FontWeight.Bold else FontWeight.Medium,
-                                            fontSize = 13.sp
-                                        )
-                                        if (isDefault) {
-                                            Surface(
-                                                shape = RoundedCornerShape(3.dp),
-                                                color = Cyan.copy(alpha = 0.2f)
-                                            ) {
-                                                Text(
-                                                    text = "DEFAULT",
-                                                    color = Cyan,
-                                                    fontSize = 8.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Spacer(Modifier.height(2.dp))
-                                    Text(
-                                        text = "${profile.providerType} • ${profile.targetModel ?: "auto"} • ${if (profile.isEnabled) "Enabled" else "Disabled"}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextSecondary,
-                                        fontSize = 10.sp
-                                    )
-                                }
-                            }
-
-                            // Status Indicator
-                            val statusColor = when (profile.status) {
-                                dev.pritam.host.tool.llmgateway.model.ProfileStatus.ACTIVE -> Emerald
-                                dev.pritam.host.tool.llmgateway.model.ProfileStatus.IDLE -> TextSecondary
-                                dev.pritam.host.tool.llmgateway.model.ProfileStatus.RATE_LIMITED -> Amber
-                                dev.pritam.host.tool.llmgateway.model.ProfileStatus.HOST_UNREACHABLE -> Rose
-                                dev.pritam.host.tool.llmgateway.model.ProfileStatus.EXPIRED -> Rose
-                            }
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = statusColor.copy(alpha = 0.15f)
-                            ) {
-                                Text(
-                                    text = profile.status.name,
-                                    color = statusColor,
-                                    fontSize = 8.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun McpServersSettingsCard(context: Context) {
-    val mcpRepository = dev.pritam.host.tool.llmgateway.manager.LlmGatewayManager.getMcpRepository(context)
-    val servers by mcpRepository.servers.collectAsStateWithLifecycle()
-    val activeToolsCount = servers.filter { it.isEnabled }.sumOf { s -> s.discoveredTools.count { it.isEnabled } }
-
-    IsometricCard(glowColor = Violet) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            SettingHeaderWithInfo(
-                title = "MCP Tool Servers",
-                description = "Turn Model Context Protocol servers on or off. Active tools (hardware sensors, FTP, system logs, remote APIs) are dynamically exposed to LLMs for automated tool calling.",
-                accentColor = Violet,
-                badgeText = "$activeToolsCount ACTIVE TOOLS"
-            )
-
-            Spacer(Modifier.height(10.dp))
-
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                servers.forEach { server ->
-                    val isBuiltin = server.transportType == dev.pritam.host.tool.llmgateway.mcp.model.McpTransportType.BUILTIN_DEVICE
-                    val enabledTools = server.discoveredTools.count { it.isEnabled }
-                    val totalTools = server.discoveredTools.size
-
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = GlassSurfaceDeep,
-                        border = BorderStroke(1.dp, if (server.isEnabled) Violet.copy(alpha = 0.5f) else GlassBorder),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = server.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = if (server.isEnabled) TextPrimary else TextSecondary,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp
-                                    )
-                                    Surface(
-                                        shape = RoundedCornerShape(3.dp),
-                                        color = if (isBuiltin) Emerald.copy(alpha = 0.15f) else Cyan.copy(alpha = 0.15f)
-                                    ) {
-                                        Text(
-                                            text = if (isBuiltin) "BUILTIN" else server.transportType.name,
-                                            color = if (isBuiltin) Emerald else Cyan,
-                                            fontSize = 8.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(Modifier.height(2.dp))
-                                Text(
-                                    text = if (isBuiltin) "$enabledTools of $totalTools device tools active" else "${server.endpointUrl.ifBlank { "No endpoint" }} • $enabledTools tools",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextSecondary,
-                                    fontSize = 10.sp
-                                )
-                            }
-
-                            Spacer(Modifier.width(8.dp))
-
-                            Switch(
-                                checked = server.isEnabled,
-                                onCheckedChange = { isChecked ->
-                                    mcpRepository.toggleServerEnabled(server.id, isChecked)
-                                    Toast.makeText(
-                                        context,
-                                        "MCP Server '${server.name}' ${if (isChecked) "Enabled" else "Disabled"}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                },
-                                colors = SwitchDefaults.colors(
-                                    checkedThumbColor = Violet,
-                                    checkedTrackColor = Violet.copy(alpha = 0.35f),
-                                    uncheckedThumbColor = TextTertiary,
-                                    uncheckedTrackColor = GlassSurfaceElevated
-                                )
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun GhostAgentSettingsCard(context: android.content.Context) {
-    val isConnected = GhostAgentManager.isAccessibilityServiceConnected()
-    val isBubbleVisible = GhostAgentManager.isBubbleVisible()
-    val statusColor = if (isConnected) Color(0xFF34D399) else Amber
-
-    IsometricCard(glowColor = Violet) {
-        Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Title row
-            SettingHeaderWithInfo(
-                title = "Ghost Agent",
-                description = "Automates multi-step tasks across any app using Android Accessibility Service. Enable A11y access in system settings to start automation workflows.",
-                accentColor = Violet,
-                badgeText = if (isConnected) "● A11Y ON" else "○ A11Y OFF",
-                badgeColor = statusColor,
-                leadingEmoji = "👻"
-            )
-
-            // Floating Bubble toggle row (Switch)
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = GlassSurfaceDeep,
-                border = BorderStroke(1.dp, if (isBubbleVisible) Violet.copy(alpha = 0.4f) else GlassBorder)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Floating Bubble",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 13.sp
-                        )
-                        Text(
-                            text = "Always-on 👻 overlay over other apps",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = TextSecondary,
-                            fontSize = 10.sp
-                        )
-                    }
-                    Switch(
-                        checked = isBubbleVisible,
-                        onCheckedChange = { enabled ->
-                            if (enabled) GhostAgentManager.showFloatingBubble(context)
-                            else GhostAgentManager.hideFloatingBubble(context)
-                        },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Violet,
-                            checkedTrackColor = Violet.copy(alpha = 0.35f),
-                            uncheckedThumbColor = TextTertiary,
-                            uncheckedTrackColor = GlassSurfaceElevated
-                        )
-                    )
-                }
-            }
-
-            // Open Accessibility Settings button
-            LiquidGlassButton(
-                onClick = {
-                    context.startActivity(
-                        android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                glowColor = if (isConnected) Color(0xFF34D399) else Amber,
-                text = if (isConnected) "✓ Accessibility Service Active" else "⚠ Enable Accessibility Service →"
-            )
-        }
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
-@Composable
-private fun SettingsScreenPreview() {
-    dev.pritam.host.ui.theme.AppTheme {
-        SettingsScreen(
-            onNavigateBack = {},
-            onOpenLogViewer = {},
-            onOpenSystemManual = {}
-        )
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
-@Composable
-private fun DialogOpacitySettingsCardPreview() {
-    dev.pritam.host.ui.theme.AppTheme {
-        DialogOpacitySettingsCard(
-            currentOpacity = 94,
-            onOpacityChange = {}
-        )
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
-@Composable
-private fun DashboardPaddingSettingsCardPreview() {
-    dev.pritam.host.ui.theme.AppTheme {
-        DashboardPaddingSettingsCard(
-            currentPadding = 18,
-            onPaddingChange = {}
-        )
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
-@Composable
-private fun GalleryLayoutSettingsCardPreview() {
-    dev.pritam.host.ui.theme.AppTheme {
-        GalleryLayoutSettingsCard(
-            currentColumns = 2,
-            onSelectColumns = {}
-        )
-    }
-}
-
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, backgroundColor = 0xFF080E1A)
-@Composable
-private fun DiagnosticsSettingsCardPreview() {
-    dev.pritam.host.ui.theme.AppTheme {
-        DiagnosticsSettingsCard(
-            currentRetention = dev.pritam.host.settings.LogRetentionPolicy.ONE_DAY,
-            onSelectRetention = {},
-            onOpenLogViewer = {},
-            onClearLogs = {}
-        )
-    }
-}
-
-

@@ -70,6 +70,7 @@ import dev.pritam.host.tool.sensors.model.SensorCategory
 import dev.pritam.host.tool.sensors.model.SensorInfoItem
 import dev.pritam.host.tool.sensors.model.SensorValueReading
 import dev.pritam.host.tool.sensors.model.UpdateInterval
+import dev.pritam.host.tool.sensors.ui.components.SensorVisualizerHub
 import dev.pritam.host.ui.theme.Cyan
 import dev.pritam.host.ui.theme.GlassBorder
 import dev.pritam.host.ui.theme.GlassBorderHighlight
@@ -773,8 +774,15 @@ private fun SensorLiveCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        // Live 3D Instrument / Meter & 30s/1m Historical Telemetry Chart
+                        SensorVisualizerHub(
+                            sensorType = sensor.type,
+                            reading = reading,
+                            isExpanded = isExpanded && isActive
+                        )
+
                         // Sensor Meaning for User & Developer
                         Surface(
                             shape = RoundedCornerShape(8.dp),

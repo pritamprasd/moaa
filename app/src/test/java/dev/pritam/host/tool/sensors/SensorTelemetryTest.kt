@@ -105,4 +105,32 @@ class SensorTelemetryTest {
         assertTrue(proxExp.userMeaning.contains("screen") || proxExp.userMeaning.contains("close"))
         assertTrue(proxExp.developerGuide.contains("calls") || proxExp.developerGuide.contains("near"))
     }
+
+    @Test
+    fun testSensorHistoryBufferPruningAndClear() {
+        val buffer = dev.pritam.host.tool.sensors.ui.components.SensorHistoryBuffer(maxRetentionMs = 1_000L)
+        assertTrue(buffer.points.isEmpty())
+
+        // Record initial points
+        buffer.record(listOf(1.0f, 2.0f, 3.0f))
+        assertEquals(1, buffer.points.size)
+        assertEquals(listOf(1.0f, 2.0f, 3.0f), buffer.points.first().values)
+
+        // Clear buffer
+        buffer.clear()
+        assertTrue(buffer.points.isEmpty())
+
+        // Insert manually with simulated past timestamp to verify pruning
+        buffer.points.add(dev.pritam.host.tool.sensors.ui.components.TelemetryDataPoint(
+            timestampMs = System.currentTimeMillis() - 2000L,
+            values = listOf(99f)
+        ))
+        assertEquals(1, buffer.points.size)
+
+        // Recording a new point must prune the point older than 1000ms
+        buffer.record(listOf(4.0f, 5.0f))
+        assertEquals(1, buffer.points.size)
+        assertEquals(listOf(4.0f, 5.0f), buffer.points.first().values)
+    }
 }
+

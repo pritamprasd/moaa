@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,9 +36,13 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import dev.pritam.host.ftp.ui.components.LiquidGlassButton
@@ -273,6 +278,20 @@ fun AddCloudProfileDialog(
     }
 }
 
+val AVAILABLE_OLLAMA_MODELS = listOf(
+    "llama3.2:latest" to "Llama 3.2 3B (Fast & Lightweight)",
+    "llama3.2:1b" to "Llama 3.2 1B (Ultra Fast Edge)",
+    "llama3.1:latest" to "Llama 3.1 8B (General Intelligence)",
+    "deepseek-r1:latest" to "DeepSeek R1 (Advanced Reasoning)",
+    "qwen2.5-coder:latest" to "Qwen 2.5 Coder (Code & Technical)",
+    "qwen2.5:latest" to "Qwen 2.5 7B (Multilingual)",
+    "mistral:latest" to "Mistral 7B (Instruction Tuned)",
+    "gemma2:latest" to "Gemma 2 9B (Google Efficient)",
+    "phi4:latest" to "Phi-4 14B (Synthetic Reasoning)",
+    "codellama:latest" to "Code Llama (Meta Code Specialist)",
+    "nomic-embed-text:latest" to "Nomic Embed (Dense Embeddings)"
+)
+
 @Composable
 fun AddDesktopHostDialog(
     onDismiss: () -> Unit,
@@ -282,6 +301,7 @@ fun AddDesktopHostDialog(
     var hostAddress by remember { mutableStateOf("http://192.168.1.100:11434") }
     var targetModel by remember { mutableStateOf("llama3.2:latest") }
     var serviceType by remember { mutableStateOf("OLLAMA_LOCAL") }
+    var modelDropdownExpanded by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     val shape = RoundedCornerShape(16.dp)
@@ -404,19 +424,89 @@ fun AddDesktopHostDialog(
 
                 Spacer(Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = targetModel,
-                    onValueChange = { targetModel = it },
-                    label = { Text("Default Model Tag (e.g. llama3.2:latest)", fontSize = 11.sp) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = liquidGlassTextFieldColors(
-                        focusedBorderColor = Color(0xFF34D399),
-                        unfocusedBorderColor = Color(0xFF222531),
-                        containerColor = Color(0xFF0C0E14)
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = targetModel,
+                        onValueChange = { targetModel = it },
+                        label = {
+                            Text(
+                                text = if (serviceType == "OLLAMA_LOCAL") "Ollama Model (Choose or Type)" else "Default Model Tag",
+                                fontSize = 11.sp
+                            )
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        trailingIcon = {
+                            if (serviceType == "OLLAMA_LOCAL") {
+                                IconButton(onClick = { modelDropdownExpanded = !modelDropdownExpanded }) {
+                                    Icon(
+                                        imageVector = Icons.Default.KeyboardArrowDown,
+                                        contentDescription = "Select Ollama Model",
+                                        tint = Color(0xFF34D399)
+                                    )
+                                }
+                            }
+                        },
+                        colors = liquidGlassTextFieldColors(
+                            focusedBorderColor = Color(0xFF34D399),
+                            unfocusedBorderColor = Color(0xFF222531),
+                            containerColor = Color(0xFF0C0E14)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (serviceType == "OLLAMA_LOCAL") {
+                        DropdownMenu(
+                            expanded = modelDropdownExpanded,
+                            onDismissRequest = { modelDropdownExpanded = false },
+                            modifier = Modifier
+                                .background(Color(0xFF14161F))
+                                .border(1.dp, Color(0xFF222531), RoundedCornerShape(8.dp))
+                        ) {
+                            Text(
+                                text = "AVAILABLE OLLAMA MODELS",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF34D399),
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 1.sp,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            )
+                            AVAILABLE_OLLAMA_MODELS.forEach { (tag, desc) ->
+                                val isSelected = targetModel == tag
+                                DropdownMenuItem(
+                                    text = {
+                                        Column {
+                                            Text(
+                                                text = tag,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                                color = if (isSelected) Color(0xFF34D399) else TextPrimary,
+                                                fontSize = 12.sp,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                            Text(
+                                                text = desc,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = TextSecondary,
+                                                fontSize = 10.sp
+                                            )
+                                        }
+                                    },
+                                    trailingIcon = {
+                                        if (isSelected) {
+                                            Text("✓", color = Color(0xFF34D399), fontWeight = FontWeight.Bold)
+                                        }
+                                    },
+                                    onClick = {
+                                        targetModel = tag
+                                        modelDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
 
                 if (errorMessage != null) {
                     Spacer(Modifier.height(6.dp))

@@ -140,5 +140,22 @@ class AppSettingsTest {
         assertTrue(AppSettingsManager.customPalettes.value.isEmpty())
         assertEquals(AccentPalette.LINEAR_CYAN, AppSettingsManager.accentPalette.value)
     }
+
+    @Test
+    fun testOpenSourceRegistry() {
+        val libs = dev.pritam.host.settings.model.OpenSourceRegistry.libraries
+        assertTrue(libs.isNotEmpty())
+        assertTrue(libs.any { it.name.contains("Compose") })
+        assertTrue(libs.any { it.name.contains("Coroutines") })
+        assertTrue(libs.any { it.name.contains("JSON") })
+        assertTrue(libs.any { it.name.contains("JUnit") })
+
+        libs.forEach { lib ->
+            assertTrue(lib.name.isNotBlank())
+            assertTrue(lib.version.isNotBlank())
+            assertTrue(lib.license.isNotBlank())
+            assertTrue(lib.description.isNotBlank())
+        }
+    }
 }
 

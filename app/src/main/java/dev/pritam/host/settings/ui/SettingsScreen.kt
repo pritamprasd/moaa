@@ -41,13 +41,13 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.AutoAwesome
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Opacity
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.SmartToy
@@ -124,14 +124,13 @@ fun SettingsScreen(
     val currentPalette by AppSettingsManager.accentPalette.collectAsStateWithLifecycle()
     val customPalettes by AppSettingsManager.customPalettes.collectAsStateWithLifecycle()
     val currentPadding by AppSettingsManager.dashboardPaddingDp.collectAsStateWithLifecycle()
-    val currentOpacity by AppSettingsManager.dialogOpacityPercent.collectAsStateWithLifecycle()
     val currentRetention by AppSettingsManager.logRetentionPolicy.collectAsStateWithLifecycle()
 
     // ── Row inline expansion states ──────────────────────────────────────────
     var accentExpanded by remember { mutableStateOf(false) }
     var galleryExpanded by remember { mutableStateOf(false) }
     var paddingExpanded by remember { mutableStateOf(false) }
-    var opacityExpanded by remember { mutableStateOf(false) }
+    var openSourceExpanded by remember { mutableStateOf(false) }
     var shortcutsExpanded by remember { mutableStateOf(false) }
     var llmExpanded by remember { mutableStateOf(false) }
     var mcpExpanded by remember { mutableStateOf(false) }
@@ -421,39 +420,6 @@ fun SettingsScreen(
                                     }
                                 }
                             }
-
-                            // Quick Swatch Palette Row
-                            LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                items(AccentPalette.builtInPalettes) { pal ->
-                                    val isSel = pal.id == currentPalette.id
-                                    Surface(
-                                        onClick = {
-                                            AppSettingsManager.setAccentPalette(pal)
-                                            Toast.makeText(context, "Accent set to ${pal.displayName}", Toast.LENGTH_SHORT).show()
-                                        },
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = if (isSel) pal.primary.copy(alpha = 0.15f) else Color(0xFF161822),
-                                        border = BorderStroke(1.dp, if (isSel) pal.primary else Color(0xFF242735))
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                        ) {
-                                            Box(Modifier.size(8.dp).clip(CircleShape).background(pal.primary))
-                                            Text(
-                                                text = pal.displayName,
-                                                fontSize = 11.sp,
-                                                color = if (isSel) pal.primary else Color(0xFF94A3B8),
-                                                fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        }
-                                    }
-                                }
-                            }
                         }
                     }
 
@@ -633,135 +599,7 @@ fun SettingsScreen(
                         }
                     }
 
-                    SettingsDivider()
 
-                    // Row 4: Dialog Opacity
-                    SettingsRowItem(
-                        icon = Icons.Outlined.Opacity,
-                        title = "Dialog Opacity",
-                        subtitle = "$currentOpacity%",
-                        iconTint = Cyan,
-                        iconBackgroundColor = Cyan.copy(alpha = 0.12f),
-                        onInfoClick = {
-                            activeInfoDialog = "Dialog Opacity" to
-                                "Controls background bleed-through for dialogs and popups. Range: 50% to 100% opacity."
-                        },
-                        trailingContent = {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                SettingBadge(text = "$currentOpacity%", color = Cyan)
-                                SettingChevron(isExpanded = opacityExpanded)
-                            }
-                        },
-                        onClick = { opacityExpanded = !opacityExpanded }
-                    )
-
-                    // Inline expand: Dialog Opacity slider, quick presets & preview box
-                    AnimatedVisibility(
-                        visible = opacityExpanded,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(Color(0xFF0F1016))
-                                .padding(horizontal = 16.dp, vertical = 12.dp)
-                        ) {
-                            Slider(
-                                value = currentOpacity.toFloat(),
-                                onValueChange = { AppSettingsManager.setDialogOpacity(it.toInt()) },
-                                valueRange = 50f..100f,
-                                steps = 9,
-                                colors = SliderDefaults.colors(
-                                    thumbColor = Cyan,
-                                    activeTrackColor = Cyan,
-                                    inactiveTrackColor = Color(0xFF20222A)
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                listOf(
-                                    70 to "Frost (70%)",
-                                    94 to "Focus (94%)",
-                                    100 to "Solid (100%)"
-                                ).forEach { (opacityVal, label) ->
-                                    val isSel = currentOpacity == opacityVal
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = if (isSel) Cyan.copy(alpha = 0.2f) else Color(0xFF161822),
-                                        border = BorderStroke(1.dp, if (isSel) Cyan else Color(0xFF242735)),
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(6.dp))
-                                            .clickable { AppSettingsManager.setDialogOpacity(opacityVal) }
-                                    ) {
-                                        Text(
-                                            text = label,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = if (isSel) Cyan else Color(0xFF94A3B8),
-                                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
-                                            fontSize = 10.sp,
-                                            modifier = Modifier.padding(vertical = 6.dp).fillMaxWidth(),
-                                            textAlign = TextAlign.Center
-                                        )
-                                    }
-                                }
-                            }
-                            Spacer(Modifier.height(10.dp))
-                            // Live Preview Box
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = AppSettingsManager.getDialogSurfaceColor(currentOpacity),
-                                border = BorderStroke(1.dp, Color(0xFF222531)),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = "PREVIEW: Dialog Content Clarity",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Color(0xFFF1F5F9),
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 11.sp
-                                        )
-                                        Text(
-                                            text = "Background visibility is dimmed according to this setting",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = Color(0xFF94A3B8),
-                                            fontSize = 10.sp
-                                        )
-                                    }
-                                    Surface(
-                                        shape = RoundedCornerShape(4.dp),
-                                        color = Cyan.copy(alpha = 0.2f),
-                                        border = BorderStroke(1.dp, Cyan)
-                                    ) {
-                                        Text(
-                                            text = "OK",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Cyan,
-                                            fontWeight = FontWeight.Bold,
-                                            fontSize = 10.sp,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
 
@@ -1469,7 +1307,117 @@ fun SettingsScreen(
 
                     SettingsDivider()
 
-                    // Row 2: Reset to Defaults
+                    // Row 2: Open Source Libraries & Licenses
+                    SettingsRowItem(
+                        icon = Icons.Outlined.Code,
+                        title = "Open Source Libraries",
+                        subtitle = "${dev.pritam.host.settings.model.OpenSourceRegistry.libraries.size} third-party components",
+                        iconTint = currentPalette.primary,
+                        iconBackgroundColor = currentPalette.primary.copy(alpha = 0.12f),
+                        onInfoClick = {
+                            activeInfoDialog = "Open Source Libraries" to
+                                "Mother of All Apps is built using premier open-source frameworks and libraries licensed under Apache 2.0, EPL, and other permissive licenses."
+                        },
+                        trailingContent = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                SettingBadge(
+                                    text = "${dev.pritam.host.settings.model.OpenSourceRegistry.libraries.size} LIBS",
+                                    color = currentPalette.primary
+                                )
+                                SettingChevron(isExpanded = openSourceExpanded)
+                            }
+                        },
+                        onClick = { openSourceExpanded = !openSourceExpanded }
+                    )
+
+                    // Inline Expand: Open Source Libraries List
+                    AnimatedVisibility(
+                        visible = openSourceExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F1016))
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            dev.pritam.host.settings.model.OpenSourceRegistry.libraries.forEach { lib ->
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF14161F),
+                                    border = BorderStroke(1.dp, Color(0xFF222531)),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(10.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = lib.name,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = Color(0xFFF1F5F9),
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 12.sp
+                                            )
+                                            Surface(
+                                                shape = RoundedCornerShape(4.dp),
+                                                color = currentPalette.primary.copy(alpha = 0.15f),
+                                                border = BorderStroke(1.dp, currentPalette.primary.copy(alpha = 0.35f))
+                                            ) {
+                                                Text(
+                                                    text = lib.license,
+                                                    color = currentPalette.primary,
+                                                    fontSize = 9.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = lib.category,
+                                                color = Color(0xFF94A3B8),
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                            Text(
+                                                text = "v${lib.version}",
+                                                color = Color(0xFF64748B),
+                                                fontSize = 10.sp,
+                                                fontFamily = FontFamily.Monospace
+                                            )
+                                        }
+
+                                        Text(
+                                            text = lib.description,
+                                            color = Color(0xFF94A3B8),
+                                            fontSize = 10.sp,
+                                            lineHeight = 14.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsDivider()
+
+                    // Row 3: Reset to Defaults
                     SettingsRowItem(
                         icon = Icons.Outlined.RestartAlt,
                         title = "Reset Settings to Default",

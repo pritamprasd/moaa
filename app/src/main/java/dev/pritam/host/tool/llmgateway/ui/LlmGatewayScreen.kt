@@ -310,36 +310,34 @@ private fun AccountsAndHostsTab(
         item {
             IsometricCard(glowColor = Color(0xFF34D399)) {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                text = "WI-FI LAN AUTO-DISCOVERY",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Color(0xFF34D399),
-                                letterSpacing = 1.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp
-                            )
-                            Text(
-                                text = "Sweep local subnet for Ollama (11434) & LM Studio (1234)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
-                                fontSize = 10.sp
-                            )
-                        }
-
-                        LiquidGlassButton(
-                            onClick = onStartScan,
-                            enabled = !isScanning,
-                            glowColor = Color(0xFF34D399),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                            text = if (isScanning) "Scanning..." else "🔍 Scan LAN"
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "WI-FI LAN AUTO-DISCOVERY",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFF34D399),
+                            letterSpacing = 1.sp,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 11.sp
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        Text(
+                            text = "Sweep local subnet for Ollama (11434) & LM Studio (1234)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary,
+                            fontSize = 10.sp
                         )
                     }
+
+                    Spacer(Modifier.height(10.dp))
+
+                    LiquidGlassButton(
+                        onClick = onStartScan,
+                        enabled = !isScanning,
+                        glowColor = Color(0xFF34D399),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        text = if (isScanning) "Scanning Subnet (Ollama / LM Studio)..." else "🔍 Scan LAN"
+                    )
 
                     if (isScanning) {
                         Spacer(Modifier.height(8.dp))

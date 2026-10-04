@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -293,7 +294,7 @@ private fun McpServerCard(
                 )
                 .animateContentSize()
         ) {
-            Column(modifier = Modifier.padding(14.dp)) {
+            Column(modifier = Modifier.padding(if (isBuiltin) 10.dp else 14.dp)) {
                 // Top Row: Header + Transport + Status + Toggle
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -331,7 +332,7 @@ private fun McpServerCard(
                             }
                             Spacer(Modifier.height(2.dp))
                             Text(
-                                text = "${server.transportType.displayName} • ${server.endpointUrl}",
+                                text = if (isBuiltin) "Direct IPC · Sensors & Diagnostics" else "${server.transportType.displayName} • ${server.endpointUrl}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary,
                                 fontSize = 10.sp,
@@ -393,25 +394,86 @@ private fun McpServerCard(
                     }
                 }
 
-                // Action Bar
-                Spacer(Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        OutlinedButton(
-                            onClick = onSyncTools,
-                            border = BorderStroke(1.dp, GlassBorder),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                            modifier = Modifier.height(28.dp)
+                // Action Bar: Compact for Builtin, standard for External
+                Spacer(Modifier.height(if (isBuiltin) 8.dp else 10.dp))
+                if (isBuiltin) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            onClick = onCardClick,
+                            shape = RoundedCornerShape(6.dp),
+                            color = Cyan.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, Cyan.copy(alpha = 0.35f))
                         ) {
-                            Text("🔄 Sync Tools (${server.discoveredTools.size})", fontSize = 10.sp)
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                Text(
+                                    text = "${server.discoveredTools.count { it.isEnabled }} of ${server.discoveredTools.size} Tools Active",
+                                    color = Cyan,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = if (isExpanded) "▲" else "▼",
+                                    color = Cyan,
+                                    fontSize = 8.sp
+                                )
+                            }
                         }
 
-                        if (!isBuiltin) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Surface(
+                                onClick = onSyncTools,
+                                shape = RoundedCornerShape(6.dp),
+                                color = GlassSurfaceDeep,
+                                border = BorderStroke(1.dp, GlassBorder)
+                            ) {
+                                Text(
+                                    text = "🔄 Sync",
+                                    color = TextSecondary,
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                )
+                            }
+
+                            TextButton(
+                                onClick = onCardClick,
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (isExpanded) "Collapse" else "Configure",
+                                    color = TextSecondary,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            OutlinedButton(
+                                onClick = onSyncTools,
+                                border = BorderStroke(1.dp, GlassBorder),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = Cyan),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier.height(28.dp)
+                            ) {
+                                Text("🔄 Sync Tools (${server.discoveredTools.size})", fontSize = 10.sp)
+                            }
+
                             OutlinedButton(
                                 onClick = onPing,
                                 border = BorderStroke(1.dp, GlassBorder),
@@ -422,28 +484,26 @@ private fun McpServerCard(
                                 Text("⚡ Ping", fontSize = 10.sp)
                             }
                         }
-                    }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (!isBuiltin) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
                             TextButton(
                                 onClick = onDelete,
                                 contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
                             ) {
                                 Text("Delete", color = Rose, fontSize = 10.sp)
                             }
-                        }
 
-                        TextButton(
-                            onClick = onCardClick,
-                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
-                        ) {
-                            Text(
-                                text = if (isExpanded) "Hide Tools ▲" else "View Tools (${server.discoveredTools.size}) ▼",
-                                color = Cyan,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
-                            )
+                            TextButton(
+                                onClick = onCardClick,
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (isExpanded) "Hide Tools ▲" else "View Tools (${server.discoveredTools.size}) ▼",
+                                    color = Cyan,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
                         }
                     }
                 }

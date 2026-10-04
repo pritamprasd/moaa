@@ -26,11 +26,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -140,24 +143,24 @@ fun SensorsScreen(
 
             Spacer(Modifier.height(4.dp))
 
-            // 2. Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = { Text("Search sensors by name or vendor...", fontSize = 12.sp) },
-                singleLine = true,
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        TextButton(onClick = { viewModel.setSearchQuery("") }) {
-                            Text("Clear", fontSize = 10.sp, color = TextSecondary)
-                        }
-                    }
-                },
-                colors = liquidGlassTextFieldColors(focusedBorderColor = Color(0xFFF59E0B)),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(8.dp))
+//            // 2. Search Bar
+//            OutlinedTextField(
+//                value = searchQuery,
+//                onValueChange = { viewModel.setSearchQuery(it) },
+//                placeholder = { Text("Search sensors by name or vendor...", fontSize = 12.sp) },
+//                singleLine = true,
+//                trailingIcon = {
+//                    if (searchQuery.isNotEmpty()) {
+//                        TextButton(onClick = { viewModel.setSearchQuery("") }) {
+//                            Text("Clear", fontSize = 10.sp, color = TextSecondary)
+//                        }
+//                    }
+//                },
+//                colors = liquidGlassTextFieldColors(focusedBorderColor = Color(0xFFF59E0B)),
+//                modifier = Modifier.fillMaxWidth()
+//            )
+//
+//            Spacer(Modifier.height(8.dp))
 
             // 3. Dropdown Filter Bar: Category Dropdown + Sampling Rate Dropdown
             Row(
@@ -177,7 +180,7 @@ fun SensorsScreen(
                 )
             }
 
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
 
             // 4. Sensors List
             if (filteredSensors.isEmpty()) {
@@ -250,11 +253,11 @@ private fun SensorsStatsBanner(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Column {
-                    Text("TOTAL SENSORS", style = MaterialTheme.typography.labelSmall, color = TextSecondary, fontSize = 9.sp)
+                    Text("TOTAL", style = MaterialTheme.typography.labelSmall, color = TextSecondary, fontSize = 9.sp)
                     Text("${stats.totalCount}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = TextPrimary)
                 }
                 Column {
-                    Text("ACTIVE STREAMS", style = MaterialTheme.typography.labelSmall, color = Color(0xFFF59E0B), fontSize = 9.sp)
+                    Text("ACTIVE", style = MaterialTheme.typography.labelSmall, color = Color(0xFFF59E0B), fontSize = 9.sp)
                     Text("${stats.activeCount}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
                 }
                 Column {
@@ -262,14 +265,17 @@ private fun SensorsStatsBanner(
                     Text(stats.currentInterval.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Cyan)
                 }
             }
-
-            LiquidGlassButton(
-                onClick = onPauseToggle,
-                glowColor = if (isPaused) Cyan else Rose,
-                useRainbowBorder = isPaused,
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                text = if (isPaused) "▶ Resume" else "⏸ Pause"
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column {
+                    LiquidGlassButton(
+                        onClick = onPauseToggle,
+                        glowColor = if (isPaused) Cyan else Rose,
+                        useRainbowBorder = isPaused,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        text = if (isPaused) "▶ Resume" else "⏸ Pause"
+                    )
+                }
+            }
         }
     }
 }
@@ -598,24 +604,28 @@ private fun SensorLiveCard(
                                 color = if (isActive) Color(0xFF34D399) else Rose,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                             )
                         }
 
-                        // Expand specs button
+                        // Info button to toggle specs and explanation (replaces SPECS dropdown button)
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = GlassSurfaceDeep,
-                            border = BorderStroke(1.dp, GlassBorder),
+                            color = if (isExpanded) Cyan.copy(alpha = 0.2f) else GlassSurfaceDeep,
+                            border = BorderStroke(1.dp, if (isExpanded) Cyan.copy(alpha = 0.45f) else GlassBorder),
                             modifier = Modifier.clickable { onToggleExpand() }
                         ) {
-                            Text(
-                                text = if (isExpanded) "▲ SPECS" else "▼ SPECS",
-                                color = TextSecondary,
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                            )
+                            Box(
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = if (isExpanded) "Hide Sensor Details & Specs" else "Show Sensor Details & Specs",
+                                    tint = if (isExpanded) Cyan else TextSecondary,
+                                    modifier = Modifier.size(13.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -690,13 +700,50 @@ private fun SensorLiveCard(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                                reading.formattedAxes.forEach { (axis, value) ->
+                                val (totalItems, axisItems) = reading.formattedAxes.partition { (axis, _) ->
+                                    axis.equals("Total", ignoreCase = true) ||
+                                    axis.equals("Field Strength", ignoreCase = true)
+                                }
+
+                                if (axisItems.size == 3) {
+                                    // All 3 axes in one row
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(axis, color = TextSecondary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
-                                        Text(value, color = TextPrimary, fontSize = 9.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
+                                        axisItems.forEach { (axis, value) ->
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                            ) {
+                                                Text(axis, color = TextSecondary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                                Text(value, color = TextPrimary, fontSize = 9.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
+                                            }
+                                        }
+                                    }
+
+                                    // Total / summary in a new row
+                                    totalItems.forEach { (axis, value) ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(axis, color = TextSecondary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                            Text(value, color = TextPrimary, fontSize = 9.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
+                                        }
+                                    }
+                                } else {
+                                    reading.formattedAxes.forEach { (axis, value) ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(axis, color = TextSecondary, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                                            Text(value, color = TextPrimary, fontSize = 9.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
+                                        }
                                     }
                                 }
                             }
@@ -719,26 +766,96 @@ private fun SensorLiveCard(
                     }
                 }
 
-                // Expandable Technical Specifications
+                // Expandable Sensor Details & Technical Specifications
                 AnimatedVisibility(visible = isExpanded) {
+                    val explanation = dev.pritam.host.tool.sensors.model.SensorTelemetryFormatter.getSensorExplanation(sensor.type)
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp)
+                            .padding(top = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        // Sensor Meaning for User & Developer
                         Surface(
                             shape = RoundedCornerShape(8.dp),
                             color = GlassSurfaceDeep,
                             border = BorderStroke(1.dp, GlassBorder),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = Cyan,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Text(
+                                        text = "WHAT THIS READING MEANS",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Cyan,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        letterSpacing = 0.5.sp
+                                    )
+                                }
+
+                                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                    Text(
+                                        text = "• For Users:",
+                                        color = TextPrimary,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = explanation.userMeaning,
+                                        color = TextSecondary,
+                                        fontSize = 9.sp,
+                                        lineHeight = 13.sp
+                                    )
+                                }
+
+                                Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                                    Text(
+                                        text = "• For Developers:",
+                                        color = TextPrimary,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = explanation.developerGuide,
+                                        color = TextSecondary,
+                                        fontSize = 9.sp,
+                                        lineHeight = 13.sp
+                                    )
+                                }
+                            }
+                        }
+
+                        // Hardware Specifications
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = GlassSurfaceDeep,
+                            border = BorderStroke(1.dp, GlassBorder),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
                                 Text(
                                     text = "HARDWARE SPECIFICATIONS",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = Cyan,
                                     fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 0.5.sp
                                 )
                                 Text("• Type ID: ${sensor.type} (${sensor.stringType})", color = TextSecondary, fontSize = 9.sp)
                                 Text("• Max Range: ${sensor.maxRange} ${reading?.unit ?: ""}", color = TextSecondary, fontSize = 9.sp)

@@ -7,10 +7,10 @@ import kotlin.math.sqrt
 enum class SensorCategory(val displayName: String, val iconLabel: String) {
     ALL("All", "⚡"),
     MOTION("Motion", "🏃"),
-    ENVIRONMENT("Environment", "🌡️"),
+    ENVIRONMENT("ENV", "🌡️"),
     POSITION("Position", "🧭"),
-    HEALTH("Health & Step", "❤️"),
-    OTHER("System & Other", "⚙️")
+    HEALTH("Health", "❤️"),
+    OTHER("System", "⚙️")
 }
 
 enum class UpdateInterval(val displayName: String, val delayMs: Long) {
@@ -49,6 +49,11 @@ data class SensorValueReading(
     val formattedAxes: List<Pair<String, String>>,
     val unit: String,
     val formattedTime: String
+)
+
+data class SensorExplanation(
+    val userMeaning: String,
+    val developerGuide: String
 )
 
 object SensorTelemetryFormatter {
@@ -93,6 +98,78 @@ object SensorTelemetryFormatter {
             1 -> "Low Accuracy"
             0 -> "Unreliable"
             else -> "Calibrating"
+        }
+    }
+
+    fun getSensorExplanation(type: Int): SensorExplanation {
+        return when (type) {
+            Sensor.TYPE_ACCELEROMETER -> SensorExplanation(
+                userMeaning = "Measures total acceleration forces in m/s² acting on the phone across 3D space (X, Y, Z), including Earth's gravity (~9.81 m/s² downward at rest).",
+                developerGuide = "X = horizontal tilt, Y = vertical tilt, Z = screen facing up (+9.81) or down (-9.81). Total magnitude = √(x²+y²+z²). Used for shake detection, screen orientation, and movement gestures."
+            )
+            Sensor.TYPE_LINEAR_ACCELERATION -> SensorExplanation(
+                userMeaning = "Measures pure physical acceleration forces in m/s² excluding gravity (reads 0.00 m/s² when stationary).",
+                developerGuide = "Isolates device motion from gravity using sensor fusion. Ideal for gesture recognition, step detection, vehicle speed tracking, and physics calculations without gravity subtraction."
+            )
+            Sensor.TYPE_GRAVITY -> SensorExplanation(
+                userMeaning = "Isolates the direction and magnitude of Earth's gravity vector in m/s² (~9.81 m/s² total).",
+                developerGuide = "Extracted via filtering of accelerometer data. Used for spirit levels, measuring incline/tilt relative to Earth, and orientation tracking."
+            )
+            Sensor.TYPE_GYROSCOPE,
+            Sensor.TYPE_GYROSCOPE_UNCALIBRATED -> SensorExplanation(
+                userMeaning = "Measures the rate of rotation around the phone's 3 physical axes in radians/sec (rad/s).",
+                developerGuide = "X = Pitch (nodding), Y = Roll (tilting side-to-side), Z = Yaw (compass spin). Critical for 3D camera tracking, mobile gaming, VR/AR, and Optical Image Stabilization (OIS)."
+            )
+            Sensor.TYPE_MAGNETIC_FIELD,
+            Sensor.TYPE_MAGNETIC_FIELD_UNCALIBRATED -> SensorExplanation(
+                userMeaning = "Measures ambient geomagnetic field strength in microteslas (µT). Earth's natural magnetic field is typically between 30 µT and 60 µT.",
+                developerGuide = "Provides geomagnetic flux vectors. Combined with accelerometer in SensorManager.getRotationMatrix() to compute true Compass Azimuth/Heading, or for metal/magnet detection."
+            )
+            Sensor.TYPE_ROTATION_VECTOR,
+            Sensor.TYPE_GAME_ROTATION_VECTOR,
+            Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR -> SensorExplanation(
+                userMeaning = "Calculates the exact 3D orientation of the phone in space as a unit quaternion, completely free from gimbal lock.",
+                developerGuide = "Fusion of accelerometer, gyroscope, and magnetometer. Direct input for 3D graphics (OpenGL/Vulkan), ARCore, VR head tracking, and SensorManager.getRotationMatrixFromVector()."
+            )
+            Sensor.TYPE_LIGHT -> SensorExplanation(
+                userMeaning = "Measures ambient room illumination in lux (lx). Varies from <10 lx in dark rooms to >10,000 lx in bright sunlight.",
+                developerGuide = "Single scalar value. Used to trigger automatic screen brightness, dark mode themes, and detecting indoor vs. outdoor environments."
+            )
+            Sensor.TYPE_PROXIMITY -> SensorExplanation(
+                userMeaning = "Detects whether an object (such as your ear or hand) is close to the top of the phone screen.",
+                developerGuide = "Most hardware sensors report binary states: near (0 cm) vs. far (e.g. 5 cm). Used during calls to turn off the display and touch digitizer to prevent accidental cheek inputs."
+            )
+            Sensor.TYPE_PRESSURE -> SensorExplanation(
+                userMeaning = "Measures ambient atmospheric pressure in hectopascals (hPa / mbar). Sea-level standard is ~1013.25 hPa.",
+                developerGuide = "Single scalar value (~1.2 hPa drop per 10m elevation). Used for hypsometric altitude calculation, indoor floor-level GPS navigation, and barometric weather trend tracking."
+            )
+            Sensor.TYPE_AMBIENT_TEMPERATURE,
+            Sensor.TYPE_TEMPERATURE -> SensorExplanation(
+                userMeaning = "Measures surrounding ambient air temperature in Celsius (°C) and Fahrenheit (°F).",
+                developerGuide = "Environmental temperature reading. Note: phone internal processor/battery heat can cause thermal drift under heavy CPU/GPU load."
+            )
+            Sensor.TYPE_RELATIVE_HUMIDITY -> SensorExplanation(
+                userMeaning = "Measures ambient relative air humidity percentage (0% to 100%).",
+                developerGuide = "Environmental moisture metric. Combined with ambient temperature to compute dew point and heat comfort index."
+            )
+            Sensor.TYPE_STEP_COUNTER,
+            Sensor.TYPE_STEP_DETECTOR -> SensorExplanation(
+                userMeaning = "Tracks footsteps taken by the user since the phone was last booted up.",
+                developerGuide = "Dedicated hardware low-power pedometer ASIC. Fires events without waking up the main CPU, providing high-efficiency fitness step counting."
+            )
+            Sensor.TYPE_HEART_RATE,
+            Sensor.TYPE_HEART_BEAT -> SensorExplanation(
+                userMeaning = "Measures instantaneous pulse rate in beats per minute (BPM) via optical photoplethysmography (PPG).",
+                developerGuide = "Returns heart rate in BPM with sensor accuracy status. Used in fitness trackers and biometric health diagnostics."
+            )
+            Sensor.TYPE_SIGNIFICANT_MOTION -> SensorExplanation(
+                userMeaning = "Detects when the user has picked up the device or started walking/driving.",
+                developerGuide = "One-shot trigger sensor. Automatically disables itself after firing; used to wake up high-accuracy GPS or initiate activity recognition."
+            )
+            else -> SensorExplanation(
+                userMeaning = "Streams real-time physical telemetry directly from the device's hardware sensor bus.",
+                developerGuide = "Values array maps directly to Android SensorEvent.values. See hardware HAL driver documentation for unit conventions."
+            )
         }
     }
 

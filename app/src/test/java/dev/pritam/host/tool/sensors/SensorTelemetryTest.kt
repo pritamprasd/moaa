@@ -90,4 +90,19 @@ class SensorTelemetryTest {
         assertEquals(0L, UpdateInterval.LIVE_FAST.delayMs)
         assertEquals(-1L, UpdateInterval.PAUSED.delayMs)
     }
+
+    @Test
+    fun testSensorExplanation() {
+        val accelExp = SensorTelemetryFormatter.getSensorExplanation(Sensor.TYPE_ACCELEROMETER)
+        assertTrue(accelExp.userMeaning.contains("acceleration"))
+        assertTrue(accelExp.developerGuide.contains("shake detection") || accelExp.developerGuide.contains("X ="))
+
+        val lightExp = SensorTelemetryFormatter.getSensorExplanation(Sensor.TYPE_LIGHT)
+        assertTrue(lightExp.userMeaning.contains("lux"))
+        assertTrue(lightExp.developerGuide.contains("brightness"))
+
+        val proxExp = SensorTelemetryFormatter.getSensorExplanation(Sensor.TYPE_PROXIMITY)
+        assertTrue(proxExp.userMeaning.contains("screen") || proxExp.userMeaning.contains("close"))
+        assertTrue(proxExp.developerGuide.contains("calls") || proxExp.developerGuide.contains("near"))
+    }
 }

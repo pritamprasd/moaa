@@ -69,23 +69,32 @@ object AppLogHub {
         }
 
         _logs.update { current ->
-            val policy = dev.pritam.host.settings.AppSettingsManager.logRetentionPolicy.value
-            val cutoff = if (policy.durationMs < Long.MAX_VALUE) System.currentTimeMillis() - policy.durationMs else 0L
-
-            val updated = ArrayList<ToolLog>(current.size + 1)
+            val capacity = minOf(current.size + 1, MAX_LOG_BUFFER_SIZE)
+            val updated = ArrayList<ToolLog>(capacity)
             updated.add(entry)
-            for (item in current) {
-                if (cutoff <= 0L || item.timestampMs >= cutoff) {
-                    updated.add(item)
-                }
+            val toCopy = minOf(current.size, MAX_LOG_BUFFER_SIZE - 1)
+            for (i in 0 until toCopy) {
+                updated.add(current[i])
             }
+            updated
+        }
+    }
 
-            if (updated.size > MAX_LOG_BUFFER_SIZE) {
-                updated.subList(0, MAX_LOG_BUFFER_SIZE)
+    /**
+     * Instantly prunes in-memory logs down to [targetSize] to reclaim heap memory.
+     * @return Number of purged log entries.
+     */
+    fun pruneDownTo(targetSize: Int): Int {
+        var purgedCount = 0
+        _logs.update { current ->
+            if (current.size > targetSize) {
+                purgedCount = current.size - targetSize
+                current.take(targetSize)
             } else {
-                updated
+                current
             }
         }
+        return purgedCount
     }
 
     /**

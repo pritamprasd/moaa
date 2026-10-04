@@ -1134,7 +1134,62 @@ fun SettingsScreen(
             }
 
             // ═════════════════════════════════════════════════════════════════
-            // 4. DIAGNOSTICS & LOGS
+            // 4. PERFORMANCE & MEMORY OPTIMIZATION
+            // ═════════════════════════════════════════════════════════════════
+            item(key = "title_performance") {
+                SettingsSectionTitle(title = "Performance & Memory")
+            }
+
+            item(key = "group_performance") {
+                var lastSummary by remember { mutableStateOf<dev.pritam.host.optimizer.AppPerformanceOptimizer.OptimizationSummary?>(null) }
+
+                SettingsGroupCard {
+                    SettingsRowItem(
+                        icon = Icons.Outlined.AutoAwesome,
+                        title = "Speed Up & Optimize App",
+                        subtitle = lastSummary?.let {
+                            "Freed ${String.format(java.util.Locale.US, "%.1f", it.memoryReclaimedMb)} MB • ${it.sensorsPausedCount} sensors suspended • ${it.logsPrunedCount} logs purged"
+                        } ?: "Suspends background sensors, purges logs, and compacts heap memory",
+                        iconTint = Emerald,
+                        iconBackgroundColor = Emerald.copy(alpha = 0.15f),
+                        onInfoClick = {
+                            activeInfoDialog = "Performance Booster & Cleaner" to
+                                "Instantly makes the app faster by stopping idle hardware sensor streaming listeners, purging excessive in-memory logs down to a minimal baseline, closing stale connection buffers, and reclaiming JVM heap memory without changing any of your saved settings or data."
+                        },
+                        trailingContent = {
+                            Surface(
+                                onClick = {
+                                    val result = dev.pritam.host.optimizer.AppPerformanceOptimizer.boostPerformance(context)
+                                    lastSummary = result
+                                    val msg = "⚡ System Boosted: Freed ${String.format(java.util.Locale.US, "%.1f", result.memoryReclaimedMb)} MB RAM (${result.sensorsPausedCount} sensors suspended, ${result.logsPrunedCount} logs pruned)"
+                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                color = Emerald.copy(alpha = 0.2f),
+                                border = BorderStroke(1.dp, Emerald.copy(alpha = 0.6f))
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                ) {
+                                    Text("⚡", fontSize = 11.sp)
+                                    Text(
+                                        text = "Boost Now",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Emerald,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp
+                                    )
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+
+            // ═════════════════════════════════════════════════════════════════
+            // 5. DIAGNOSTICS & LOGS
             // ═════════════════════════════════════════════════════════════════
             item(key = "title_diagnostics") {
                 SettingsSectionTitle(title = "Diagnostics & Logs")
@@ -1275,7 +1330,7 @@ fun SettingsScreen(
             }
 
             // ═════════════════════════════════════════════════════════════════
-            // 5. ABOUT
+            // 6. ABOUT
             // ═════════════════════════════════════════════════════════════════
             item(key = "title_about") {
                 SettingsSectionTitle(title = "About")

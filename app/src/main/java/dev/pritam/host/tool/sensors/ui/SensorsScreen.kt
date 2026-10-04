@@ -98,6 +98,23 @@ fun SensorsScreen(
     val updateInterval by viewModel.updateInterval.collectAsStateWithLifecycle()
     val expandedTypes by viewModel.expandedSensorTypes.collectAsStateWithLifecycle()
 
+    // Automatically suspend hardware sensor polling when navigating away or app is backgrounded
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_PAUSE) {
+                viewModel.pauseSensorStreaming()
+            } else if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                viewModel.resumeSensorStreaming()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.pauseSensorStreaming()
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = Color.Transparent,

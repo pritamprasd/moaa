@@ -107,6 +107,16 @@ class SensorsViewModel(application: Application) : AndroidViewModel(application)
         sensorsManager.resumeAllSensors()
     }
 
+    fun pauseSensorStreaming() {
+        sensorsManager.stopAllSensors()
+    }
+
+    fun resumeSensorStreaming() {
+        if (sensorsManager.updateInterval.value != UpdateInterval.PAUSED) {
+            sensorsManager.resumeAllSensors()
+        }
+    }
+
     fun exportTelemetry(context: Context) {
         val snapshot = sensorsManager.exportSnapshot()
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

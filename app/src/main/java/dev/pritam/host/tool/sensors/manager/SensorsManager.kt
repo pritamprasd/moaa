@@ -13,11 +13,13 @@ import dev.pritam.host.tool.sensors.model.SensorValueReading
 import dev.pritam.host.tool.sensors.model.UpdateInterval
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -42,11 +44,17 @@ class SensorsManager(context: Context) {
     private val _updateInterval = MutableStateFlow(UpdateInterval.EVERY_1_SEC)
     val updateInterval: StateFlow<UpdateInterval> = _updateInterval.asStateFlow()
 
+    // High-performance thread-safe internal reading cache for 0-allocation sensor event dispatching
+    private val latestReadings = ConcurrentHashMap<Int, SensorValueReading>()
+    @Volatile private var hasNewReadings = false
+    private var batcherJob: Job? = null
+
     // Last emission timestamp per sensorType to enforce throttling
     private val lastEmissionTimes = ConcurrentHashMap<Int, Long>()
     private val sensorListeners = ConcurrentHashMap<Int, SensorEventListener>()
 
     init {
+        activeInstance = this
         discoverAvailableSensors()
     }
 
@@ -92,9 +100,23 @@ class SensorsManager(context: Context) {
             message = "SENSORS HARDWARE [DISCOVERY] Found ${items.size} hardware sensors on device."
         )
 
-        // Automatically start streaming all available continuous/on-change sensors
-        val typesToStart = items.map { it.type }.toSet()
+        // Automatically start streaming primary sensors on device
+        val primarySensors = items.filter { it.type in CORE_DEFAULT_SENSOR_TYPES }.map { it.type }.toSet()
+        val typesToStart = if (primarySensors.isNotEmpty()) primarySensors else items.take(12).map { it.type }.toSet()
         startStreamingSensors(typesToStart)
+    }
+
+    private fun startBatcher() {
+        if (batcherJob?.isActive == true) return
+        batcherJob = scope.launch {
+            while (isActive) {
+                delay(33L) // 30 FPS UI state update throttle eliminates thousands of redundant recompositions
+                if (hasNewReadings) {
+                    hasNewReadings = false
+                    _sensorReadings.value = HashMap(latestReadings)
+                }
+            }
+        }
     }
 
     fun setUpdateInterval(interval: UpdateInterval) {
@@ -135,6 +157,8 @@ class SensorsManager(context: Context) {
         val interval = _updateInterval.value
         if (interval == UpdateInterval.PAUSED) return
 
+        startBatcher()
+
         // Use SENSOR_DELAY_GAME (~20ms / 50Hz) for live mode to prevent native sensor hardware flooding
         val samplingRateUs = when (interval) {
             UpdateInterval.LIVE_FAST -> SensorManager.SENSOR_DELAY_GAME
@@ -169,10 +193,9 @@ class SensorsManager(context: Context) {
                                         timeFormatted = timeFormatted
                                     )
 
-                                    // Atomic lock-free StateFlow update avoids spawning thousands of unconstrained coroutines
-                                    _sensorReadings.update { currentMap ->
-                                        currentMap + (type to reading)
-                                    }
+                                    // Store in zero-allocation lock-free map; UI batcher will emit at smooth 30 FPS
+                                    latestReadings[type] = reading
+                                    hasNewReadings = true
                                 }
                             } catch (t: Throwable) {
                                 AppLogHub.log(
@@ -225,6 +248,8 @@ class SensorsManager(context: Context) {
     }
 
     fun stopAllSensors() {
+        batcherJob?.cancel()
+        batcherJob = null
         val sm = sensorManager ?: return
         sensorListeners.forEach { (type, listener) ->
             val sensor = sm.getDefaultSensor(type)
@@ -270,5 +295,31 @@ class SensorsManager(context: Context) {
             }
         }
         return sb.toString()
+    }
+
+    companion object {
+        @Volatile var activeInstance: SensorsManager? = null
+
+        val CORE_DEFAULT_SENSOR_TYPES = setOf(
+            Sensor.TYPE_ACCELEROMETER,
+            Sensor.TYPE_GYROSCOPE,
+            Sensor.TYPE_MAGNETIC_FIELD,
+            Sensor.TYPE_LIGHT,
+            Sensor.TYPE_PRESSURE,
+            Sensor.TYPE_PROXIMITY,
+            Sensor.TYPE_GRAVITY,
+            Sensor.TYPE_LINEAR_ACCELERATION,
+            Sensor.TYPE_ROTATION_VECTOR,
+            Sensor.TYPE_STEP_COUNTER,
+            Sensor.TYPE_STEP_DETECTOR,
+            Sensor.TYPE_AMBIENT_TEMPERATURE,
+            Sensor.TYPE_RELATIVE_HUMIDITY
+        )
+
+        fun pauseActiveStreaming(): Int {
+            val count = activeInstance?.sensorListeners?.size ?: 0
+            activeInstance?.stopAllSensors()
+            return count
+        }
     }
 }
